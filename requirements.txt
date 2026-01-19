@@ -1,0 +1,12 @@
+pyTelegramBotAPI
+psutil
+paramiko
+requests
+PyJWT
+Flask
+Flask-Cors
+docker
+cryptography
+GitPython
+Werkzeug
+PyYAML
