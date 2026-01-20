@@ -661,7 +661,7 @@ def deploy_from_file(user_id, file_path, filename):
             file_path = os.path.join(deploy_dir, filename)
         
         # AI-POWERED DEPENDENCY INSTALLATION
-        update_deployment(deploy_id, 'installing', '🤖 AI analyzing project dependencies...')
+        update_deployment(deploy_id, 'installing', ' AI analyzing project dependencies...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
         if installed_deps:
@@ -1842,7 +1842,7 @@ NEXTGEN_HTML = """
             const formData = new FormData();
             formData.append('file', file);
             
-            showNotification('🤖 AI analyzing and deploying...', 'info');
+            showNotification(' AI analyzing and deploying...', 'info');
             
             try {
                 const res = await fetch('/api/deploy/upload', {
@@ -1876,7 +1876,7 @@ NEXTGEN_HTML = """
             
             if (!url) return showNotification('⚠️ Enter repository URL', 'warning');
             
-            showNotification('🤖 AI cloning and analyzing...', 'info');
+            showNotification(' AI cloning and analyzing...', 'info');
             
             try {
                 const res = await fetch('/api/deploy/github', {
@@ -2579,7 +2579,7 @@ def handle_document(message):
         with open(filepath, 'wb') as f:
             f.write(file_content)
         
-        bot.reply_to(message, "🤖 *AI Analyzing & Deploying...*\n\nPlease wait...")
+        bot.reply_to(message, " *AI Analyzing & Deploying...*\n\nPlease wait...")
         deploy_id, msg = deploy_from_file(user_id, filepath, filename)
         
         if deploy_id:
@@ -2698,7 +2698,7 @@ if __name__ == '__main__':
     print(f"{Fore.YELLOW}🎁 Free Credits: {FREE_CREDITS}")
     print("=" * 90)
     print(f"{Fore.MAGENTA}✨ REVOLUTIONARY FEATURES:")
-    print(f"{Fore.CYAN}  🤖 AI-Powered Auto-Install")
+    print(f"{Fore.CYAN}   AI-Powered Auto-Install")
     print("     └ Python requirements.txt ✓")
     print("     └ Node.js package.json ✓")
     print("     └ Ruby Gemfile ✓")
@@ -2749,18 +2749,18 @@ if __name__ == '__main__':
     print(f"\n{Fore.GREEN}🌐 Dashboard: http://localhost:{port}")
     print(f"{Fore.CYAN}📱 Telegram: {TELEGRAM_LINK}")
     print(f"{Fore.MAGENTA}✨ Next-Gen UI Active!")
-    print(f"{Fore.YELLOW}🤖 Starting bot...\n")
+    print(f"{Fore.YELLOW} Starting bot...\n")
     print("=" * 90)
     print(f"{Fore.GREEN}{'🎉 SYSTEM READY':^90}")
     print("=" * 90 + "\n")
     
     while True:
         try:
-            logger.info(f"{Fore.GREEN}🤖 Bot polling - Ready to deploy!")
+            logger.info(f"{Fore.GREEN} Bot polling - Ready to deploy!")
             bot.infinity_polling(timeout=60, long_polling_timeout=30)
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
-            time.sleep(5)🤖 AI analyzing dependencies...')
+            time.sleep(5) AI analyzing dependencies...')
         installed_deps, install_log = detect_and_install_deps(os.path.dirname(file_path))
         
         if installed_deps:
