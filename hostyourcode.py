@@ -2732,7 +2732,7 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
             time.sleep(5)
-        }
+        
         
         .action-btn:hover {
             transform: translateY(-3px);
