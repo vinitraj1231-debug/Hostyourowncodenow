@@ -2731,7 +2731,7 @@ if __name__ == '__main__':
             bot.infinity_polling(timeout=60, long_polling_timeout=30)
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
-            time.sleep(5)box-shadow: 0 5px 15px rgba(0,0,0,0.18);
+            time.sleep(5)
         }
         
         .action-btn:hover {
