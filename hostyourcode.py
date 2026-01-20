@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-ULTRA ADVANCED DEVOPS BOT v7.0 - REVOLUTIONARY EDITION
-Next-Generation AI-Powered Deployment Platform
+🚀 ULTRA ADVANCED DEVOPS BOT v8.0 - ULTIMATE EDITION
+Revolutionary AI-Powered Deployment Platform
+Mobile-First | Auto-Install | Zero Config
 """
 
 import sys
@@ -10,7 +11,7 @@ import os
 
 # ==================== SMART DEPENDENCY INSTALLER ====================
 print("=" * 90)
-print("🔧 NEXT-GEN DEPENDENCY INSTALLER v7.0")
+print("🔧 NEXT-GEN DEPENDENCY INSTALLER v8.0")
 print("=" * 90)
 
 REQUIRED_PACKAGES = {
@@ -23,7 +24,6 @@ REQUIRED_PACKAGES = {
     'werkzeug': 'werkzeug',
     'python-dotenv': 'dotenv',
     'colorama': 'colorama',
-    'qrcode': 'qrcode',
     'pillow': 'PIL'
 }
 
@@ -86,14 +86,14 @@ from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet
 import psutil
 from colorama import Fore, Style, init
-import qrcode
 from io import BytesIO
 import base64
+import re
 
 init(autoreset=True)
 
 # ==================== ADVANCED CONFIGURATION ====================
-TOKEN = '8451737127:AAGRbO0CygbnYuqMCBolTP8_EG7NLrh5d04'
+TOKEN = '7991988270:AAFsl-uDsVcf2tl7L5sZgl9Eq9U2nnW3bps'
 OWNER_ID = 7524032836
 ADMIN_ID = 8285724366
 YOUR_USERNAME = '@Zolvit'
@@ -154,18 +154,60 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ==================== ENHANCED DEPENDENCY DETECTOR V3 ====================
+# ==================== 🤖 REVOLUTIONARY AI DEPENDENCY DETECTOR V8 ====================
+
+def extract_imports_from_code(code_content):
+    """Extract all import statements from Python code"""
+    imports = set()
+    
+    # Standard import patterns
+    import_patterns = [
+        r'^\s*import\s+([a-zA-Z0-9_\.]+)',
+        r'^\s*from\s+([a-zA-Z0-9_\.]+)\s+import',
+    ]
+    
+    for line in code_content.split('\n'):
+        for pattern in import_patterns:
+            match = re.match(pattern, line)
+            if match:
+                module = match.group(1).split('.')[0]
+                imports.add(module)
+    
+    return imports
+
+def get_package_name(import_name):
+    """Map import names to pip package names"""
+    mapping = {
+        'cv2': 'opencv-python',
+        'PIL': 'pillow',
+        'sklearn': 'scikit-learn',
+        'yaml': 'pyyaml',
+        'dotenv': 'python-dotenv',
+        'telebot': 'pyTelegramBotAPI',
+        'bs4': 'beautifulsoup4',
+        'jwt': 'pyjwt',
+        'magic': 'python-magic',
+        'dateutil': 'python-dateutil',
+        'openai': 'openai',
+        'anthropic': 'anthropic',
+        'discord': 'discord.py',
+    }
+    return mapping.get(import_name, import_name)
 
 def detect_and_install_deps(project_path):
-    """Revolutionary AI-Powered dependency detection and installation"""
+    """🤖 REVOLUTIONARY AI-Powered dependency detection and installation"""
     installed = []
     install_log = []
     
-    # Python requirements.txt
+    logger.info(f"{Fore.CYAN}🤖 AI DEPENDENCY ANALYZER v8.0 - STARTING...")
+    install_log.append("🤖 AI DEPENDENCY ANALYZER v8.0")
+    install_log.append("=" * 60)
+    
+    # ========== PYTHON REQUIREMENTS.TXT ==========
     req_file = os.path.join(project_path, 'requirements.txt')
     if os.path.exists(req_file):
-        logger.info(f"{Fore.CYAN}📦 Detected requirements.txt")
-        install_log.append("📦 Python requirements.txt detected")
+        logger.info(f"{Fore.CYAN}📦 Found requirements.txt")
+        install_log.append("\n📦 PYTHON REQUIREMENTS.TXT DETECTED")
         try:
             with open(req_file, 'r') as f:
                 packages = [line.strip() for line in f if line.strip() and not line.startswith('#')]
@@ -173,48 +215,120 @@ def detect_and_install_deps(project_path):
             if packages:
                 logger.info(f"{Fore.YELLOW}⚡ Installing {len(packages)} Python packages...")
                 install_log.append(f"⚡ Installing {len(packages)} packages...")
-                subprocess.run(
-                    [sys.executable, '-m', 'pip', 'install', '-r', req_file, '--quiet'],
-                    check=True,
-                    capture_output=True
-                )
-                installed.extend(packages)
-                install_log.append(f"✅ Installed: {', '.join(packages[:5])}{'...' if len(packages) > 5 else ''}")
+                
+                for pkg in packages:
+                    try:
+                        subprocess.run(
+                            [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
+                            check=True,
+                            capture_output=True,
+                            timeout=300
+                        )
+                        install_log.append(f"  ✅ {pkg}")
+                        installed.append(pkg)
+                    except:
+                        install_log.append(f"  ⚠️  {pkg} (skipped)")
+                
                 logger.info(f"{Fore.GREEN}✅ Python packages installed")
+                install_log.append("✅ Python requirements.txt processed")
         except Exception as e:
-            logger.error(f"{Fore.RED}❌ Python install failed: {e}")
+            logger.error(f"{Fore.RED}❌ requirements.txt error: {e}")
             install_log.append(f"❌ Error: {str(e)[:100]}")
     
-    # Node.js package.json
+    # ========== SMART CODE ANALYSIS ==========
+    install_log.append("\n🧠 AI CODE ANALYSIS - Scanning project files...")
+    python_files = []
+    for root, dirs, files in os.walk(project_path):
+        for file in files:
+            if file.endswith('.py'):
+                python_files.append(os.path.join(root, file))
+    
+    if python_files:
+        install_log.append(f"📝 Found {len(python_files)} Python files")
+        all_imports = set()
+        
+        for py_file in python_files[:20]:  # Analyze max 20 files
+            try:
+                with open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    code = f.read()
+                    imports = extract_imports_from_code(code)
+                    all_imports.update(imports)
+            except:
+                continue
+        
+        if all_imports:
+            install_log.append(f"\n🔍 Detected {len(all_imports)} imports from code analysis")
+            install_log.append("🤖 AI auto-installing missing packages...")
+            
+            # Filter out standard library modules
+            stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'random', 'datetime', 
+                     'collections', 'itertools', 'functools', 'pathlib', 'logging', 
+                     'threading', 'subprocess', 'socket', 'http', 'urllib', 'email',
+                     'unittest', 'io', 'csv', 'sqlite3', 'pickle', 'base64', 'hashlib',
+                     'uuid', 'typing', 'copy', 'tempfile', 'shutil', 'glob', 'zipfile'}
+            
+            third_party = all_imports - stdlib
+            
+            for imp in third_party:
+                pkg = get_package_name(imp)
+                try:
+                    # Check if already installed
+                    __import__(imp)
+                    install_log.append(f"  ✓ {pkg} (already installed)")
+                except ImportError:
+                    try:
+                        subprocess.run(
+                            [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
+                            check=True,
+                            capture_output=True,
+                            timeout=300
+                        )
+                        install_log.append(f"  ✅ {pkg} (auto-installed)")
+                        installed.append(pkg)
+                    except:
+                        install_log.append(f"  ⚠️  {pkg} (optional)")
+    
+    # ========== NODE.JS PACKAGE.JSON ==========
     pkg_file = os.path.join(project_path, 'package.json')
     if os.path.exists(pkg_file):
-        logger.info(f"{Fore.CYAN}📦 Detected package.json")
-        install_log.append("📦 Node.js package.json detected")
+        logger.info(f"{Fore.CYAN}📦 Found package.json")
+        install_log.append("\n📦 NODE.JS PACKAGE.JSON DETECTED")
         try:
             subprocess.run(['npm', '--version'], check=True, capture_output=True)
             logger.info(f"{Fore.YELLOW}⚡ Installing Node.js packages...")
             install_log.append("⚡ Running npm install...")
-            subprocess.run(
+            
+            result = subprocess.run(
                 ['npm', 'install', '--silent'],
                 cwd=project_path,
-                check=True,
-                capture_output=True
+                capture_output=True,
+                text=True,
+                timeout=600
             )
-            installed.append('npm packages')
-            install_log.append("✅ Node.js packages installed")
-            logger.info(f"{Fore.GREEN}✅ Node.js packages installed")
-        except (subprocess.CalledProcessError, FileNotFoundError):
+            
+            if result.returncode == 0:
+                installed.append('npm packages')
+                install_log.append("✅ Node.js packages installed successfully")
+                logger.info(f"{Fore.GREEN}✅ Node.js packages installed")
+            else:
+                install_log.append(f"⚠️  npm install completed with warnings")
+        except subprocess.TimeoutExpired:
+            install_log.append("⚠️  npm install timeout (may still be running)")
+        except FileNotFoundError:
             logger.warning(f"{Fore.YELLOW}⚠️  npm not found")
-            install_log.append("⚠️  npm not available, skipped")
+            install_log.append("⚠️  npm not available on system")
+        except Exception as e:
+            install_log.append(f"⚠️  npm error: {str(e)[:50]}")
     
-    # Gemfile for Ruby
+    # ========== RUBY GEMFILE ==========
     gem_file = os.path.join(project_path, 'Gemfile')
     if os.path.exists(gem_file):
-        logger.info(f"{Fore.CYAN}📦 Detected Gemfile")
-        install_log.append("📦 Ruby Gemfile detected")
+        logger.info(f"{Fore.CYAN}📦 Found Gemfile")
+        install_log.append("\n📦 RUBY GEMFILE DETECTED")
         try:
             subprocess.run(['bundle', '--version'], check=True, capture_output=True)
-            subprocess.run(['bundle', 'install'], cwd=project_path, check=True, capture_output=True)
+            subprocess.run(['bundle', 'install'], cwd=project_path, 
+                         check=True, capture_output=True, timeout=600)
             installed.append('Ruby gems')
             install_log.append("✅ Ruby gems installed")
             logger.info(f"{Fore.GREEN}✅ Ruby gems installed")
@@ -222,14 +336,15 @@ def detect_and_install_deps(project_path):
             logger.warning(f"{Fore.YELLOW}⚠️  bundler not found")
             install_log.append("⚠️  bundler not available")
     
-    # composer.json for PHP
+    # ========== PHP COMPOSER.JSON ==========
     composer_file = os.path.join(project_path, 'composer.json')
     if os.path.exists(composer_file):
-        logger.info(f"{Fore.CYAN}📦 Detected composer.json")
-        install_log.append("📦 PHP composer.json detected")
+        logger.info(f"{Fore.CYAN}📦 Found composer.json")
+        install_log.append("\n📦 PHP COMPOSER.JSON DETECTED")
         try:
             subprocess.run(['composer', '--version'], check=True, capture_output=True)
-            subprocess.run(['composer', 'install'], cwd=project_path, check=True, capture_output=True)
+            subprocess.run(['composer', 'install'], cwd=project_path, 
+                         check=True, capture_output=True, timeout=600)
             installed.append('PHP packages')
             install_log.append("✅ PHP packages installed")
             logger.info(f"{Fore.GREEN}✅ PHP packages installed")
@@ -237,23 +352,34 @@ def detect_and_install_deps(project_path):
             logger.warning(f"{Fore.YELLOW}⚠️  composer not found")
             install_log.append("⚠️  composer not available")
     
-    # Go modules
+    # ========== GO MODULES ==========
     go_mod = os.path.join(project_path, 'go.mod')
     if os.path.exists(go_mod):
-        logger.info(f"{Fore.CYAN}📦 Detected go.mod")
-        install_log.append("📦 Go modules detected")
+        logger.info(f"{Fore.CYAN}📦 Found go.mod")
+        install_log.append("\n📦 GO MODULES DETECTED")
         try:
             subprocess.run(['go', 'version'], check=True, capture_output=True)
-            subprocess.run(['go', 'mod', 'download'], cwd=project_path, check=True, capture_output=True)
+            subprocess.run(['go', 'mod', 'download'], cwd=project_path, 
+                         check=True, capture_output=True, timeout=600)
             installed.append('Go modules')
             install_log.append("✅ Go modules downloaded")
             logger.info(f"{Fore.GREEN}✅ Go modules downloaded")
         except:
             install_log.append("⚠️  Go not available")
     
+    # ========== SUMMARY ==========
+    install_log.append("\n" + "=" * 60)
+    install_log.append(f"🎉 AI ANALYSIS COMPLETE")
+    install_log.append(f"📦 Total Packages Installed: {len(installed)}")
+    if installed:
+        install_log.append(f"✅ Installed: {', '.join(installed[:10])}")
+        if len(installed) > 10:
+            install_log.append(f"   ... and {len(installed) - 10} more")
+    install_log.append("=" * 60)
+    
     return installed, "\n".join(install_log)
 
-# ==================== DATABASE V3 ====================
+# ==================== DATABASE V8 ====================
 
 def init_db():
     with DB_LOCK:
@@ -302,18 +428,6 @@ def init_db():
             uptime INTEGER DEFAULT 0
         )''')
         
-        c.execute('''CREATE TABLE IF NOT EXISTS vps_servers (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            name TEXT,
-            host TEXT,
-            port INTEGER,
-            username TEXT,
-            password_encrypted TEXT,
-            created_at TEXT,
-            last_connected TEXT
-        )''')
-        
         c.execute('''CREATE TABLE IF NOT EXISTS env_vars (
             id TEXT PRIMARY KEY,
             user_id INTEGER,
@@ -323,16 +437,6 @@ def init_db():
             created_at TEXT
         )''')
         
-        c.execute('''CREATE TABLE IF NOT EXISTS backups (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            deployment_id TEXT,
-            file_path TEXT,
-            size INTEGER,
-            created_at TEXT,
-            auto_backup INTEGER DEFAULT 0
-        )''')
-        
         c.execute('''CREATE TABLE IF NOT EXISTS activity_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
@@ -340,16 +444,6 @@ def init_db():
             details TEXT,
             ip_address TEXT,
             timestamp TEXT
-        )''')
-        
-        c.execute('''CREATE TABLE IF NOT EXISTS analytics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            deployment_id TEXT,
-            timestamp TEXT,
-            cpu REAL,
-            memory REAL,
-            network_in INTEGER,
-            network_out INTEGER
         )''')
         
         c.execute('INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
@@ -388,23 +482,6 @@ def load_data():
                 'memory_usage': mem or 0
             })
         
-        c.execute('SELECT id, user_id, name, host, port, username, password_encrypted FROM vps_servers')
-        for vps_id, user_id, name, host, port, username, password_enc in c.fetchall():
-            if user_id not in user_vps:
-                user_vps[user_id] = []
-            try:
-                password = fernet.decrypt(password_enc.encode()).decode() if password_enc else None
-            except:
-                password = None
-            user_vps[user_id].append({
-                'id': vps_id,
-                'name': name,
-                'host': host,
-                'port': port,
-                'username': username,
-                'password': password
-            })
-        
         c.execute('SELECT id, user_id, key, value_encrypted FROM env_vars')
         for env_id, user_id, key, value_enc in c.fetchall():
             if user_id not in user_env_vars:
@@ -420,7 +497,7 @@ def load_data():
 init_db()
 load_data()
 
-# ==================== CREDIT SYSTEM V3 ====================
+# ==================== CREDIT SYSTEM ====================
 
 def get_credits(user_id):
     if user_id in admin_ids:
@@ -484,7 +561,7 @@ def init_user_credits(user_id):
         return True
     return False
 
-# ==================== DEPLOYMENT FUNCTIONS V3 ====================
+# ==================== DEPLOYMENT FUNCTIONS ====================
 
 def find_free_port():
     import socket
@@ -607,17 +684,6 @@ def monitor_deployment(deploy_id, process):
                 mem = proc.memory_percent()
                 
                 update_deployment(deploy_id, cpu=cpu, mem=mem)
-                
-                with DB_LOCK:
-                    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-                    c = conn.cursor()
-                    c.execute('''INSERT INTO analytics 
-                                (deployment_id, timestamp, cpu, memory, network_in, network_out)
-                                VALUES (?, ?, ?, ?, ?, ?)''',
-                             (deploy_id, datetime.now().isoformat(), cpu, mem, 0, 0))
-                    conn.commit()
-                    conn.close()
-                
                 time.sleep(5)
             except:
                 break
@@ -659,13 +725,13 @@ def deploy_from_file(user_id, file_path, filename):
             shutil.copy(file_path, os.path.join(deploy_dir, filename))
             file_path = os.path.join(deploy_dir, filename)
         
-        # AI-POWERED DEPENDENCY INSTALLATION
+        # 🤖 AI-POWERED DEPENDENCY INSTALLATION
         update_deployment(deploy_id, 'installing', '🤖 AI analyzing project dependencies...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
         if installed_deps:
             update_deployment(deploy_id, deps=', '.join(installed_deps), install_log=install_log)
-            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps)}")
+            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps[:5])}")
         
         env = os.environ.copy()
         env['PORT'] = str(port)
@@ -741,7 +807,7 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         update_deployment(deploy_id, 'cloning', f'🔄 Cloning {repo_url}...')
         
         clone_cmd = ['git', 'clone', '-b', branch, '--depth', '1', repo_url, deploy_dir]
-        result = subprocess.run(clone_cmd, capture_output=True, text=True)
+        result = subprocess.run(clone_cmd, capture_output=True, text=True, timeout=600)
         
         if result.returncode != 0:
             update_deployment(deploy_id, 'failed', f'❌ Clone failed: {result.stderr}')
@@ -750,18 +816,18 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         
         update_deployment(deploy_id, logs='✅ Repository cloned')
         
-        # AI-POWERED DEPENDENCY INSTALLATION
+        # 🤖 AI-POWERED DEPENDENCY INSTALLATION
         update_deployment(deploy_id, 'installing', '🤖 AI analyzing dependencies...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
         if installed_deps:
             update_deployment(deploy_id, deps=', '.join(installed_deps), install_log=install_log)
-            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps)}")
+            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps[:5])}")
         
         if build_cmd:
             update_deployment(deploy_id, 'building', f'🔨 Building: {build_cmd}')
             build_result = subprocess.run(build_cmd, shell=True, cwd=deploy_dir,
-                                        capture_output=True, text=True)
+                                        capture_output=True, text=True, timeout=600)
             update_deployment(deploy_id, logs=f"Build:\n{build_result.stdout}\n{build_result.stderr}")
         
         if start_cmd:
@@ -884,53 +950,59 @@ def get_deployment_logs(deploy_id):
             return f"{install}\n\n=== Runtime Logs ===\n{logs}" if install else logs or "No logs"
         return "Deployment not found"
 
-# ==================== REVOLUTIONARY WEB DASHBOARD V3 ====================
+# ==================== 📱 ULTIMATE MOBILE-FIRST DASHBOARD ====================
 
-REVOLUTIONARY_HTML = """
+ULTIMATE_MOBILE_HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#6366f1">
-    <title>🚀 DevOps Bot v7.0 - Revolutionary Platform</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <meta name="theme-color" content="#8B5CF6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>🚀 DevOps Bot v8.0</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #8b5cf6;
-            --accent: #ec4899;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
-            --dark: #0f172a;
-            --light: #f8fafc;
-            --gradient-main: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            --gradient-glow: radial-gradient(circle at 50% 50%, rgba(102, 126, 234, 0.3), transparent 70%);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        @keyframes gradientShift {
+        :root {
+            --primary: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --secondary: #EC4899;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            --dark: #1F2937;
+            --light: #F9FAFB;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+        
+        @keyframes gradient {
             0%, 100% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
         }
         
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
+            50% { transform: translateY(-20px); }
         }
         
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         
         @keyframes fadeIn {
@@ -939,450 +1011,410 @@ REVOLUTIONARY_HTML = """
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--gradient-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             background-size: 400% 400%;
-            animation: gradientShift 20s ease infinite;
+            animation: gradient 15s ease infinite;
             min-height: 100vh;
-            padding-bottom: 90px;
-            position: relative;
             overflow-x: hidden;
+            padding-bottom: 80px;
         }
         
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 60px 60px;
-            animation: float 25s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-        
+        /* 🎨 Glassmorphism Header */
         .header {
-            background: rgba(255,255,255,0.98);
-            backdrop-filter: blur(25px);
-            padding: 28px 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 20px;
             position: sticky;
             top: 0;
-            z-index: 100;
-            border-bottom: 4px solid var(--primary);
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
         
         .logo {
-            font-size: 32px;
-            font-weight: 900;
-            background: var(--gradient-main);
-            background-size: 200% 200%;
-            animation: gradientShift 4s ease infinite;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 18px;
-            letter-spacing: -1.5px;
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
+            color: white;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 16px;
         }
         
         .logo i {
-            background: var(--gradient-main);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: float 3.5s ease-in-out infinite;
+            font-size: 28px;
+            animation: float 3s ease-in-out infinite;
         }
         
         .version-badge {
-            background: var(--gradient-main);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            padding: 5px 14px;
-            border-radius: 24px;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 1.2px;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
-            animation: pulse 2.5s ease-in-out infinite;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
-        .credit-display {
+        /* 💎 Credit Card */
+        .credit-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--gradient-main);
-            background-size: 200% 200%;
-            animation: gradientShift 6s ease infinite;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .credit-info {
             color: white;
-            padding: 26px 28px;
-            border-radius: 24px;
-            margin-top: 18px;
-            box-shadow: 0 14px 36px rgba(102, 126, 234, 0.45);
-            position: relative;
-            overflow: hidden;
         }
         
-        .credit-display::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.15) 10%, transparent 70%);
-            animation: float 12s ease-in-out infinite;
-        }
-        
-        .credit-badge {
-            background: rgba(255,255,255,0.28);
-            padding: 7px 16px;
-            border-radius: 24px;
+        .credit-label {
             font-size: 12px;
-            font-weight: 800;
-            margin-bottom: 10px;
-            backdrop-filter: blur(12px);
+            opacity: 0.9;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .credit-value {
-            font-size: 42px;
+            font-size: 36px;
             font-weight: 900;
-            text-shadow: 0 3px 12px rgba(0,0,0,0.25);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
         
         .buy-btn {
-            background: rgba(255,255,255,0.32);
+            background: rgba(255, 255, 255, 0.25);
             color: white;
-            padding: 16px 32px;
-            border: 2px solid rgba(255,255,255,0.5);
-            border-radius: 16px;
-            font-weight: 900;
-            backdrop-filter: blur(12px);
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 20px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 14px;
             text-decoration: none;
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.25);
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .buy-btn:hover {
-            background: rgba(255,255,255,0.45);
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+        .buy-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.3);
         }
         
+        /* 📊 Stats Grid */
         .container {
-            padding: 28px 24px;
-            max-width: 1400px;
+            padding: 20px;
+            max-width: 600px;
             margin: 0 auto;
-            position: relative;
-            z-index: 1;
         }
         
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 18px;
-            margin-bottom: 28px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
         
         .stat-card {
-            background: rgba(255,255,255,0.96);
-            backdrop-filter: blur(12px);
-            border-radius: 24px;
-            padding: 28px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            border: 2px solid transparent;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
         
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: var(--gradient-main);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 15px 45px rgba(0,0,0,0.18);
-            border-color: var(--primary);
+        .stat-card:active {
+            transform: scale(0.95);
         }
         
         .stat-icon {
-            font-size: 38px;
-            margin-bottom: 14px;
-            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15));
-            animation: float 4s ease-in-out infinite;
+            font-size: 32px;
+            margin-bottom: 10px;
         }
         
         .stat-value {
-            font-size: 42px;
+            font-size: 28px;
             font-weight: 900;
-            background: var(--gradient-main);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 12px 0;
+            margin: 8px 0;
         }
         
         .stat-label {
-            color: #64748b;
-            font-size: 14px;
-            font-weight: 800;
+            color: #6B7280;
+            font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.5px;
         }
         
+        /* 🎯 Tab Bar */
         .tab-bar {
             display: flex;
             overflow-x: auto;
-            gap: 12px;
-            padding: 18px 24px;
-            background: rgba(255,255,255,0.96);
-            backdrop-filter: blur(12px);
-            margin: 0 -24px 28px -24px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            gap: 8px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin: 0 -20px 20px -20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
         
-        .tab-bar::-webkit-scrollbar { display: none; }
+        .tab-bar::-webkit-scrollbar {
+            display: none;
+        }
         
         .tab {
             flex: 0 0 auto;
-            padding: 16px 28px;
-            border-radius: 16px;
+            padding: 12px 20px;
+            border-radius: 12px;
             background: transparent;
             border: none;
-            font-size: 15px;
-            font-weight: 900;
-            color: #64748b;
+            font-size: 14px;
+            font-weight: 700;
+            color: #6B7280;
             white-space: nowrap;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
+            transition: all 0.3s;
         }
         
         .tab.active {
-            background: var(--gradient-main);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.45);
-            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
         }
         
         .tab-content {
             display: none;
-            animation: fadeIn 0.5s ease-out;
+            animation: fadeIn 0.3s ease-out;
         }
         
         .tab-content.active {
             display: block;
         }
         
+        /* 🎴 Card */
         .card {
-            background: rgba(255,255,255,0.96);
-            backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
-            position: relative;
-            overflow: hidden;
-            border: 2px solid transparent;
-            transition: all 0.4s;
-        }
-        
-        .card:hover {
-            border-color: rgba(102, 126, 234, 0.3);
-            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
-        }
-        
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: var(--gradient-main);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
         
         .card-title {
-            font-size: 26px;
-            font-weight: 900;
-            margin-bottom: 24px;
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 20px;
             color: var(--dark);
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
         }
         
+        /* 📤 Upload Zone */
+        .upload-zone {
+            border: 3px dashed var(--primary);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05));
+            transition: all 0.3s;
+        }
+        
+        .upload-zone:active {
+            transform: scale(0.98);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .upload-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        
+        .upload-desc {
+            color: #6B7280;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .upload-hint {
+            color: var(--primary);
+            font-size: 12px;
+            margin-top: 12px;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+        
+        /* 🔘 Buttons */
         .btn {
-            background: var(--gradient-main);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border: none;
-            padding: 20px 32px;
-            border-radius: 18px;
-            cursor: pointer;
-            font-size: 17px;
-            font-weight: 900;
+            padding: 16px 24px;
+            border-radius: 15px;
+            font-size: 15px;
+            font-weight: 700;
             width: 100%;
-            margin: 14px 0;
+            margin: 10px 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 14px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 28px rgba(102, 126, 234, 0.45);
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 12px 38px rgba(102, 126, 234, 0.55);
+            letter-spacing: 0.5px;
         }
         
         .btn:active {
-            transform: translateY(0) scale(0.98);
+            transform: scale(0.95);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
         
-        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
-        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .btn-info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-success { background: linear-gradient(135deg, #10B981, #059669); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+        .btn-danger { background: linear-gradient(135deg, #EF4444, #DC2626); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); }
+        .btn-warning { background: linear-gradient(135deg, #F59E0B, #D97706); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+        .btn-info { background: linear-gradient(135deg, #3B82F6, #2563EB); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); }
         
+        /* 📝 Input */
         .input-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         
         .input-group label {
             display: block;
-            margin-bottom: 12px;
-            font-weight: 900;
+            margin-bottom: 10px;
+            font-weight: 800;
             color: var(--dark);
-            font-size: 15px;
+            font-size: 13px;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.5px;
         }
         
-        .input-group input, .input-group select, .input-group textarea {
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
             width: 100%;
-            padding: 18px 20px;
-            border: 3px solid #e2e8f0;
-            border-radius: 16px;
-            font-size: 16px;
+            padding: 14px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 15px;
             font-family: inherit;
-            transition: all 0.4s;
+            transition: all 0.3s;
             background: white;
         }
         
-        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 5px rgba(102,126,234,0.18);
-            transform: translateY(-2px);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
         }
         
-        .upload-zone {
-            border: 4px dashed var(--primary);
-            border-radius: 28px;
-            padding: 70px 28px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.4s;
-            background: linear-gradient(135deg, rgba(102,126,234,0.06), rgba(118,75,162,0.06));
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .upload-zone::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 350px;
-            height: 350px;
-            background: radial-gradient(circle, rgba(102,126,234,0.12) 0%, transparent 70%);
-            transform: translate(-50%, -50%);
-            animation: pulse 4s ease-in-out infinite;
-        }
-        
-        .upload-zone:hover {
-            background: linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.12));
-            border-color: var(--secondary);
-            transform: scale(1.03);
-            box-shadow: 0 15px 40px rgba(102,126,234,0.25);
-        }
-        
-        .upload-icon {
-            font-size: 64px;
-            background: var(--gradient-main);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 24px;
-            animation: float 3.5s ease-in-out infinite;
-        }
-        
+        /* 📦 Deployment Item */
         .deployment-item {
-            background: linear-gradient(135deg, #ffffff, #f8fafc);
-            border-radius: 24px;
-            padding: 26px;
-            margin-bottom: 20px;
-            border-left: 7px solid var(--primary);
-            transition: all 0.4s;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #ffffff, #f9fafb);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s;
         }
         
-        .deployment-item:hover {
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-            transform: translateX(8px);
+        .deployment-item:active {
+            transform: translateX(5px);
         }
         
         .deployment-header {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         
         .deployment-name {
-            font-size: 20px;
-            font-weight: 900;
+            font-size: 17px;
+            font-weight: 800;
             color: var(--dark);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         .deployment-meta {
-            color: #64748b;
-            font-size: 13px;
-            font-weight: 700;
+            color: #6B7280;
+            font-size: 12px;
+            font-weight: 600;
             display: flex;
             flex-wrap: wrap;
-            gap: 14px;
-            margin-top: 10px;
+            gap: 10px;
+            margin-top: 8px;
         }
         
         .meta-item {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 5px;
         }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .status-running { background: linear-gradient(135deg, #D1FAE5, #A7F3D0); color: #065F46; }
+        .status-pending { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #92400E; }
+        .status-installing { background: linear-gradient(135deg, #DBEAFE, #BFDBFE); color: #1E40AF; }
+        .status-building { background: linear-gradient(135deg, #E0E7FF, #C7D2FE); color: #3730A3; }
+        .status-cloning { background: linear-gradient(135deg, #E0E7FF, #C7D2FE); color: #3730A3; }
+        .status-extracting { background: linear-gradient(135deg, #FCE7F3, #FBCFE8); color: #9F1239; }
+        .status-starting { background: linear-gradient(135deg, #FCE7F3, #FBCFE8); color: #9F1239; }
+        .status-stopped { background: linear-gradient(135deg, #FEE2E2, #FECACA); color: #991B1B; }
+        .status-failed { background: linear-gradient(135deg, #FECACA, #FCA5A5); color: #7F1D1D; }
         
         .resource-usage {
             display: flex;
-            gap: 18px;
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 2px solid #e2e8f0;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #E5E7EB;
         }
         
         .resource-bar {
@@ -1390,208 +1422,332 @@ REVOLUTIONARY_HTML = """
         }
         
         .resource-label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
-            color: #64748b;
-            margin-bottom: 8px;
+            color: #6B7280;
+            margin-bottom: 6px;
             text-transform: uppercase;
         }
         
         .progress-bar {
-            height: 10px;
-            background: #e2e8f0;
-            border-radius: 12px;
+            height: 6px;
+            background: #E5E7EB;
+            border-radius: 10px;
             overflow: hidden;
         }
         
         .progress-fill {
             height: 100%;
-            background: var(--gradient-main);
-            border-radius: 12px;
-            transition: width 0.6s ease;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            transition: width 0.5s ease;
         }
-        
-        .status-badge {
-            padding: 10px 18px;
-            border-radius: 28px;
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.12);
-        }
-        
-        .status-running { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
-        .status-pending { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
-        .status-building, .status-installing { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; }
-        .status-cloning, .status-extracting { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); color: #3730a3; }
-        .status-starting { background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #9f1239; }
-        .status-stopped { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; }
-        .status-failed { background: linear-gradient(135deg, #fecaca, #fca5a5); color: #7f1d1d; }
-        .status-completed { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
         
         .action-btns {
-            display: flex;
-            gap: 12px;
-            margin-top: 18px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 16px;
         }
         
         .action-btn {
-            flex: 1;
-            min-width: 110px;
-            padding: 14px 18px;
+            padding: 10px;
             border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 900;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
             color: white;
-            transition: all 0.4s;
+            transition: all 0.3s;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
+            letter-spacing: 0.3px;
+        }
+        
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* 📱 Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.5);
+            z-index: 999;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #9CA3AF;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 700;
+            transition: all 0.3s;
+            padding: 8px;
+            position: relative;
+        }
+        
+        .nav-item i {
+            font-size: 22px;
         }
         
         .nav-item.active {
             color: var(--primary);
-            transform: translateY(-4px);
         }
         
-        .nav-item i {
-            font-size: 26px;
+        .nav-item:active {
+            transform: scale(0.9);
         }
         
         .badge {
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -4px;
+            right: 10px;
             background: var(--danger);
             color: white;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 900;
-            padding: 4px 8px;
-            border-radius: 14px;
-            box-shadow: 0 3px 10px rgba(239, 68, 68, 0.5);
+            padding: 3px 7px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
         }
         
+        /* 🔔 Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 9999;
+            max-width: 90%;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .notification-icon {
+            font-size: 24px;
+        }
+        
+        /* 🎭 Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        /* 💻 Terminal */
+        .terminal {
+            background: #1F2937;
+            color: #10B981;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+        
+        /* 💰 Pricing Card */
         .pricing-card {
-            background: linear-gradient(135deg, #ffffff, #f8fafc);
-            border-radius: 28px;
-            padding: 38px;
-            margin: 24px 0;
+            background: linear-gradient(135deg, #ffffff, #f9fafb);
+            border-radius: 24px;
+            padding: 28px;
+            margin: 16px 0;
             text-align: center;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-            transition: all 0.5s;
-            border: 3px solid transparent;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border: 2px solid transparent;
         }
         
-        .pricing-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+        .pricing-card:active {
+            transform: scale(0.98);
         }
         
         .pricing-card.featured {
             border-color: var(--primary);
-            background: linear-gradient(135deg, rgba(102,126,234,0.08), rgba(118,75,162,0.08));
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05));
         }
         
         .pricing-badge {
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gradient-main);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
-            padding: 10px 28px;
-            border-radius: 28px;
-            font-size: 12px;
-            font-weight: 900;
-            letter-spacing: 1.2px;
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            display: inline-block;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
         }
         
         .pricing-type {
-            font-size: 15px;
-            color: #64748b;
-            font-weight: 900;
-            margin-top: 14px;
+            font-size: 14px;
+            color: #6B7280;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
+            letter-spacing: 1px;
         }
         
         .pricing-amount {
-            font-size: 64px;
+            font-size: 48px;
             font-weight: 900;
-            background: var(--gradient-main);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 18px 0;
+            margin: 12px 0;
         }
         
         .pricing-credits {
-            font-size: 22px;
-            color: #64748b;
-            margin-bottom: 28px;
-            font-weight: 800;
+            font-size: 18px;
+            color: #6B7280;
+            margin-bottom: 20px;
+            font-weight: 700;
         }
         
         .feature-list {
             text-align: left;
-            margin: 28px 0;
-            padding: 0 14px;
+            margin: 20px 0;
         }
         
         .feature-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            margin: 14px 0;
-            font-size: 15px;
-            font-weight: 700;
-            color: #475569;
+            gap: 12px;
+            margin: 12px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4B5563;
         }
         
         .feature-item i {
             color: var(--success);
-            font-size: 20px;
+            font-size: 18px;
+        }
+        
+        /* 🎯 Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-title {
+            color: #6B7280;
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        
+        .empty-desc {
+            color: #9CA3AF;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* 🌊 Smooth Scrolling */
+        * {
+            -webkit-overflow-scrolling: touch;
         }
         
         @media (min-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
             .bottom-nav {
                 display: none;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
             }
         }
     </style>
 </head>
 <body>
+    <!-- 🎨 Header -->
     <div class="header">
         <div class="logo">
-            <i class="fas fa-rocket"></i> 
-            DevOps Bot v7.0
-            <span class="version-badge">REVOLUTIONARY</span>
+            <i class="fas fa-rocket"></i>
+            <div>
+                <div>DevOps Bot v8.0</div>
+                <span class="version-badge">ULTIMATE</span>
+            </div>
         </div>
-        <div class="credit-display">
-            <div style="position: relative; z-index: 1;">
-                <div class="credit-badge">💎 CREDITS BALANCE</div>
+        <div class="credit-card">
+            <div class="credit-info">
+                <div class="credit-label">
+                    <i class="fas fa-gem"></i> CREDITS
+                </div>
                 <div class="credit-value" id="creditBalance">{{ credits }}</div>
             </div>
             <a href="{{ telegram_link }}" target="_blank" class="buy-btn">
-                <i class="fab fa-telegram"></i> Buy Credits
+                <i class="fab fa-telegram"></i> Buy
             </a>
         </div>
     </div>
     
     <div class="container">
+        <!-- 📊 Stats -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon">🚀</div>
                 <div class="stat-value" id="totalDeploys">{{ total_deploys }}</div>
-                <div class="stat-label">Deployments</div>
+                <div class="stat-label">Total</div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">🟢</div>
@@ -1604,17 +1760,18 @@ REVOLUTIONARY_HTML = """
                 <div class="stat-label">Servers</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">💾</div>
-                <div class="stat-value" id="backupCount">{{ backup_count }}</div>
-                <div class="stat-label">Backups</div>
+                <div class="stat-icon">🤖</div>
+                <div class="stat-value">AI</div>
+                <div class="stat-label">Powered</div>
             </div>
         </div>
         
+        <!-- 🎯 Tabs -->
         <div class="tab-bar">
             <button class="tab active" onclick="showTab('deploy')">
                 <i class="fas fa-rocket"></i> Deploy
             </button>
-            <button class="tab" onclick="showTab('deployments')">
+            <button class="tab" onclick="showTab('apps')">
                 <i class="fas fa-list"></i> Apps
             </button>
             <button class="tab" onclick="showTab('github')">
@@ -1624,43 +1781,64 @@ REVOLUTIONARY_HTML = """
                 <i class="fas fa-key"></i> ENV
             </button>
             <button class="tab" onclick="showTab('pricing')">
-                <i class="fas fa-shopping-cart"></i> Pricing
+                <i class="fas fa-crown"></i> Pro
             </button>
         </div>
         
-        <!-- Deploy Tab -->
+        <!-- 📤 Deploy Tab -->
         <div id="deploy-tab" class="tab-content active">
             <div class="card">
-                <h3 class="card-title"><i class="fas fa-cloud-upload-alt"></i> Revolutionary Deploy</h3>
-                <p style="color: #64748b; margin-bottom: 28px; font-size: 16px; line-height: 1.9; font-weight: 700;">
-                    <strong style="color: var(--primary);">🤖 AI-Powered Auto-Install:</strong> Upload any project and watch as our revolutionary system automatically detects and installs all dependencies. Zero configuration needed!
+                <h3 class="card-title">
+                    <i class="fas fa-cloud-upload-alt"></i> Smart Deploy
+                </h3>
+                <p style="color: #6B7280; margin-bottom: 20px; font-size: 14px; line-height: 1.8; font-weight: 600;">
+                    <strong style="color: var(--primary);">🤖 AI Auto-Install:</strong> Upload any project and our AI automatically detects & installs ALL dependencies. Zero config needed!
                 </p>
                 
-                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
-                    <h3 style="font-size: 26px; font-weight: 900; margin-bottom: 14px; color: var(--dark);">Drop or Click to Upload</h3>
-                    <p style="color: #64748b; font-size: 15px; font-weight: 700;">Python, JavaScript, ZIP archives</p>
-                    <p style="color: var(--primary); font-size: 14px; margin-top: 14px; font-weight: 900;">
-                        ✨ Auto-detects: requirements.txt • package.json • Gemfile • composer.json • go.mod
-                    </p>
+                    <div class="upload-title">Tap to Upload</div>
+                    <div class="upload-desc">Python • JavaScript • ZIP</div>
+                    <div class="upload-hint">
+                        ✨ Auto-detects:<br>
+                        requirements.txt • package.json<br>
+                        Gemfile • composer.json • go.mod
+                    </div>
                     <input type="file" id="fileInput" hidden accept=".py,.js,.zip" onchange="handleFileUpload(this)">
                 </div>
             </div>
         </div>
         
-        <!-- GitHub Deploy Tab -->
+        <!-- 📱 Apps Tab -->
+        <div id="apps-tab" class="tab-content">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 class="card-title" style="margin: 0;">
+                        <i class="fas fa-server"></i> Your Apps
+                    </h3>
+                    <button onclick="loadDeployments()" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; color: white; font-size: 20px; padding: 10px; cursor: pointer; border-radius: 10px; width: 40px; height: 40px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                </div>
+                <div id="deploymentsList"></div>
+            </div>
+        </div>
+        
+        <!-- 🐙 GitHub Tab -->
         <div id="github-tab" class="tab-content">
             <div class="card">
-                <h3 class="card-title"><i class="fab fa-github"></i> GitHub Deploy</h3>
-                <p style="color: #64748b; margin-bottom: 28px; font-size: 16px; font-weight: 700;">
-                    Deploy from any GitHub repository with intelligent dependency detection
+                <h3 class="card-title">
+                    <i class="fab fa-github"></i> GitHub Deploy
+                </h3>
+                <p style="color: #6B7280; margin-bottom: 20px; font-size: 14px; font-weight: 600;">
+                    Deploy from any GitHub repo with AI-powered dependency detection
                 </p>
                 
                 <div class="input-group">
                     <label><i class="fab fa-github"></i> Repository URL</label>
-                    <input type="url" id="repoUrl" placeholder="https://github.com/username/repo.git">
+                    <input type="url" id="repoUrl" placeholder="https://github.com/user/repo.git">
                 </div>
                 
                 <div class="input-group">
@@ -1679,30 +1857,19 @@ REVOLUTIONARY_HTML = """
                 </div>
                 
                 <button class="btn" onclick="deployGithub()">
-                    <i class="fab fa-github"></i> Deploy Repository
+                    <i class="fab fa-github"></i> Deploy Now
                 </button>
             </div>
         </div>
         
-        <!-- Deployments Tab -->
-        <div id="deployments-tab" class="tab-content">
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
-                    <h3 class="card-title" style="margin: 0;"><i class="fas fa-server"></i> Your Applications</h3>
-                    <button onclick="loadDeployments()" style="background: var(--gradient-main); border: none; color: white; font-size: 26px; padding: 14px; cursor: pointer; border-radius: 14px; width: 52px; height: 52px; box-shadow: 0 5px 15px rgba(102,126,234,0.35);">
-                        <i class="fas fa-sync"></i>
-                    </button>
-                </div>
-                <div id="deploymentsList"></div>
-            </div>
-        </div>
-        
-        <!-- Environment Tab -->
+        <!-- 🔐 ENV Tab -->
         <div id="env-tab" class="tab-content">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
-                    <h3 class="card-title" style="margin: 0;"><i class="fas fa-lock"></i> Environment Variables</h3>
-                    <button onclick="showAddEnv()" style="background: var(--gradient-main); border: none; color: white; font-size: 26px; padding: 14px; cursor: pointer; border-radius: 14px; width: 52px; height: 52px; box-shadow: 0 5px 15px rgba(102,126,234,0.35);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 class="card-title" style="margin: 0;">
+                        <i class="fas fa-lock"></i> Environment
+                    </h3>
+                    <button onclick="showAddEnv()" style="background: linear-gradient(135deg, var(--success), #059669); border: none; color: white; font-size: 20px; padding: 10px; cursor: pointer; border-radius: 10px; width: 40px; height: 40px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
@@ -1710,10 +1877,12 @@ REVOLUTIONARY_HTML = """
             </div>
         </div>
         
-        <!-- Pricing Tab -->
+        <!-- 👑 Pricing Tab -->
         <div id="pricing-tab" class="tab-content">
             <div class="card">
-                <h3 class="card-title" style="text-align: center; font-size: 32px;"><i class="fas fa-crown"></i> Premium Plans</h3>
+                <h3 class="card-title" style="text-align: center; font-size: 24px;">
+                    <i class="fas fa-crown"></i> Premium Plans
+                </h3>
                 
                 <div class="pricing-card">
                     <div class="pricing-type">STARTER</div>
@@ -1722,7 +1891,7 @@ REVOLUTIONARY_HTML = """
                     <div class="feature-list">
                         <div class="feature-item"><i class="fas fa-check-circle"></i> 20 Deployments</div>
                         <div class="feature-item"><i class="fas fa-check-circle"></i> GitHub Integration</div>
-                        <div class="feature-item"><i class="fas fa-check-circle"></i> Auto Dependencies</div>
+                        <div class="feature-item"><i class="fas fa-check-circle"></i> AI Auto-Install</div>
                     </div>
                     <a href="{{ telegram_link }}" target="_blank" class="btn">
                         <i class="fab fa-telegram"></i> Buy Now
@@ -1730,32 +1899,32 @@ REVOLUTIONARY_HTML = """
                 </div>
                 
                 <div class="pricing-card featured">
-                    <div class="pricing-badge">⭐ MOST POPULAR</div>
+                    <div class="pricing-badge">⭐ POPULAR</div>
                     <div class="pricing-type">PRO</div>
                     <div class="pricing-amount">₹399</div>
                     <div class="pricing-credits">50 Credits</div>
                     <div class="feature-list">
                         <div class="feature-item"><i class="fas fa-check-circle"></i> 100 Deployments</div>
                         <div class="feature-item"><i class="fas fa-check-circle"></i> Priority Support</div>
-                        <div class="feature-item"><i class="fas fa-check-circle"></i> Advanced Analytics</div>
+                        <div class="feature-item"><i class="fas fa-check-circle"></i> Analytics</div>
                         <div class="feature-item"><i class="fas fa-check-circle"></i> Auto Backups</div>
                     </div>
                     <a href="{{ telegram_link }}" target="_blank" class="btn">
-                        <i class="fab fa-telegram"></i> Get Pro Now
+                        <i class="fab fa-telegram"></i> Get Pro
                     </a>
                 </div>
                 
                 <div class="pricing-card" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white;">
                     <div class="pricing-type" style="color: white;">UNLIMITED</div>
                     <div class="pricing-amount" style="color: white; background: none; -webkit-background-clip: initial; -webkit-text-fill-color: white;">₹2999</div>
-                    <div class="pricing-credits" style="color: white;">∞ Unlimited Credits</div>
+                    <div class="pricing-credits" style="color: white;">∞ Unlimited</div>
                     <div class="feature-list">
-                        <div class="feature-item" style="color: white;"><i class="fas fa-check-circle"></i> Unlimited Everything</div>
+                        <div class="feature-item" style="color: white;"><i class="fas fa-check-circle"></i> Everything Unlimited</div>
                         <div class="feature-item" style="color: white;"><i class="fas fa-check-circle"></i> Dedicated Support</div>
-                        <div class="feature-item" style="color: white;"><i class="fas fa-check-circle"></i> Custom Integrations</div>
-                        <div class="feature-item" style="color: white;"><i class="fas fa-check-circle"></i> White Label Option</div>
+                        <div class="feature-item" style="color: white;"><i class="fas fa-check-circle"></i> Custom Features</div>
+                        <div class="feature-item" style="color: white;"><i class="fas fa-check-circle"></i> White Label</div>
                     </div>
-                    <a href="{{ telegram_link }}" target="_blank" class="btn" style="background: white; color: #f5576c; box-shadow: 0 8px 28px rgba(0,0,0,0.25);">
+                    <a href="{{ telegram_link }}" target="_blank" class="btn" style="background: white; color: #f5576c; box-shadow: 0 6px 20px rgba(0,0,0,0.2);">
                         <i class="fab fa-telegram"></i> Go Unlimited
                     </a>
                 </div>
@@ -1763,12 +1932,13 @@ REVOLUTIONARY_HTML = """
         </div>
     </div>
     
+    <!-- 📱 Bottom Nav -->
     <div class="bottom-nav">
         <a class="nav-item active" onclick="showTab('deploy')">
             <i class="fas fa-rocket"></i>
             <span>Deploy</span>
         </a>
-        <a class="nav-item" onclick="showTab('deployments')">
+        <a class="nav-item" onclick="showTab('apps')">
             <div style="position: relative;">
                 <i class="fas fa-list"></i>
                 <span class="badge" id="runningBadge" style="display: none;">0</span>
@@ -1785,7 +1955,7 @@ REVOLUTIONARY_HTML = """
         </a>
         <a class="nav-item" onclick="showTab('pricing')">
             <i class="fas fa-crown"></i>
-            <span>Pricing</span>
+            <span>Pro</span>
         </a>
     </div>
     
@@ -1802,7 +1972,7 @@ REVOLUTIONARY_HTML = """
             event.target.closest('.tab')?.classList.add('active');
             event.target.closest('.nav-item')?.classList.add('active');
             
-            if (tab === 'deployments') loadDeployments();
+            if (tab === 'apps') loadDeployments();
             if (tab === 'env') loadEnv();
         }
         
@@ -1813,7 +1983,7 @@ REVOLUTIONARY_HTML = """
             const formData = new FormData();
             formData.append('file', file);
             
-            showNotification('🤖 AI analyzing and deploying...', 'info');
+            showNotification('🤖 AI analyzing...', 'info');
             
             try {
                 const res = await fetch('/api/deploy/upload', {
@@ -1827,13 +1997,13 @@ REVOLUTIONARY_HTML = """
                     setTimeout(() => {
                         updateCredits();
                         loadDeployments();
-                        showTab('deployments');
+                        showTab('apps');
                     }, 1500);
                 } else {
                     showNotification('❌ ' + data.error, 'error');
                 }
             } catch (err) {
-                showNotification('❌ Deployment failed', 'error');
+                showNotification('❌ Deploy failed', 'error');
             }
             
             input.value = '';
@@ -1845,9 +2015,9 @@ REVOLUTIONARY_HTML = """
             const buildCmd = document.getElementById('buildCmd').value;
             const startCmd = document.getElementById('startCmd').value;
             
-            if (!url) return showNotification('⚠️ Enter repository URL', 'warning');
+            if (!url) return showNotification('⚠️ Enter repo URL', 'warning');
             
-            showNotification('🤖 AI cloning and analyzing...', 'info');
+            showNotification('🤖 AI cloning...', 'info');
             
             try {
                 const res = await fetch('/api/deploy/github', {
@@ -1865,13 +2035,13 @@ REVOLUTIONARY_HTML = """
                     setTimeout(() => {
                         updateCredits();
                         loadDeployments();
-                        showTab('deployments');
+                        showTab('apps');
                     }, 1500);
                 } else {
                     showNotification('❌ ' + data.error, 'error');
                 }
             } catch (err) {
-                showNotification('❌ Deployment failed', 'error');
+                showNotification('❌ Deploy failed', 'error');
             }
         }
         
@@ -1883,7 +2053,13 @@ REVOLUTIONARY_HTML = """
                 const list = document.getElementById('deploymentsList');
                 
                 if (!data.deployments || !data.deployments.length) {
-                    list.innerHTML = '<div style="text-align:center;padding:70px 24px;"><div style="font-size:72px;margin-bottom:24px;">🚀</div><p style="color:#64748b;font-size:20px;font-weight:800;">No deployments yet</p><p style="color:#94a3b8;font-size:16px;margin-top:14px;font-weight:700;">Deploy your first application to get started!</p></div>';
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🚀</div>
+                            <div class="empty-title">No deployments yet</div>
+                            <div class="empty-desc">Deploy your first app to get started!</div>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -1895,9 +2071,9 @@ REVOLUTIONARY_HTML = """
                                 <div class="deployment-meta">
                                     <span class="meta-item"><i class="fas fa-fingerprint"></i> ${d.id}</span>
                                     ${d.port ? `<span class="meta-item"><i class="fas fa-network-wired"></i> :${d.port}</span>` : ''}
-                                    ${d.pid ? `<span class="meta-item"><i class="fas fa-microchip"></i> PID ${d.pid}</span>` : ''}
+                                    ${d.pid ? `<span class="meta-item"><i class="fas fa-microchip"></i> ${d.pid}</span>` : ''}
                                 </div>
-                                ${d.repo_url ? `<p style="color:#6366f1;font-size:13px;margin-top:10px;font-weight:800;"><i class="fab fa-github"></i> ${d.repo_url.split('/').slice(-2).join('/')}</p>` : ''}
+                                ${d.repo_url ? `<p style="color:#8B5CF6;font-size:12px;margin-top:8px;font-weight:700;"><i class="fab fa-github"></i> ${d.repo_url.split('/').slice(-2).join('/')}</p>` : ''}
                             </div>
                             <span class="status-badge status-${d.status}">${d.status}</span>
                         </div>
@@ -1955,9 +2131,11 @@ REVOLUTIONARY_HTML = """
                 const data = await res.json();
                 
                 showModal(`
-                    <h3 style="margin-bottom: 28px; font-size: 28px; font-weight: 900;"><i class="fas fa-terminal"></i> Deployment Logs</h3>
+                    <h3 style="margin-bottom: 24px; font-size: 22px; font-weight: 900;">
+                        <i class="fas fa-terminal"></i> Deployment Logs
+                    </h3>
                     <div class="terminal">${data.logs || 'No logs available...'}</div>
-                    <button class="btn btn-danger" onclick="closeModal()" style="margin-top: 24px;">
+                    <button class="btn btn-danger" onclick="closeModal()" style="margin-top: 20px;">
                         <i class="fas fa-times"></i> Close
                     </button>
                 `);
@@ -1969,14 +2147,14 @@ REVOLUTIONARY_HTML = """
         async function stopDeploy(deployId) {
             if (!confirm('Stop this deployment?')) return;
             
-            showNotification('⏳ Stopping deployment...', 'info');
+            showNotification('⏳ Stopping...', 'info');
             
             try {
                 const res = await fetch('/api/deployment/' + deployId + '/stop', {method: 'POST'});
                 const data = await res.json();
                 
                 if (data.success) {
-                    showNotification('✅ Deployment stopped', 'success');
+                    showNotification('✅ Stopped', 'success');
                     loadDeployments();
                 } else {
                     showNotification('❌ ' + data.error, 'error');
@@ -1987,16 +2165,16 @@ REVOLUTIONARY_HTML = """
         }
         
         async function deleteDeploy(deployId) {
-            if (!confirm('Delete this deployment permanently?')) return;
+            if (!confirm('Delete permanently?')) return;
             
-            showNotification('⏳ Deleting deployment...', 'info');
+            showNotification('⏳ Deleting...', 'info');
             
             try {
                 const res = await fetch('/api/deployment/' + deployId, {method: 'DELETE'});
                 const data = await res.json();
                 
                 if (data.success) {
-                    showNotification('✅ Deployment deleted', 'success');
+                    showNotification('✅ Deleted', 'success');
                     loadDeployments();
                 } else {
                     showNotification('❌ ' + data.error, 'error');
@@ -2008,7 +2186,9 @@ REVOLUTIONARY_HTML = """
         
         function showAddEnv() {
             showModal(`
-                <h3 style="margin-bottom: 28px; font-size: 28px; font-weight: 900;"><i class="fas fa-plus"></i> Add Environment Variable</h3>
+                <h3 style="margin-bottom: 24px; font-size: 22px; font-weight: 900;">
+                    <i class="fas fa-plus"></i> Add Variable
+                </h3>
                 <div class="input-group">
                     <label>Variable Name</label>
                     <input type="text" id="envKey" placeholder="API_KEY">
@@ -2034,7 +2214,7 @@ REVOLUTIONARY_HTML = """
                 return showNotification('⚠️ Fill all fields', 'warning');
             }
             
-            showNotification('⏳ Adding variable...', 'info');
+            showNotification('⏳ Adding...', 'info');
             
             try {
                 const res = await fetch('/api/env/add', {
@@ -2045,7 +2225,7 @@ REVOLUTIONARY_HTML = """
                 const data = await res.json();
                 
                 if (data.success) {
-                    showNotification('✅ Variable added', 'success');
+                    showNotification('✅ Added', 'success');
                     closeModal();
                     loadEnv();
                 } else {
@@ -2064,7 +2244,13 @@ REVOLUTIONARY_HTML = """
                 const list = document.getElementById('envList');
                 
                 if (!data.variables || !Object.keys(data.variables).length) {
-                    list.innerHTML = '<div style="text-align:center;padding:70px 24px;"><div style="font-size:72px;margin-bottom:24px;">🔐</div><p style="color:#64748b;font-size:20px;font-weight:800;">No environment variables</p><p style="color:#94a3b8;font-size:16px;margin-top:14px;font-weight:700;">Add variables for your deployments</p></div>';
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🔐</div>
+                            <div class="empty-title">No variables</div>
+                            <div class="empty-desc">Add environment variables for your apps</div>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -2073,11 +2259,11 @@ REVOLUTIONARY_HTML = """
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1; min-width: 0;">
                                 <div class="deployment-name">${key}</div>
-                                <p style="color:#64748b;font-size:14px;margin-top:10px;overflow:hidden;text-overflow:ellipsis;font-family:monospace;font-weight:700;">
-                                    ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}
+                                <p style="color:#6B7280;font-size:13px;margin-top:8px;overflow:hidden;text-overflow:ellipsis;font-family:monospace;font-weight:600;">
+                                    ${value.substring(0, 40)}${value.length > 40 ? '...' : ''}
                                 </p>
                             </div>
-                            <button class="action-btn" style="background: var(--danger); margin: 0; min-width: auto; flex: 0;" onclick="deleteEnv('${key}')">
+                            <button class="action-btn" style="background: var(--danger); margin: 0; padding: 10px 16px;" onclick="deleteEnv('${key}')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -2089,9 +2275,9 @@ REVOLUTIONARY_HTML = """
         }
         
         async function deleteEnv(key) {
-            if (!confirm('Delete variable "' + key + '"?')) return;
+            if (!confirm('Delete "' + key + '"?')) return;
             
-            showNotification('⏳ Deleting variable...', 'info');
+            showNotification('⏳ Deleting...', 'info');
             
             try {
                 const res = await fetch('/api/env/delete', {
@@ -2102,7 +2288,7 @@ REVOLUTIONARY_HTML = """
                 const data = await res.json();
                 
                 if (data.success) {
-                    showNotification('✅ Variable deleted', 'success');
+                    showNotification('✅ Deleted', 'success');
                     loadEnv();
                 } else {
                     showNotification('❌ ' + data.error, 'error');
@@ -2136,47 +2322,53 @@ REVOLUTIONARY_HTML = """
         function showNotification(msg, type = 'info') {
             const notif = document.getElementById('notification');
             const icons = {
-                info: '<i class="fas fa-info-circle notification-icon" style="color: #3b82f6;"></i>',
-                success: '<i class="fas fa-check-circle notification-icon" style="color: #10b981;"></i>',
-                warning: '<i class="fas fa-exclamation-triangle notification-icon" style="color: #f59e0b;"></i>',
-                error: '<i class="fas fa-times-circle notification-icon" style="color: #ef4444;"></i>'
+                info: '<i class="fas fa-info-circle notification-icon" style="color: #3B82F6;"></i>',
+                success: '<i class="fas fa-check-circle notification-icon" style="color: #10B981;"></i>',
+                warning: '<i class="fas fa-exclamation-triangle notification-icon" style="color: #F59E0B;"></i>',
+                error: '<i class="fas fa-times-circle notification-icon" style="color: #EF4444;"></i>'
             };
             
-            notif.innerHTML = (icons[type] || icons.info) + `<div style="flex: 1; font-weight: 800;"><strong>${msg}</strong></div>`;
+            notif.innerHTML = (icons[type] || icons.info) + `<div style="flex: 1; font-weight: 700;">${msg}</div>`;
             notif.classList.add('show');
-            setTimeout(() => notif.classList.remove('show'), 4500);
+            setTimeout(() => notif.classList.remove('show'), 4000);
         }
         
+        // Auto refresh
         setInterval(updateCredits, 15000);
         setInterval(() => {
-            if (document.getElementById('deployments-tab').classList.contains('active')) {
+            if (document.getElementById('apps-tab').classList.contains('active')) {
                 loadDeployments();
             }
         }, 10000);
         
+        // Initial load
         loadDeployments();
         
+        // Modal click outside to close
         document.getElementById('modal').addEventListener('click', (e) => {
             if (e.target.id === 'modal') closeModal();
         });
         
+        // Drag & drop
         const uploadZone = document.getElementById('uploadZone');
-        ['dragover', 'drop'].forEach(evt => {
-            uploadZone.addEventListener(evt, e => e.preventDefault());
-        });
-        uploadZone.addEventListener('drop', e => {
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                document.getElementById('fileInput').files = files;
-                handleFileUpload(document.getElementById('fileInput'));
-            }
-        });
+        if (uploadZone) {
+            ['dragover', 'drop'].forEach(evt => {
+                uploadZone.addEventListener(evt, e => e.preventDefault());
+            });
+            uploadZone.addEventListener('drop', e => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    document.getElementById('fileInput').files = files;
+                    handleFileUpload(document.getElementById('fileInput'));
+                }
+            });
+        }
     </script>
 </body>
 </html>
 """
 
-# ==================== FLASK ROUTES V3 ====================
+# ==================== FLASK ROUTES ====================
 
 @app.route('/')
 def index():
@@ -2191,20 +2383,12 @@ def index():
     active_count = len([d for d in active_deployments.get(user_id, []) if d['status'] == 'running'])
     vps_count = len(user_vps.get(user_id, []))
     
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        c.execute('SELECT COUNT(*) FROM backups WHERE user_id = ?', (user_id,))
-        backup_count = c.fetchone()[0]
-        conn.close()
-    
     return render_template_string(
-        REVOLUTIONARY_HTML,
+        ULTIMATE_MOBILE_HTML,
         credits=f"{credits:.1f}" if credits != float('inf') else "∞",
         total_deploys=total_deploys,
         active_deploys=active_count,
         vps_count=vps_count,
-        backup_count=backup_count,
         telegram_link=TELEGRAM_LINK
     )
 
@@ -2367,7 +2551,7 @@ def keep_alive():
     t.start()
     logger.info(f"{Fore.GREEN}✅ Web Dashboard: http://localhost:{os.environ.get('PORT', 8080)}")
 
-# ==================== REVOLUTIONARY TELEGRAM BOT ====================
+# ==================== TELEGRAM BOT ====================
 
 def create_main_menu(user_id):
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -2385,7 +2569,7 @@ def create_main_menu(user_id):
     )
     
     if user_id in admin_ids:
-        markup.add(types.InlineKeyboardButton('👑 Admin Panel', callback_data='admin'))
+        markup.add(types.InlineKeyboardButton('👑 Admin', callback_data='admin'))
     
     return markup
 
@@ -2416,30 +2600,28 @@ def start_cmd(message):
     
     bot.send_message(
         message.chat.id,
-        f"🚀 *DevOps Bot v7.0 - REVOLUTIONARY EDITION*\n\n"
+        f"🚀 *DevOps Bot v8.0 - ULTIMATE EDITION*\n\n"
         f"👤 *{first_name}*\n"
         f"💎 Credits: *{credits if credits != float('inf') else '∞'}*\n\n"
         f"*✨ REVOLUTIONARY FEATURES:*\n\n"
         f"🤖 *AI-Powered Auto-Install*\n"
-        f"   └ Python (requirements.txt)\n"
-        f"   └ Node.js (package.json)\n"
-        f"   └ Ruby (Gemfile)\n"
-        f"   └ PHP (composer.json)\n"
-        f"   └ Go (go.mod)\n\n"
-        f"⚡ *Advanced Capabilities*\n"
-        f"   • One-Click File Deploy\n"
+        f"   └ Scans your code for imports\n"
+        f"   └ Auto-installs ALL dependencies\n"
+        f"   └ Supports 5+ package managers\n"
+        f"   └ Zero configuration needed\n\n"
+        f"⚡ *Smart Deployment*\n"
+        f"   • File Upload (.py, .js, .zip)\n"
         f"   • GitHub Integration\n"
         f"   • Real-time Monitoring\n"
         f"   • Resource Analytics\n"
-        f"   • Auto Backup System\n"
-        f"   • Environment Manager\n"
-        f"   • VPS Management\n\n"
-        f"🎨 *Revolutionary Dashboard*\n"
-        f"   • Beautiful Gradient UI\n"
+        f"   • Auto Port Allocation\n\n"
+        f"📱 *Ultimate Mobile Dashboard*\n"
+        f"   • Instagram-level UI\n"
         f"   • Smooth Animations\n"
-        f"   • Mobile Optimized\n"
+        f"   • Touch Optimized\n"
+        f"   • Glassmorphism Design\n"
         f"   • Real-time Updates\n\n"
-        f"*Zero configuration. Just deploy!* 🎯",
+        f"*Just upload & deploy. AI does the rest!* 🎯",
         reply_markup=create_main_menu(user_id)
     )
 
@@ -2452,25 +2634,25 @@ def callback_handler(call):
             port = os.environ.get('PORT', 8080)
             bot.answer_callback_query(call.id)
             bot.send_message(call.message.chat.id,
-                f"🌐 *Revolutionary Web Dashboard*\n\n"
+                f"📱 *Ultimate Mobile Dashboard*\n\n"
                 f"🔗 Access: `http://localhost:{port}`\n\n"
                 f"*🎨 REVOLUTIONARY FEATURES:*\n"
-                f"✓ Stunning gradient animations\n"
-                f"✓ AI-powered auto-install\n"
-                f"✓ Real-time resource monitoring\n"
-                f"✓ Interactive deployment logs\n"
-                f"✓ Drag & drop file upload\n"
-                f"✓ GitHub one-click deploy\n"
-                f"✓ Secure environment manager\n"
-                f"✓ Mobile-first responsive\n\n"
-                f"*Experience the future of DevOps!* 🚀")
+                f"✓ Glassmorphism design\n"
+                f"✓ Smooth animations\n"
+                f"✓ Touch-optimized UI\n"
+                f"✓ AI auto-install\n"
+                f"✓ Real-time monitoring\n"
+                f"✓ Drag & drop upload\n"
+                f"✓ GitHub one-click\n"
+                f"✓ Mobile-first design\n\n"
+                f"*Experience the future!* 🚀")
         
         elif call.data == 'status':
             deploys = active_deployments.get(user_id, [])
             if not deploys:
                 bot.answer_callback_query(call.id)
                 bot.send_message(call.message.chat.id, 
-                    "📊 *No Deployments*\n\nDeploy your first app to see stats!")
+                    "📊 *No Deployments*\n\nDeploy your first app!")
             else:
                 running = sum(1 for d in deploys if d['status'] == 'running')
                 installing = sum(1 for d in deploys if d['status'] in ['installing', 'building'])
@@ -2479,21 +2661,17 @@ def callback_handler(call):
                 avg_mem = sum(d.get('memory_usage', 0) for d in deploys if d['status'] == 'running') / max(running, 1)
                 
                 status_text = f"📊 *Deployment Analytics*\n\n"
-                status_text += f"📦 Total Deployments: *{len(deploys)}*\n"
+                status_text += f"📦 Total: *{len(deploys)}*\n"
                 status_text += f"🟢 Running: *{running}*\n"
                 status_text += f"⚡ Installing: *{installing}*\n"
                 status_text += f"💻 Avg CPU: *{avg_cpu:.1f}%*\n"
                 status_text += f"🧠 Avg RAM: *{avg_mem:.1f}%*\n\n"
-                status_text += "*📋 Recent Deployments:*\n"
+                status_text += "*📋 Recent:*\n"
                 
                 for d in deploys[-5:]:
                     emoji = {
-                        'running': '🟢', 
-                        'pending': '🟡', 
-                        'stopped': '🔴',
-                        'installing': '📦',
-                        'building': '🔨',
-                        'failed': '❌'
+                        'running': '🟢', 'pending': '🟡', 'stopped': '🔴',
+                        'installing': '📦', 'building': '🔨', 'failed': '❌'
                     }
                     status_text += f"{emoji.get(d['status'], '⚪')} `{d['name']}` - _{d['status']}_\n"
                 
@@ -2516,19 +2694,18 @@ def callback_handler(call):
             bot.answer_callback_query(call.id)
             bot.send_message(call.message.chat.id,
                 f"💎 *Credit Balance*\n\n"
-                f"Current: *{credits if credits != float('inf') else '∞'}* credits\n"
-                f"Total Earned: *{earned}* credits\n"
-                f"Total Spent: *{spent}* credits\n\n"
-                f"*💰 Get More Credits*\n"
-                f"Contact: {YOUR_USERNAME}\n"
-                f"Link: {TELEGRAM_LINK}")
+                f"Current: *{credits if credits != float('inf') else '∞'}*\n"
+                f"Earned: *{earned}*\n"
+                f"Spent: *{spent}*\n\n"
+                f"*💰 Get More*\n"
+                f"Contact: {YOUR_USERNAME}")
         
         else:
-            bot.answer_callback_query(call.id, "Use web dashboard for full features!", show_alert=True)
+            bot.answer_callback_query(call.id, "Use dashboard for full features!", show_alert=True)
     
     except Exception as e:
         logger.error(f"Callback error: {e}")
-        bot.answer_callback_query(call.id, "Error occurred")
+        bot.answer_callback_query(call.id, "Error")
 
 @bot.message_handler(content_types=['document'])
 def handle_document(message):
@@ -2539,7 +2716,7 @@ def handle_document(message):
         filename = message.document.file_name
         
         if not filename.endswith(('.py', '.js', '.zip')):
-            bot.reply_to(message, "❌ *Unsupported File*\n\nSupported: `.py`, `.js`, `.zip`")
+            bot.reply_to(message, "❌ Unsupported\n\nUse: `.py`, `.js`, `.zip`")
             return
         
         file_content = bot.download_file(file_info.file_path)
@@ -2550,18 +2727,18 @@ def handle_document(message):
         with open(filepath, 'wb') as f:
             f.write(file_content)
         
-        bot.reply_to(message, "🤖 *AI Analyzing & Deploying...*\n\nPlease wait...")
+        bot.reply_to(message, "🤖 *AI Analyzing...*\n\nPlease wait...")
         deploy_id, msg = deploy_from_file(user_id, filepath, filename)
         
         if deploy_id:
             bot.send_message(message.chat.id,
-                f"✅ *Deployment Successful!*\n\n"
+                f"✅ *Success!*\n\n"
                 f"🆔 ID: `{deploy_id}`\n"
                 f"📦 AI auto-installed dependencies\n\n"
                 f"{msg}\n\n"
-                f"View in dashboard for real-time monitoring!")
+                f"View in dashboard!")
         else:
-            bot.send_message(message.chat.id, f"❌ *Deployment Failed*\n\n{msg}")
+            bot.send_message(message.chat.id, f"❌ *Failed*\n\n{msg}")
     
     except Exception as e:
         logger.error(f"File error: {e}")
@@ -2583,9 +2760,9 @@ def addcredits_cmd(message):
         amount = float(parts[2])
         
         if add_credits(target_user, amount, "Admin bonus"):
-            bot.reply_to(message, f"✅ Added *{amount}* credits to `{target_user}`")
+            bot.reply_to(message, f"✅ Added *{amount}* to `{target_user}`")
             try:
-                bot.send_message(target_user, f"🎉 *Bonus Credits!*\n\nYou received *{amount}* credits from admin!")
+                bot.send_message(target_user, f"🎉 *Bonus!*\n\nYou got *{amount}* credits!")
             except:
                 pass
         else:
@@ -2620,9 +2797,9 @@ def stats_cmd(message):
         
         conn.close()
     
-    stats_text = f"📊 *System Analytics*\n\n"
+    stats_text = f"📊 *System Stats*\n\n"
     stats_text += f"👥 Users: *{total_users}*\n"
-    stats_text += f"🚀 Deployments: *{total_deploys}*\n"
+    stats_text += f"🚀 Deploys: *{total_deploys}*\n"
     stats_text += f"🟢 Running: *{running_deploys}*\n"
     stats_text += f"💰 Spent: *{total_spent:.1f}*\n"
     stats_text += f"📦 AI Installs: *{auto_installed}*\n"
@@ -2661,7 +2838,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'🚀 ULTRA ADVANCED DEVOPS BOT v7.0 - REVOLUTIONARY EDITION':^90}")
+    print(f"{Fore.CYAN}{'🚀 ULTRA ADVANCED DEVOPS BOT v8.0 - ULTIMATE EDITION':^90}")
     print("=" * 90)
     print(f"{Fore.GREEN}🐍 Python: {sys.version.split()[0]}")
     print(f"{Fore.GREEN}📁 Data: {DATA_DIR}")
@@ -2670,56 +2847,29 @@ if __name__ == '__main__':
     print("=" * 90)
     print(f"{Fore.MAGENTA}✨ REVOLUTIONARY FEATURES:")
     print(f"{Fore.CYAN}  🤖 AI-Powered Auto-Install")
-    print("     └ Python requirements.txt ✓")
-    print("     └ Node.js package.json ✓")
-    print("     └ Ruby Gemfile ✓")
-    print("     └ PHP composer.json ✓")
-    print("     └ Go go.mod ✓")
+    print("     └ Code analysis & import detection")
+    print("     └ Auto-installs missing packages")
+    print("     └ Supports: Python, Node.js, Ruby, PHP, Go")
     print("")
-    print(f"{Fore.CYAN}  🚀 Advanced Deployment")
-    print("     └ File Upload (.py, .js, .zip)")
-    print("     └ GitHub Integration")
-    print("     └ Custom Build Commands")
-    print("     └ Auto Port Allocation")
-    print("     └ Real-time Monitoring")
-    print("     └ Resource Analytics")
+    print(f"{Fore.CYAN}  📱 Ultimate Mobile Dashboard")
+    print("     └ Glassmorphism design")
+    print("     └ Smooth animations")
+    print("     └ Touch-optimized UI")
+    print("     └ Real-time updates")
     print("")
-    print(f"{Fore.CYAN}  🎨 Revolutionary Dashboard")
-    print("     └ Stunning Gradient UI")
-    print("     └ Smooth Animations")
-    print("     └ Mobile-First Design")
-    print("     └ Touch Optimized")
-    print("     └ Real-time Updates")
-    print("     └ Interactive Modals")
-    print("     └ Resource Graphs")
-    print("")
-    print(f"{Fore.CYAN}  📱 Advanced Telegram Bot")
-    print("     └ File Upload Deploy")
-    print("     └ Status Analytics")
-    print("     └ Credit Management")
-    print("     └ Admin Commands")
-    print("")
-    print(f"{Fore.CYAN}  🔐 Enterprise Security")
-    print("     └ Encrypted ENV Variables")
-    print("     └ Encrypted VPS Credentials")
-    print("     └ Activity Logging")
-    print("     └ Transaction History")
-    print("=" * 90)
-    print(f"{Fore.YELLOW}📊 CAPABILITIES:")
-    print(f"  ✓ {len(REQUIRED_PACKAGES)} Dependencies")
-    print("  ✓ 5 Package Managers")
-    print("  ✓ Unlimited Deployments")
-    print("  ✓ Real-time Logs")
-    print("  ✓ Auto Detection")
-    print("  ✓ Zero Config")
+    print(f"{Fore.CYAN}  🚀 Smart Deployment")
+    print("     └ File upload & GitHub")
+    print("     └ Resource monitoring")
+    print("     └ Auto port allocation")
+    print("     └ Environment variables")
     print("=" * 90)
     
     keep_alive()
     
     port = os.environ.get('PORT', 8080)
-    print(f"\n{Fore.GREEN}🌐 Dashboard: http://localhost:{port}")
+    print(f"\n{Fore.GREEN}📱 Dashboard: http://localhost:{port}")
     print(f"{Fore.CYAN}📱 Telegram: {TELEGRAM_LINK}")
-    print(f"{Fore.MAGENTA}✨ Revolutionary UI Active!")
+    print(f"{Fore.MAGENTA}✨ Ultimate Mobile UI Active!")
     print(f"{Fore.YELLOW}🤖 Starting bot...\n")
     print("=" * 90)
     print(f"{Fore.GREEN}{'🎉 SYSTEM READY':^90}")
