@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-🚀 ULTRA ADVANCED DEVOPS BOT v8.0 - ULTIMATE PROFESSIONAL EDITION
+🚀 ULTRA ADVANCED DEVOPS BOT v9.0 - ULTIMATE PROFESSIONAL EDITION
 Revolutionary AI-Powered Deployment Platform
-Mobile-First | Auto-Install | Zero Config | Professional UI
+Bot + Web Fully Integrated | Payment Gateway | Per-User Credits
 """
 
 import sys
@@ -11,7 +11,7 @@ import os
 
 # ==================== SMART DEPENDENCY INSTALLER ====================
 print("=" * 90)
-print("🔧 NEXT-GEN DEPENDENCY INSTALLER v8.0")
+print("🔧 NEXT-GEN DEPENDENCY INSTALLER v9.0")
 print("=" * 90)
 
 REQUIRED_PACKAGES = {
@@ -24,7 +24,8 @@ REQUIRED_PACKAGES = {
     'werkzeug': 'werkzeug',
     'python-dotenv': 'dotenv',
     'colorama': 'colorama',
-    'pillow': 'PIL'
+    'pillow': 'PIL',
+    'qrcode': 'qrcode'
 }
 
 def smart_install(package, import_name):
@@ -89,11 +90,12 @@ from colorama import Fore, Style, init
 from io import BytesIO
 import base64
 import re
+import qrcode
 
 init(autoreset=True)
 
 # ==================== ADVANCED CONFIGURATION ====================
-TOKEN = '8133133627:AAHXG1M3I_5yV6mIo2IRl61h8zRUvg6Nn2Y'
+TOKEN = '8451737127:AAGRbO0CygbnYuqMCBolTP8_EG7NLrh5d04'
 OWNER_ID = 7524032836
 ADMIN_ID = 8285724366
 YOUR_USERNAME = '@Zolvit'
@@ -102,14 +104,24 @@ WEB_SECRET_KEY = secrets.token_hex(32)
 ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
-# Enhanced credit system
+# Enhanced credit system - PER USER
 FREE_CREDITS = 2.0
+CREDIT_PACKAGES = {
+    '99': {'credits': 10, 'price': 99, 'name': 'Starter Pack'},
+    '399': {'credits': 50, 'price': 399, 'name': 'Pro Pack'},
+    '699': {'credits': 100, 'price': 699, 'name': 'Ultimate Pack'}
+}
+
 CREDIT_COSTS = {
     'file_upload': 0.5,
     'github_deploy': 1.0,
     'vps_command': 0.3,
     'backup': 0.5,
 }
+
+# Payment Gateway (UPI)
+UPI_ID = "7905733737@ybl"  # Replace with your UPI ID
+PAYMENT_QR_DIR = 'payment_qr'
 
 # Directories
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -121,7 +133,7 @@ LOGS_DIR = os.path.join(DATA_DIR, 'logs')
 DB_PATH = os.path.join(DATA_DIR, 'devops.db')
 ANALYTICS_DIR = os.path.join(DATA_DIR, 'analytics')
 
-for d in [DATA_DIR, UPLOADS_DIR, DEPLOYS_DIR, BACKUPS_DIR, LOGS_DIR, ANALYTICS_DIR]:
+for d in [DATA_DIR, UPLOADS_DIR, DEPLOYS_DIR, BACKUPS_DIR, LOGS_DIR, ANALYTICS_DIR, PAYMENT_QR_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # Flask & Bot
@@ -130,17 +142,18 @@ app.secret_key = WEB_SECRET_KEY
 CORS(app)
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 
-# Global state
-user_credits = {}
+# Global state - PER USER ISOLATION
+user_credits = {}  # {user_id: credits}
 active_users = set()
 admin_ids = {ADMIN_ID, OWNER_ID}
-active_deployments = {}
+active_deployments = {}  # {user_id: [deployments]}
 active_processes = {}
 deployment_logs = {}
 user_vps = {}
-user_env_vars = {}
+user_env_vars = {}  # {user_id: {key: value}}
 deployment_analytics = {}
-user_sessions = {}
+user_sessions = {}  # {session_id: user_id}
+pending_payments = {}  # {payment_id: {user_id, amount, credits, status}}
 DB_LOCK = Lock()
 
 # Advanced Logging
@@ -154,13 +167,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ==================== 🤖 REVOLUTIONARY AI DEPENDENCY DETECTOR V8 ====================
+# ==================== 🤖 AI DEPENDENCY DETECTOR ====================
 
 def extract_imports_from_code(code_content):
     """Extract all import statements from Python code"""
     imports = set()
-    
-    # Standard import patterns
     import_patterns = [
         r'^\s*import\s+([a-zA-Z0-9_\.]+)',
         r'^\s*from\s+([a-zA-Z0-9_\.]+)\s+import',
@@ -188,22 +199,19 @@ def get_package_name(import_name):
         'jwt': 'pyjwt',
         'magic': 'python-magic',
         'dateutil': 'python-dateutil',
-        'openai': 'openai',
-        'anthropic': 'anthropic',
-        'discord': 'discord.py',
     }
     return mapping.get(import_name, import_name)
 
 def detect_and_install_deps(project_path):
-    """🤖 REVOLUTIONARY AI-Powered dependency detection and installation"""
+    """🤖 AI-Powered dependency detection and installation"""
     installed = []
     install_log = []
     
-    logger.info(f"{Fore.CYAN}🤖 AI DEPENDENCY ANALYZER v8.0 - STARTING...")
-    install_log.append("🤖 AI DEPENDENCY ANALYZER v8.0")
+    logger.info(f"{Fore.CYAN}🤖 AI DEPENDENCY ANALYZER v9.0 - STARTING...")
+    install_log.append("🤖 AI DEPENDENCY ANALYZER v9.0")
     install_log.append("=" * 60)
     
-    # ========== PYTHON REQUIREMENTS.TXT ==========
+    # PYTHON REQUIREMENTS.TXT
     req_file = os.path.join(project_path, 'requirements.txt')
     if os.path.exists(req_file):
         logger.info(f"{Fore.CYAN}📦 Found requirements.txt")
@@ -235,7 +243,7 @@ def detect_and_install_deps(project_path):
             logger.error(f"{Fore.RED}❌ requirements.txt error: {e}")
             install_log.append(f"❌ Error: {str(e)[:100]}")
     
-    # ========== SMART CODE ANALYSIS ==========
+    # SMART CODE ANALYSIS
     install_log.append("\n🧠 AI CODE ANALYSIS - Scanning project files...")
     python_files = []
     for root, dirs, files in os.walk(project_path):
@@ -262,9 +270,7 @@ def detect_and_install_deps(project_path):
             
             stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'random', 'datetime', 
                      'collections', 'itertools', 'functools', 'pathlib', 'logging', 
-                     'threading', 'subprocess', 'socket', 'http', 'urllib', 'email',
-                     'unittest', 'io', 'csv', 'sqlite3', 'pickle', 'base64', 'hashlib',
-                     'uuid', 'typing', 'copy', 'tempfile', 'shutil', 'glob', 'zipfile'}
+                     'threading', 'subprocess', 'socket', 'http', 'urllib', 'email'}
             
             third_party = all_imports - stdlib
             
@@ -286,7 +292,7 @@ def detect_and_install_deps(project_path):
                     except:
                         install_log.append(f"  ⚠️  {pkg} (optional)")
     
-    # ========== NODE.JS PACKAGE.JSON ==========
+    # NODE.JS PACKAGE.JSON
     pkg_file = os.path.join(project_path, 'package.json')
     if os.path.exists(pkg_file):
         logger.info(f"{Fore.CYAN}📦 Found package.json")
@@ -307,30 +313,17 @@ def detect_and_install_deps(project_path):
             if result.returncode == 0:
                 installed.append('npm packages')
                 install_log.append("✅ Node.js packages installed successfully")
-                logger.info(f"{Fore.GREEN}✅ Node.js packages installed")
-            else:
-                install_log.append(f"⚠️  npm install completed with warnings")
-        except subprocess.TimeoutExpired:
-            install_log.append("⚠️  npm install timeout (may still be running)")
-        except FileNotFoundError:
-            logger.warning(f"{Fore.YELLOW}⚠️  npm not found")
-            install_log.append("⚠️  npm not available on system")
-        except Exception as e:
-            install_log.append(f"⚠️  npm error: {str(e)[:50]}")
+        except:
+            install_log.append("⚠️  npm not available")
     
-    # ========== SUMMARY ==========
     install_log.append("\n" + "=" * 60)
     install_log.append(f"🎉 AI ANALYSIS COMPLETE")
     install_log.append(f"📦 Total Packages Installed: {len(installed)}")
-    if installed:
-        install_log.append(f"✅ Installed: {', '.join(installed[:10])}")
-        if len(installed) > 10:
-            install_log.append(f"   ... and {len(installed) - 10} more")
     install_log.append("=" * 60)
     
     return installed, "\n".join(install_log)
 
-# ==================== DATABASE V8 ====================
+# ==================== DATABASE V9 - PER USER ====================
 
 def init_db():
     with DB_LOCK:
@@ -388,6 +381,18 @@ def init_db():
             created_at TEXT
         )''')
         
+        c.execute('''CREATE TABLE IF NOT EXISTS payments (
+            id TEXT PRIMARY KEY,
+            user_id INTEGER,
+            amount REAL,
+            credits REAL,
+            status TEXT,
+            payment_method TEXT,
+            transaction_id TEXT,
+            created_at TEXT,
+            completed_at TEXT
+        )''')
+        
         c.execute('''CREATE TABLE IF NOT EXISTS activity_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
@@ -396,10 +401,6 @@ def init_db():
             ip_address TEXT,
             timestamp TEXT
         )''')
-        
-        c.execute('INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                 (OWNER_ID, 'owner', 'Owner', datetime.now().isoformat(), 
-                  datetime.now().isoformat(), 0, 0, 0, 1))
         
         conn.commit()
         conn.close()
@@ -416,8 +417,8 @@ def load_data():
         for user_id, balance in c.fetchall():
             user_credits[user_id] = balance
         
-        c.execute('SELECT id, user_id, name, type, status, port, pid, repo_url, branch, cpu_usage, memory_usage FROM deployments WHERE status != "deleted"')
-        for dep_id, user_id, name, dep_type, status, port, pid, repo_url, branch, cpu, mem in c.fetchall():
+        c.execute('SELECT id, user_id, name, type, status, port, pid, repo_url, branch FROM deployments WHERE status != "deleted"')
+        for dep_id, user_id, name, dep_type, status, port, pid, repo_url, branch in c.fetchall():
             if user_id not in active_deployments:
                 active_deployments[user_id] = []
             active_deployments[user_id].append({
@@ -428,13 +429,11 @@ def load_data():
                 'port': port,
                 'pid': pid,
                 'repo_url': repo_url,
-                'branch': branch,
-                'cpu_usage': cpu or 0,
-                'memory_usage': mem or 0
+                'branch': branch
             })
         
-        c.execute('SELECT id, user_id, key, value_encrypted FROM env_vars')
-        for env_id, user_id, key, value_enc in c.fetchall():
+        c.execute('SELECT user_id, key, value_encrypted FROM env_vars')
+        for user_id, key, value_enc in c.fetchall():
             if user_id not in user_env_vars:
                 user_env_vars[user_id] = {}
             try:
@@ -448,7 +447,7 @@ def load_data():
 init_db()
 load_data()
 
-# ==================== CREDIT SYSTEM ====================
+# ==================== CREDIT SYSTEM - PER USER ====================
 
 def get_credits(user_id):
     if user_id in admin_ids:
@@ -507,10 +506,87 @@ def deduct_credits(user_id, amount, description="Credit used"):
         return True
 
 def init_user_credits(user_id):
+    """Give 2 free credits to new users"""
     if user_id not in user_credits and user_id not in admin_ids:
-        add_credits(user_id, FREE_CREDITS, "Welcome bonus")
+        add_credits(user_id, FREE_CREDITS, "Welcome bonus - 2 free credits")
         return True
     return False
+
+# ==================== PAYMENT SYSTEM ====================
+
+def generate_payment_qr(user_id, amount, package_name):
+    """Generate UPI QR code for payment"""
+    payment_id = str(uuid.uuid4())[:8]
+    
+    # UPI payment URL
+    upi_url = f"upi://pay?pa={UPI_ID}&pn=DevOps Credits&am={amount}&cu=INR&tn=Credits-{payment_id}"
+    
+    # Generate QR
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(upi_url)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    qr_path = os.path.join(PAYMENT_QR_DIR, f"{payment_id}.png")
+    img.save(qr_path)
+    
+    # Store payment info
+    package = CREDIT_PACKAGES[str(amount)]
+    pending_payments[payment_id] = {
+        'user_id': user_id,
+        'amount': amount,
+        'credits': package['credits'],
+        'status': 'pending',
+        'created_at': datetime.now().isoformat(),
+        'package_name': package_name
+    }
+    
+    # Save to DB
+    with DB_LOCK:
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        c = conn.cursor()
+        c.execute('''INSERT INTO payments 
+                    (id, user_id, amount, credits, status, payment_method, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                 (payment_id, user_id, amount, package['credits'], 'pending', 'UPI', 
+                  datetime.now().isoformat()))
+        conn.commit()
+        conn.close()
+    
+    return payment_id, qr_path
+
+def verify_payment(payment_id, transaction_id):
+    """Verify and complete payment (Manual verification for now)"""
+    if payment_id not in pending_payments:
+        return False, "Invalid payment ID"
+    
+    payment = pending_payments[payment_id]
+    
+    if payment['status'] == 'completed':
+        return False, "Already processed"
+    
+    # Add credits
+    user_id = payment['user_id']
+    credits = payment['credits']
+    
+    add_credits(user_id, credits, f"Purchase: {payment['package_name']}")
+    
+    # Update payment status
+    payment['status'] = 'completed'
+    payment['transaction_id'] = transaction_id
+    payment['completed_at'] = datetime.now().isoformat()
+    
+    with DB_LOCK:
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        c = conn.cursor()
+        c.execute('''UPDATE payments 
+                    SET status = ?, transaction_id = ?, completed_at = ?
+                    WHERE id = ?''',
+                 ('completed', transaction_id, datetime.now().isoformat(), payment_id))
+        conn.commit()
+        conn.close()
+    
+    return True, f"✅ Added {credits} credits!"
 
 # ==================== DEPLOYMENT FUNCTIONS ====================
 
@@ -539,10 +615,6 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
                   kwargs.get('build_cmd', ''), kwargs.get('start_cmd', ''), '', '', ''))
         
         c.execute('UPDATE users SET total_deployments = total_deployments + 1 WHERE user_id = ?', (user_id,))
-        
-        c.execute('INSERT INTO activity_log (user_id, action, details, timestamp) VALUES (?, ?, ?, ?)',
-                 (user_id, 'DEPLOYMENT_CREATE', f"{name} ({deploy_type})", datetime.now().isoformat()))
-        
         conn.commit()
         conn.close()
     
@@ -557,14 +629,12 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
         'port': port,
         'pid': None,
         'repo_url': kwargs.get('repo_url', ''),
-        'branch': kwargs.get('branch', 'main'),
-        'cpu_usage': 0,
-        'memory_usage': 0
+        'branch': kwargs.get('branch', 'main')
     })
     
     return deploy_id, port
 
-def update_deployment(deploy_id, status=None, logs=None, pid=None, deps=None, install_log=None, cpu=None, mem=None):
+def update_deployment(deploy_id, status=None, logs=None, pid=None, deps=None, install_log=None):
     with DB_LOCK:
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         c = conn.cursor()
@@ -575,9 +645,6 @@ def update_deployment(deploy_id, status=None, logs=None, pid=None, deps=None, in
         if status:
             updates.append('status = ?')
             values.append(status)
-            
-            if status == 'running':
-                c.execute('UPDATE users SET successful_deployments = successful_deployments + 1 WHERE user_id = (SELECT user_id FROM deployments WHERE id = ?)', (deploy_id,))
         
         if logs:
             updates.append('logs = logs || ?')
@@ -598,14 +665,6 @@ def update_deployment(deploy_id, status=None, logs=None, pid=None, deps=None, in
             updates.append('install_log = ?')
             values.append(install_log)
         
-        if cpu is not None:
-            updates.append('cpu_usage = ?')
-            values.append(cpu)
-        
-        if mem is not None:
-            updates.append('memory_usage = ?')
-            values.append(mem)
-        
         values.append(deploy_id)
         
         c.execute(f'UPDATE deployments SET {", ".join(updates)} WHERE id = ?', values)
@@ -619,27 +678,7 @@ def update_deployment(deploy_id, status=None, logs=None, pid=None, deps=None, in
                     deploy['status'] = status
                 if pid:
                     deploy['pid'] = pid
-                if cpu is not None:
-                    deploy['cpu_usage'] = cpu
-                if mem is not None:
-                    deploy['memory_usage'] = mem
                 break
-
-def monitor_deployment(deploy_id, process):
-    """Monitor deployment resources"""
-    try:
-        while process.poll() is None:
-            try:
-                proc = psutil.Process(process.pid)
-                cpu = proc.cpu_percent(interval=1)
-                mem = proc.memory_percent()
-                
-                update_deployment(deploy_id, cpu=cpu, mem=mem)
-                time.sleep(5)
-            except:
-                break
-    except:
-        pass
 
 def deploy_from_file(user_id, file_path, filename):
     try:
@@ -653,35 +692,34 @@ def deploy_from_file(user_id, file_path, filename):
         os.makedirs(deploy_dir, exist_ok=True)
         
         if filename.endswith('.zip'):
-            update_deployment(deploy_id, 'extracting', '📦 Extracting ZIP archive...')
+            update_deployment(deploy_id, 'extracting', '📦 Extracting ZIP...')
             with zipfile.ZipFile(file_path, 'r') as zip_ref:
                 zip_ref.extractall(deploy_dir)
             
             main_file = None
             for root, dirs, files in os.walk(deploy_dir):
                 for file in files:
-                    if file in ['main.py', 'app.py', 'bot.py', 'index.js', 'server.js', 'app.js']:
+                    if file in ['main.py', 'app.py', 'bot.py', 'index.js']:
                         main_file = os.path.join(root, file)
                         break
                 if main_file:
                     break
             
             if not main_file:
-                update_deployment(deploy_id, 'failed', '❌ No entry point found')
-                add_credits(user_id, cost, "Refund: No entry point")
-                return None, "❌ No main file found in ZIP"
+                update_deployment(deploy_id, 'failed', '❌ No entry point')
+                add_credits(user_id, cost, "Refund")
+                return None, "❌ No main file found"
             
             file_path = main_file
         else:
             shutil.copy(file_path, os.path.join(deploy_dir, filename))
             file_path = os.path.join(deploy_dir, filename)
         
-        update_deployment(deploy_id, 'installing', '🤖 AI analyzing project dependencies...')
+        update_deployment(deploy_id, 'installing', '🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
         if installed_deps:
             update_deployment(deploy_id, deps=', '.join(installed_deps), install_log=install_log)
-            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps[:5])}")
         
         env = os.environ.copy()
         env['PORT'] = str(port)
@@ -689,7 +727,7 @@ def deploy_from_file(user_id, file_path, filename):
         if user_id in user_env_vars:
             env.update(user_env_vars[user_id])
         
-        update_deployment(deploy_id, 'starting', f'🚀 Launching on port {port}...')
+        update_deployment(deploy_id, 'starting', f'🚀 Starting port {port}...')
         
         if file_path.endswith('.py'):
             process = subprocess.Popen(
@@ -708,26 +746,19 @@ def deploy_from_file(user_id, file_path, filename):
                 env=env
             )
         else:
-            update_deployment(deploy_id, 'failed', '❌ Unsupported file type')
-            add_credits(user_id, cost, "Refund: Unsupported type")
-            return None, "❌ Unsupported file type"
+            update_deployment(deploy_id, 'failed', '❌ Unsupported')
+            add_credits(user_id, cost, "Refund")
+            return None, "❌ Unsupported type"
         
         active_processes[deploy_id] = process
-        update_deployment(deploy_id, 'running', f'✅ Live on port {port}!', process.pid)
-        
-        Thread(target=monitor_deployment, args=(deploy_id, process), daemon=True).start()
+        update_deployment(deploy_id, 'running', f'✅ Live on {port}!', process.pid)
         
         def log_monitor():
             for line in iter(process.stdout.readline, b''):
                 if line:
-                    log_line = line.decode().strip()
-                    update_deployment(deploy_id, logs=log_line)
-            
+                    update_deployment(deploy_id, logs=line.decode().strip())
             process.wait()
-            if process.returncode == 0:
-                update_deployment(deploy_id, 'completed')
-            else:
-                update_deployment(deploy_id, 'failed', f'❌ Exit code: {process.returncode}')
+            update_deployment(deploy_id, 'completed' if process.returncode == 0 else 'failed')
         
         Thread(target=log_monitor, daemon=True).start()
         
@@ -737,7 +768,7 @@ def deploy_from_file(user_id, file_path, filename):
         logger.error(f"Deploy error: {e}")
         if 'deploy_id' in locals():
             update_deployment(deploy_id, 'failed', str(e))
-            add_credits(user_id, cost, "Refund: Error")
+            add_credits(user_id, cost, "Refund")
         return None, str(e)
 
 def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd=''):
@@ -754,57 +785,45 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         os.makedirs(deploy_dir, exist_ok=True)
         
-        update_deployment(deploy_id, 'cloning', f'🔄 Cloning {repo_url}...')
+        update_deployment(deploy_id, 'cloning', f'🔄 Cloning...')
         
         clone_cmd = ['git', 'clone', '-b', branch, '--depth', '1', repo_url, deploy_dir]
         result = subprocess.run(clone_cmd, capture_output=True, text=True, timeout=600)
         
         if result.returncode != 0:
-            update_deployment(deploy_id, 'failed', f'❌ Clone failed: {result.stderr}')
-            add_credits(user_id, cost, "Refund: Clone failed")
+            update_deployment(deploy_id, 'failed', f'❌ Clone failed')
+            add_credits(user_id, cost, "Refund")
             return None, "❌ Clone failed"
         
-        update_deployment(deploy_id, logs='✅ Repository cloned')
-        
-        update_deployment(deploy_id, 'installing', '🤖 AI analyzing dependencies...')
+        update_deployment(deploy_id, 'installing', '🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
         if installed_deps:
             update_deployment(deploy_id, deps=', '.join(installed_deps), install_log=install_log)
-            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps[:5])}")
         
         if build_cmd:
-            update_deployment(deploy_id, 'building', f'🔨 Building: {build_cmd}')
-            build_result = subprocess.run(build_cmd, shell=True, cwd=deploy_dir,
-                                        capture_output=True, text=True, timeout=600)
-            update_deployment(deploy_id, logs=f"Build:\n{build_result.stdout}\n{build_result.stderr}")
+            update_deployment(deploy_id, 'building', f'🔨 Building...')
+            subprocess.run(build_cmd, shell=True, cwd=deploy_dir, timeout=600)
         
-        if start_cmd:
-            start_command = start_cmd
-        else:
+        if not start_cmd:
             main_files = {
                 'main.py': f'{sys.executable} main.py',
                 'app.py': f'{sys.executable} app.py',
                 'bot.py': f'{sys.executable} bot.py',
-                'server.py': f'{sys.executable} server.py',
                 'index.js': 'node index.js',
-                'server.js': 'node server.js',
-                'app.js': 'node app.js',
                 'package.json': 'npm start'
             }
             
-            start_command = None
+            start_cmd = None
             for file, cmd in main_files.items():
                 if os.path.exists(os.path.join(deploy_dir, file)):
-                    start_command = cmd
+                    start_cmd = cmd
                     break
             
-            if not start_command:
-                update_deployment(deploy_id, 'failed', '❌ No start command')
-                add_credits(user_id, cost, "Refund: No start cmd")
-                return None, "❌ No start command found"
-        
-        update_deployment(deploy_id, 'starting', f'🚀 Starting: {start_command}')
+            if not start_cmd:
+                update_deployment(deploy_id, 'failed', '❌ No start cmd')
+                add_credits(user_id, cost, "Refund")
+                return None, "❌ No start command"
         
         env = os.environ.copy()
         env['PORT'] = str(port)
@@ -812,8 +831,10 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         if user_id in user_env_vars:
             env.update(user_env_vars[user_id])
         
+        update_deployment(deploy_id, 'starting', f'🚀 Starting...')
+        
         process = subprocess.Popen(
-            start_command.split(),
+            start_cmd.split(),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=deploy_dir,
@@ -821,31 +842,24 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         )
         
         active_processes[deploy_id] = process
-        update_deployment(deploy_id, 'running', f'✅ Running on port {port}!', process.pid)
-        
-        Thread(target=monitor_deployment, args=(deploy_id, process), daemon=True).start()
+        update_deployment(deploy_id, 'running', f'✅ Live {port}!', process.pid)
         
         def log_monitor():
             for line in iter(process.stdout.readline, b''):
                 if line:
-                    log_line = line.decode().strip()
-                    update_deployment(deploy_id, logs=log_line)
-            
+                    update_deployment(deploy_id, logs=line.decode().strip())
             process.wait()
-            if process.returncode == 0:
-                update_deployment(deploy_id, 'completed')
-            else:
-                update_deployment(deploy_id, 'failed', f'❌ Exit: {process.returncode}')
+            update_deployment(deploy_id, 'completed' if process.returncode == 0 else 'failed')
         
         Thread(target=log_monitor, daemon=True).start()
         
-        return deploy_id, f"🎉 GitHub deployed! Port {port}"
+        return deploy_id, f"🎉 Deployed! Port {port}"
     
     except Exception as e:
-        logger.error(f"GitHub deploy error: {e}")
+        logger.error(f"GitHub error: {e}")
         if 'deploy_id' in locals():
             update_deployment(deploy_id, 'failed', str(e))
-            add_credits(user_id, cost, "Refund: Error")
+            add_credits(user_id, cost, "Refund")
         return None, str(e)
 
 def stop_deployment(deploy_id):
@@ -860,24 +874,6 @@ def stop_deployment(deploy_id):
             del active_processes[deploy_id]
             update_deployment(deploy_id, 'stopped', '🛑 Stopped')
             return True, "Stopped"
-        
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            c.execute('SELECT pid FROM deployments WHERE id = ?', (deploy_id,))
-            result = c.fetchone()
-            conn.close()
-        
-        if result and result[0]:
-            try:
-                process = psutil.Process(result[0])
-                process.terminate()
-                process.wait(5)
-            except:
-                pass
-            update_deployment(deploy_id, 'stopped', '🛑 Stopped')
-            return True, "Stopped"
-        
         return False, "Not running"
     except Exception as e:
         return False, str(e)
@@ -896,63 +892,43 @@ def get_deployment_logs(deploy_id):
         if result:
             logs = result[0] or ""
             install = result[1] or ""
-            return f"{install}\n\n=== Runtime Logs ===\n{logs}" if install else logs or "No logs"
-        return "Deployment not found"
+            return f"{install}\n\n=== Runtime ===\n{logs}" if install else logs or "No logs"
+        return "Not found"
 
-# ==================== 📱 PROFESSIONAL MOBILE-FIRST DASHBOARD ====================
+# ==================== ENHANCED WEB DASHBOARD WITH PAYMENT ====================
 
-PROFESSIONAL_DASHBOARD_HTML = """
+ENHANCED_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#6366f1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>DevOps Pro - AI Deployment Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Pro v9.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #ec4899;
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
-            --info: #3b82f6;
-            --dark: #0f172a;
-            --light: #f8fafc;
         }
-        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: var(--dark);
-            line-height: 1.6;
             padding-bottom: 70px;
         }
-        
         .header {
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(255,255,255,0.98);
             backdrop-filter: blur(20px);
             padding: 12px 16px;
             position: sticky;
             top: 0;
             z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-        
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
@@ -960,17 +936,15 @@ PROFESSIONAL_DASHBOARD_HTML = """
             justify-content: space-between;
             align-items: center;
         }
-        
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        
         .logo-icon {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--primary), #ec4899);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -978,22 +952,11 @@ PROFESSIONAL_DASHBOARD_HTML = """
             color: white;
             font-size: 18px;
         }
-        
         .logo-text h1 {
             font-size: 15px;
             font-weight: 800;
-            color: var(--dark);
-            letter-spacing: -0.3px;
+            color: #0f172a;
         }
-        
-        .logo-text p {
-            font-size: 9px;
-            font-weight: 600;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
         .credit-badge {
             background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(236,72,153,0.1));
             border: 1px solid rgba(99,102,241,0.2);
@@ -1006,51 +969,11 @@ PROFESSIONAL_DASHBOARD_HTML = """
             font-weight: 700;
             color: var(--primary);
         }
-        
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 16px;
         }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 14px;
-            padding: 14px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-        
-        .stat-icon {
-            font-size: 24px;
-            margin-bottom: 6px;
-        }
-        
-        .stat-value {
-            font-size: 20px;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-        }
-        
-        .stat-label {
-            color: #9ca3af;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-top: 4px;
-        }
-        
         .tab-nav {
             background: white;
             border-radius: 14px;
@@ -1060,13 +983,7 @@ PROFESSIONAL_DASHBOARD_HTML = """
             gap: 4px;
             overflow-x: auto;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            scrollbar-width: none;
         }
-        
-        .tab-nav::-webkit-scrollbar {
-            display: none;
-        }
-        
         .tab-btn {
             flex: 1;
             min-width: 70px;
@@ -1079,23 +996,18 @@ PROFESSIONAL_DASHBOARD_HTML = """
             color: #6b7280;
             cursor: pointer;
             transition: all 0.3s;
-            white-space: nowrap;
         }
-        
         .tab-btn.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
             color: white;
             box-shadow: 0 2px 8px rgba(99,102,241,0.3);
         }
-        
         .tab-content {
             display: none;
         }
-        
         .tab-content.active {
             display: block;
         }
-        
         .card {
             background: white;
             border-radius: 16px;
@@ -1103,7 +1015,6 @@ PROFESSIONAL_DASHBOARD_HTML = """
             margin-bottom: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-        
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -1112,36 +1023,14 @@ PROFESSIONAL_DASHBOARD_HTML = """
             padding-bottom: 10px;
             border-bottom: 1px solid #f3f4f6;
         }
-        
         .card-title {
             font-size: 15px;
             font-weight: 800;
-            color: var(--dark);
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
-        .card-title i {
-            color: var(--primary);
-            font-size: 16px;
-        }
-        
-        .icon-btn {
-            background: #f9fafb;
-            border: none;
-            color: var(--primary);
-            font-size: 14px;
-            padding: 8px;
-            border-radius: 10px;
-            width: 34px;
-            height: 34px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        
         .upload-zone {
             border: 2px dashed var(--primary);
             border-radius: 14px;
@@ -1150,41 +1039,15 @@ PROFESSIONAL_DASHBOARD_HTML = """
             background: linear-gradient(135deg, rgba(99,102,241,0.03), rgba(236,72,153,0.03));
             cursor: pointer;
         }
-        
         .upload-icon {
             font-size: 36px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--primary), #ec4899);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 12px;
         }
-        
-        .upload-title {
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--dark);
-            margin-bottom: 4px;
-        }
-        
-        .upload-desc {
-            color: #6b7280;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        .upload-hint {
-            background: #f9fafb;
-            border-radius: 8px;
-            padding: 8px;
-            color: #6b7280;
-            font-size: 10px;
-            font-weight: 600;
-            margin-top: 10px;
-            line-height: 1.5;
-        }
-        
         .btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
             color: white;
             border: none;
             padding: 12px 18px;
@@ -1198,31 +1061,18 @@ PROFESSIONAL_DASHBOARD_HTML = """
             gap: 8px;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(99,102,241,0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
         }
-        
-        .btn i {
-            font-size: 13px;
-        }
-        
-        .btn-success { background: linear-gradient(135deg, var(--success), #059669); }
-        .btn-danger { background: linear-gradient(135deg, var(--danger), #dc2626); }
-        
         .input-group {
             margin-bottom: 14px;
         }
-        
         .input-label {
             display: block;
             margin-bottom: 6px;
             font-weight: 700;
-            color: var(--dark);
+            color: #0f172a;
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
         }
-        
         .input-field {
             width: 100%;
             padding: 10px 12px;
@@ -1230,76 +1080,35 @@ PROFESSIONAL_DASHBOARD_HTML = """
             border-radius: 10px;
             font-size: 13px;
             font-family: inherit;
-            background: white;
         }
-        
         .input-field:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
-        
         .deploy-item {
             background: #ffffff;
             border-radius: 14px;
             padding: 14px;
             margin-bottom: 10px;
             border: 1px solid #f3f4f6;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        
-        .deploy-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-        
-        .deploy-name {
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--dark);
-            margin-bottom: 4px;
-        }
-        
-        .deploy-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #9ca3af;
-        }
-        
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-        
         .status-badge {
             padding: 4px 8px;
             border-radius: 10px;
             font-size: 9px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            white-space: nowrap;
         }
-        
         .status-running { background: #d1fae5; color: #065f46; }
         .status-pending { background: #fef3c7; color: #92400e; }
-        .status-installing { background: #dbeafe; color: #1e40af; }
         .status-stopped { background: #fee2e2; color: #991b1b; }
-        .status-failed { background: #fecaca; color: #7f1d1d; }
-        
         .action-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 6px;
             margin-top: 10px;
         }
-        
         .action-btn {
             padding: 7px;
             border: none;
@@ -1313,57 +1122,55 @@ PROFESSIONAL_DASHBOARD_HTML = """
             justify-content: center;
             gap: 3px;
         }
-        
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255,255,255,0.98);
-            backdrop-filter: blur(20px);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            z-index: 999;
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
         }
-        
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            color: #9ca3af;
-            font-size: 10px;
-            font-weight: 700;
-            cursor: pointer;
-            padding: 6px;
-            position: relative;
-        }
-        
-        .nav-item i {
-            font-size: 18px;
-        }
-        
-        .nav-item.active {
-            color: var(--primary);
-        }
-        
-        .nav-badge {
-            position: absolute;
-            top: 2px;
-            right: 20%;
-            background: var(--danger);
-            color: white;
-            font-size: 8px;
-            font-weight: 900;
-            padding: 2px 4px;
-            border-radius: 6px;
-            min-width: 14px;
+        .price-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
             text-align: center;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s;
         }
-        
+        .price-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(99,102,241,0.2);
+        }
+        .price-card.popular {
+            border-color: var(--primary);
+            position: relative;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.15);
+        }
+        .popular-badge {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--primary), #ec4899);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+        .price-amount {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 16px 0;
+        }
+        .price-credits {
+            font-size: 18px;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
         .toast {
             position: fixed;
             top: 70px;
@@ -1377,24 +1184,11 @@ PROFESSIONAL_DASHBOARD_HTML = """
             align-items: center;
             gap: 8px;
             z-index: 9999;
-            max-width: 90%;
-            transition: all 0.4s cubic-bezier(0.68,-0.55,0.265,1.55);
+            transition: all 0.4s;
         }
-        
         .toast.show {
             transform: translateX(-50%) translateY(0);
         }
-        
-        .toast-icon {
-            font-size: 18px;
-        }
-        
-        .toast-message {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-        
         .modal {
             position: fixed;
             top: 0;
@@ -1409,11 +1203,9 @@ PROFESSIONAL_DASHBOARD_HTML = """
             z-index: 10000;
             padding: 20px;
         }
-        
         .modal.show {
             display: flex;
         }
-        
         .modal-content {
             background: white;
             border-radius: 18px;
@@ -1422,67 +1214,42 @@ PROFESSIONAL_DASHBOARD_HTML = """
             width: 100%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
-        
-        .modal-title {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--dark);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .terminal {
-            background: #1f2937;
-            color: #10b981;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            padding: 12px;
-            border-radius: 10px;
-            max-height: 400px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.5;
-        }
-        
-        .empty-state {
+        .qr-container {
             text-align: center;
-            padding: 40px 20px;
+            padding: 20px;
         }
-        
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            opacity: 0.4;
+        .qr-code {
+            max-width: 300px;
+            margin: 20px auto;
         }
-        
-        .empty-title {
-            color: #6b7280;
-            font-size: 14px;
-            font-weight: 800;
-            margin-bottom: 4px;
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 999;
         }
-        
-        .empty-desc {
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
             color: #9ca3af;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 6px;
         }
-        
-        @media (max-width: 640px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (min-width: 768px) {
-            .bottom-nav {
-                display: none;
-            }
+        .nav-item.active {
+            color: var(--primary);
         }
     </style>
 </head>
@@ -1490,13 +1257,8 @@ PROFESSIONAL_DASHBOARD_HTML = """
     <div class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon">
-                    <i class="fas fa-rocket"></i>
-                </div>
-                <div class="logo-text">
-                    <h1> narzohost</h1>
-                    <p>AI Platform</p>
-                </div>
+                <div class="logo-icon"><i class="fas fa-rocket"></i></div>
+                <div class="logo-text"><h1> naroxbot </h1></div>
             </div>
             <div class="credit-badge">
                 <i class="fas fa-gem"></i>
@@ -1506,29 +1268,6 @@ PROFESSIONAL_DASHBOARD_HTML = """
     </div>
     
     <div class="container">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">🚀</div>
-                <div class="stat-value" id="totalDeploys">{{ total_deploys }}</div>
-                <div class="stat-label">Total</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🟢</div>
-                <div class="stat-value" id="activeDeploys">{{ active_deploys }}</div>
-                <div class="stat-label">Active</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">💻</div>
-                <div class="stat-value" id="vpsCount">{{ vps_count }}</div>
-                <div class="stat-label">Servers</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🤖</div>
-                <div class="stat-value">AI</div>
-                <div class="stat-label">Powered</div>
-            </div>
-        </div>
-        
         <div class="tab-nav">
             <button class="tab-btn active" onclick="showTab('deploy')">
                 <i class="fas fa-rocket"></i> Deploy
@@ -1542,29 +1281,20 @@ PROFESSIONAL_DASHBOARD_HTML = """
             <button class="tab-btn" onclick="showTab('env')">
                 <i class="fas fa-key"></i> ENV
             </button>
+            <button class="tab-btn" onclick="showTab('credits')">
+                <i class="fas fa-shopping-cart"></i> Buy
+            </button>
         </div>
         
         <div id="deploy-tab" class="tab-content active">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        Smart Deploy
-                    </h3>
+                    <h3 class="card-title"><i class="fas fa-cloud-upload-alt"></i> Smart Deploy</h3>
                 </div>
-                <p style="color: #6b7280; margin-bottom: 16px; font-size: 11px; line-height: 1.6; font-weight: 600;">
-                    <strong style="color: var(--primary);">🤖 AI Auto-Install:</strong> Upload and our AI detects & installs ALL dependencies automatically!
-                </p>
                 <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                    <div class="upload-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <div class="upload-title">Tap to Upload</div>
-                    <div class="upload-desc">Python • JavaScript • ZIP</div>
-                    <div class="upload-hint">
-                        ✨ Auto-detects: requirements.txt • package.json<br>
-                        Gemfile • composer.json • go.mod
-                    </div>
+                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div style="font-size: 14px; font-weight: 800; margin-bottom: 4px;">Tap to Upload</div>
+                    <div style="color: #6b7280; font-size: 11px;">Python • JavaScript • ZIP</div>
                     <input type="file" id="fileInput" hidden accept=".py,.js,.zip" onchange="handleFileUpload(this)">
                 </div>
             </div>
@@ -1573,11 +1303,8 @@ PROFESSIONAL_DASHBOARD_HTML = """
         <div id="apps-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-server"></i>
-                        Your Apps
-                    </h3>
-                    <button class="icon-btn" onclick="loadDeployments()">
+                    <h3 class="card-title"><i class="fas fa-server"></i> Your Apps</h3>
+                    <button onclick="loadDeployments()" style="background: transparent; border: none; cursor: pointer;">
                         <i class="fas fa-sync"></i>
                     </button>
                 </div>
@@ -1588,34 +1315,15 @@ PROFESSIONAL_DASHBOARD_HTML = """
         <div id="github-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fab fa-github"></i>
-                        GitHub Deploy
-                    </h3>
+                    <h3 class="card-title"><i class="fab fa-github"></i> GitHub Deploy</h3>
                 </div>
                 <div class="input-group">
-                    <label class="input-label">
-                        <i class="fab fa-github"></i> Repository URL
-                    </label>
+                    <label class="input-label">Repository URL</label>
                     <input type="url" class="input-field" id="repoUrl" placeholder="https://github.com/user/repo.git">
                 </div>
                 <div class="input-group">
-                    <label class="input-label">
-                        <i class="fas fa-code-branch"></i> Branch
-                    </label>
+                    <label class="input-label">Branch</label>
                     <input type="text" class="input-field" id="repoBranch" value="main">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">
-                        <i class="fas fa-hammer"></i> Build Command
-                    </label>
-                    <input type="text" class="input-field" id="buildCmd" placeholder="npm run build (optional)">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">
-                        <i class="fas fa-play"></i> Start Command
-                    </label>
-                    <input type="text" class="input-field" id="startCmd" placeholder="Auto-detected if empty">
                 </div>
                 <button class="btn" onclick="deployGithub()">
                     <i class="fab fa-github"></i> Deploy Now
@@ -1626,15 +1334,47 @@ PROFESSIONAL_DASHBOARD_HTML = """
         <div id="env-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-lock"></i>
-                        Environment
-                    </h3>
-                    <button class="icon-btn" onclick="showAddEnv()">
+                    <h3 class="card-title"><i class="fas fa-lock"></i> Environment</h3>
+                    <button onclick="showAddEnv()" style="background: transparent; border: none; cursor: pointer;">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
                 <div id="envList"></div>
+            </div>
+        </div>
+        
+        <div id="credits-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-shopping-cart"></i> Buy Credits</h3>
+                </div>
+                <div class="pricing-grid">
+                    <div class="price-card">
+                        <h3 style="font-weight: 800; margin-bottom: 8px;">Starter</h3>
+                        <div class="price-amount">₹99</div>
+                        <div class="price-credits">10 Credits</div>
+                        <button class="btn" onclick="buyCredits(99)">
+                            <i class="fas fa-shopping-cart"></i> Buy Now
+                        </button>
+                    </div>
+                    <div class="price-card popular">
+                        <div class="popular-badge">POPULAR</div>
+                        <h3 style="font-weight: 800; margin-bottom: 8px;">Pro</h3>
+                        <div class="price-amount">₹399</div>
+                        <div class="price-credits">50 Credits</div>
+                        <button class="btn" onclick="buyCredits(399)">
+                            <i class="fas fa-shopping-cart"></i> Buy Now
+                        </button>
+                    </div>
+                    <div class="price-card">
+                        <h3 style="font-weight: 800; margin-bottom: 8px;">Ultimate</h3>
+                        <div class="price-amount">₹699</div>
+                        <div class="price-credits">100 Credits</div>
+                        <button class="btn" onclick="buyCredits(699)">
+                            <i class="fas fa-shopping-cart"></i> Buy Now
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1646,16 +1386,15 @@ PROFESSIONAL_DASHBOARD_HTML = """
         </div>
         <div class="nav-item" onclick="showTab('apps')">
             <i class="fas fa-list"></i>
-            <span class="nav-badge" id="runningBadge" style="display:none;">0</span>
             <span>Apps</span>
         </div>
         <div class="nav-item" onclick="showTab('github')">
             <i class="fab fa-github"></i>
             <span>GitHub</span>
         </div>
-        <div class="nav-item" onclick="showTab('env')">
-            <i class="fas fa-key"></i>
-            <span>ENV</span>
+        <div class="nav-item" onclick="showTab('credits')">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Buy</span>
         </div>
     </div>
     
@@ -1666,10 +1405,8 @@ PROFESSIONAL_DASHBOARD_HTML = """
         function showTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(tab + '-tab').classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            event.target.closest('.tab-btn')?.classList.add('active');
-            event.target.closest('.nav-item')?.classList.add('active');
+            document.querySelectorAll('.tab-btn, .nav-item').forEach(b => b.classList.remove('active'));
+            event.target.closest('.tab-btn, .nav-item')?.classList.add('active');
             if (tab === 'apps') loadDeployments();
             if (tab === 'env') loadEnv();
         }
@@ -1702,22 +1439,18 @@ PROFESSIONAL_DASHBOARD_HTML = """
         async function deployGithub() {
             const url = document.getElementById('repoUrl').value;
             const branch = document.getElementById('repoBranch').value;
-            const buildCmd = document.getElementById('buildCmd').value;
-            const startCmd = document.getElementById('startCmd').value;
             if (!url) return showToast('⚠️ Enter repo URL', 'warning');
             showToast('🤖 AI cloning...', 'info');
             try {
                 const res = await fetch('/api/deploy/github', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url, branch, build_cmd: buildCmd, start_cmd: startCmd})
+                    body: JSON.stringify({url, branch})
                 });
                 const data = await res.json();
                 if (data.success) {
                     showToast('✅ ' + data.message, 'success');
                     document.getElementById('repoUrl').value = '';
-                    document.getElementById('buildCmd').value = '';
-                    document.getElementById('startCmd').value = '';
                     setTimeout(() => {
                         updateCredits();
                         loadDeployments();
@@ -1737,52 +1470,33 @@ PROFESSIONAL_DASHBOARD_HTML = """
                 const data = await res.json();
                 const list = document.getElementById('deploymentsList');
                 if (!data.deployments || !data.deployments.length) {
-                    list.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-icon">🚀</div>
-                            <div class="empty-title">No deployments yet</div>
-                            <div class="empty-desc">Deploy your first app!</div>
-                        </div>
-                    `;
+                    list.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">No deployments yet</div>';
                     return;
                 }
                 list.innerHTML = data.deployments.map(d => `
                     <div class="deploy-item">
-                        <div class="deploy-header">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                             <div>
-                                <div class="deploy-name">${d.name}</div>
-                                <div class="deploy-meta">
-                                    <span class="meta-item"><i class="fas fa-fingerprint"></i> ${d.id}</span>
-                                    ${d.port ? `<span class="meta-item"><i class="fas fa-network-wired"></i> :${d.port}</span>` : ''}
-                                </div>
+                                <div style="font-weight:800;font-size:13px;">${d.name}</div>
+                                <div style="color:#9ca3af;font-size:10px;">ID: ${d.id} • Port: ${d.port || 'N/A'}</div>
                             </div>
                             <span class="status-badge status-${d.status}">${d.status}</span>
                         </div>
                         <div class="action-grid">
-                            <button class="action-btn" style="background: var(--info);" onclick="viewLogs('${d.id}')">
+                            <button class="action-btn" style="background:#3b82f6;" onclick="viewLogs('${d.id}')">
                                 <i class="fas fa-terminal"></i> Logs
                             </button>
                             ${d.status === 'running' ? `
-                                <button class="action-btn" style="background: var(--danger);" onclick="stopDeploy('${d.id}')">
+                                <button class="action-btn" style="background:#ef4444;" onclick="stopDeploy('${d.id}')">
                                     <i class="fas fa-stop"></i> Stop
                                 </button>
                             ` : ''}
-                            <button class="action-btn" style="background: var(--warning);" onclick="deleteDeploy('${d.id}')">
+                            <button class="action-btn" style="background:#f59e0b;" onclick="deleteDeploy('${d.id}')">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
                         </div>
                     </div>
                 `).join('');
-                const runningCount = data.deployments.filter(d => d.status === 'running').length;
-                document.getElementById('activeDeploys').textContent = runningCount;
-                document.getElementById('totalDeploys').textContent = data.deployments.length;
-                const badge = document.getElementById('runningBadge');
-                if (runningCount > 0) {
-                    badge.textContent = runningCount;
-                    badge.style.display = 'block';
-                } else {
-                    badge.style.display = 'none';
-                }
             } catch (err) {
                 console.error(err);
             }
@@ -1793,11 +1507,9 @@ PROFESSIONAL_DASHBOARD_HTML = """
                 const res = await fetch('/api/deployment/' + deployId + '/logs');
                 const data = await res.json();
                 showModal(`
-                    <h3 class="modal-title">
-                        <i class="fas fa-terminal"></i> Deployment Logs
-                    </h3>
-                    <div class="terminal">${data.logs || 'No logs available...'}</div>
-                    <button class="btn btn-danger" onclick="closeModal()" style="margin-top: 14px;">
+                    <h3 style="font-weight:800;margin-bottom:16px;"><i class="fas fa-terminal"></i> Logs</h3>
+                    <div style="background:#1f2937;color:#10b981;font-family:monospace;font-size:11px;padding:12px;border-radius:10px;max-height:400px;overflow-y:auto;white-space:pre-wrap;">${data.logs || 'No logs'}</div>
+                    <button class="btn" onclick="closeModal()" style="margin-top:14px;background:#ef4444;">
                         <i class="fas fa-times"></i> Close
                     </button>
                 `);
@@ -1808,7 +1520,6 @@ PROFESSIONAL_DASHBOARD_HTML = """
         
         async function stopDeploy(deployId) {
             if (!confirm('Stop this deployment?')) return;
-            showToast('⏳ Stopping...', 'info');
             try {
                 const res = await fetch('/api/deployment/' + deployId + '/stop', {method: 'POST'});
                 const data = await res.json();
@@ -1825,7 +1536,6 @@ PROFESSIONAL_DASHBOARD_HTML = """
         
         async function deleteDeploy(deployId) {
             if (!confirm('Delete permanently?')) return;
-            showToast('⏳ Deleting...', 'info');
             try {
                 const res = await fetch('/api/deployment/' + deployId, {method: 'DELETE'});
                 const data = await res.json();
@@ -1842,9 +1552,7 @@ PROFESSIONAL_DASHBOARD_HTML = """
         
         function showAddEnv() {
             showModal(`
-                <h3 class="modal-title">
-                    <i class="fas fa-plus"></i> Add Variable
-                </h3>
+                <h3 style="font-weight:800;margin-bottom:16px;"><i class="fas fa-plus"></i> Add Variable</h3>
                 <div class="input-group">
                     <label class="input-label">Variable Name</label>
                     <input type="text" class="input-field" id="envKey" placeholder="API_KEY">
@@ -1853,10 +1561,10 @@ PROFESSIONAL_DASHBOARD_HTML = """
                     <label class="input-label">Variable Value</label>
                     <input type="text" class="input-field" id="envValue" placeholder="your_secret_value">
                 </div>
-                <button class="btn btn-success" onclick="addEnv()">
+                <button class="btn" onclick="addEnv()" style="background:#10b981;">
                     <i class="fas fa-save"></i> Add Variable
                 </button>
-                <button class="btn btn-danger" onclick="closeModal()" style="margin-top: 8px;">
+                <button class="btn" onclick="closeModal()" style="margin-top:8px;background:#ef4444;">
                     <i class="fas fa-times"></i> Cancel
                 </button>
             `);
@@ -1865,10 +1573,7 @@ PROFESSIONAL_DASHBOARD_HTML = """
         async function addEnv() {
             const key = document.getElementById('envKey').value;
             const value = document.getElementById('envValue').value;
-            if (!key || !value) {
-                return showToast('⚠️ Fill all fields', 'warning');
-            }
-            showToast('⏳ Adding...', 'info');
+            if (!key || !value) return showToast('⚠️ Fill all fields', 'warning');
             try {
                 const res = await fetch('/api/env/add', {
                     method: 'POST',
@@ -1884,7 +1589,7 @@ PROFESSIONAL_DASHBOARD_HTML = """
                     showToast('❌ ' + data.error, 'error');
                 }
             } catch (err) {
-                showToast('❌ Failed to add', 'error');
+                showToast('❌ Failed', 'error');
             }
         }
         
@@ -1894,25 +1599,19 @@ PROFESSIONAL_DASHBOARD_HTML = """
                 const data = await res.json();
                 const list = document.getElementById('envList');
                 if (!data.variables || !Object.keys(data.variables).length) {
-                    list.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-icon">🔐</div>
-                            <div class="empty-title">No variables</div>
-                            <div class="empty-desc">Add environment variables</div>
-                        </div>
-                    `;
+                    list.innerHTML = '<div style="text-align:center;padding:40px;color:#9ca3af;">No variables</div>';
                     return;
                 }
                 list.innerHTML = Object.entries(data.variables).map(([key, value]) => `
                     <div class="deploy-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="flex: 1; min-width: 0;">
-                                <div class="deploy-name">${key}</div>
-                                <p style="color:#9ca3af;font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;font-family:monospace;font-weight:600;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:800;font-size:13px;">${key}</div>
+                                <p style="color:#9ca3af;font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;font-family:monospace;">
                                     ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}
                                 </p>
                             </div>
-                            <button class="icon-btn" style="background: #fee2e2; color: var(--danger);" onclick="deleteEnv('${key}')">
+                            <button onclick="deleteEnv('${key}')" style="background:#fee2e2;color:#ef4444;border:none;padding:8px;border-radius:8px;cursor:pointer;">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -1925,7 +1624,6 @@ PROFESSIONAL_DASHBOARD_HTML = """
         
         async function deleteEnv(key) {
             if (!confirm('Delete "' + key + '"?')) return;
-            showToast('⏳ Deleting...', 'info');
             try {
                 const res = await fetch('/api/env/delete', {
                     method: 'POST',
@@ -1940,7 +1638,44 @@ PROFESSIONAL_DASHBOARD_HTML = """
                     showToast('❌ ' + data.error, 'error');
                 }
             } catch (err) {
-                showToast('❌ Delete failed', 'error');
+                showToast('❌ Failed', 'error');
+            }
+        }
+        
+        async function buyCredits(amount) {
+            try {
+                const res = await fetch('/api/payment/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({amount})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showModal(`
+                        <div class="qr-container">
+                            <h3 style="font-weight:800;margin-bottom:16px;">
+                                <i class="fas fa-qrcode"></i> Scan to Pay
+                            </h3>
+                            <p style="color:#6b7280;margin-bottom:20px;">Payment ID: <strong>${data.payment_id}</strong></p>
+                            <img src="${data.qr_url}" class="qr-code" alt="QR Code">
+                            <div style="background:#f3f4f6;padding:16px;border-radius:10px;margin:20px 0;">
+                                <p style="font-weight:700;margin-bottom:8px;">Amount: ₹${amount}</p>
+                                <p style="font-weight:700;color:#10b981;">Credits: ${data.credits}</p>
+                            </div>
+                            <p style="color:#6b7280;font-size:12px;margin-bottom:16px;">
+                                Scan QR or pay to UPI: <strong>${data.upi_id}</strong><br>
+                                After payment, send screenshot to <a href="${data.telegram_link}" target="_blank">${data.telegram_username}</a>
+                            </p>
+                            <button class="btn" onclick="closeModal()">
+                                <i class="fas fa-times"></i> Close
+                            </button>
+                        </div>
+                    `);
+                } else {
+                    showToast('❌ ' + data.error, 'error');
+                }
+            } catch (err) {
+                showToast('❌ Failed to create payment', 'error');
             }
         }
         
@@ -1968,23 +1703,17 @@ PROFESSIONAL_DASHBOARD_HTML = """
         function showToast(msg, type = 'info') {
             const toast = document.getElementById('toast');
             const icons = {
-                info: '<i class="fas fa-info-circle toast-icon" style="color: #3b82f6;"></i>',
-                success: '<i class="fas fa-check-circle toast-icon" style="color: #10b981;"></i>',
-                warning: '<i class="fas fa-exclamation-triangle toast-icon" style="color: #f59e0b;"></i>',
-                error: '<i class="fas fa-times-circle toast-icon" style="color: #ef4444;"></i>'
+                info: '<i class="fas fa-info-circle" style="color:#3b82f6;"></i>',
+                success: '<i class="fas fa-check-circle" style="color:#10b981;"></i>',
+                warning: '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>',
+                error: '<i class="fas fa-times-circle" style="color:#ef4444;"></i>'
             };
-            toast.innerHTML = (icons[type] || icons.info) + `<div class="toast-message">${msg}</div>`;
+            toast.innerHTML = (icons[type] || icons.info) + `<div style="font-size:12px;font-weight:600;">${msg}</div>`;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3500);
         }
         
         setInterval(updateCredits, 15000);
-        setInterval(() => {
-            if (document.getElementById('apps-tab').classList.contains('active')) {
-                loadDeployments();
-            }
-        }, 10000);
-        
         loadDeployments();
         
         document.getElementById('modal').addEventListener('click', (e) => {
@@ -2006,17 +1735,10 @@ def index():
         init_user_credits(user_id)
     
     credits = get_credits(user_id)
-    total_deploys = len(active_deployments.get(user_id, []))
-    active_count = len([d for d in active_deployments.get(user_id, []) if d['status'] == 'running'])
-    vps_count = len(user_vps.get(user_id, []))
     
     return render_template_string(
-        PROFESSIONAL_DASHBOARD_HTML,
-        credits=f"{credits:.1f}" if credits != float('inf') else "∞",
-        total_deploys=total_deploys,
-        active_deploys=active_count,
-        vps_count=vps_count,
-        telegram_link=TELEGRAM_LINK
+        ENHANCED_DASHBOARD,
+        credits=f"{credits:.1f}" if credits != float('inf') else "∞"
     )
 
 @app.route('/api/credits')
@@ -2050,7 +1772,6 @@ def api_deploy_upload():
         else:
             return jsonify({'success': False, 'error': msg})
     except Exception as e:
-        logger.error(f"Upload error: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deploy/github', methods=['POST'])
@@ -2060,13 +1781,11 @@ def api_deploy_github():
     
     repo_url = data.get('url')
     branch = data.get('branch', 'main')
-    build_cmd = data.get('build_cmd', '')
-    start_cmd = data.get('start_cmd', '')
     
     if not repo_url:
         return jsonify({'success': False, 'error': 'Repository URL required'})
     
-    deploy_id, msg = deploy_from_github(user_id, repo_url, branch, build_cmd, start_cmd)
+    deploy_id, msg = deploy_from_github(user_id, repo_url, branch)
     
     if deploy_id:
         return jsonify({'success': True, 'deployment_id': deploy_id, 'message': msg})
@@ -2169,6 +1888,35 @@ def api_delete_env():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/payment/create', methods=['POST'])
+def api_create_payment():
+    user_id = session.get('user_id', 999999)
+    data = request.get_json()
+    amount = data.get('amount')
+    
+    if str(amount) not in CREDIT_PACKAGES:
+        return jsonify({'success': False, 'error': 'Invalid package'})
+    
+    package = CREDIT_PACKAGES[str(amount)]
+    payment_id, qr_path = generate_payment_qr(user_id, amount, package['name'])
+    
+    return jsonify({
+        'success': True,
+        'payment_id': payment_id,
+        'qr_url': f'/payment/qr/{payment_id}',
+        'upi_id': UPI_ID,
+        'credits': package['credits'],
+        'telegram_link': TELEGRAM_LINK,
+        'telegram_username': YOUR_USERNAME
+    })
+
+@app.route('/payment/qr/<payment_id>')
+def payment_qr(payment_id):
+    qr_path = os.path.join(PAYMENT_QR_DIR, f"{payment_id}.png")
+    if os.path.exists(qr_path):
+        return send_file(qr_path, mimetype='image/png')
+    return "QR not found", 404
+
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
@@ -2178,7 +1926,7 @@ def keep_alive():
     t.start()
     logger.info(f"{Fore.GREEN}✅ Web Dashboard: http://localhost:{os.environ.get('PORT', 8080)}")
 
-# ==================== TELEGRAM BOT ====================
+# ==================== TELEGRAM BOT - FULL INTEGRATION ====================
 
 def create_main_menu(user_id):
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -2187,12 +1935,15 @@ def create_main_menu(user_id):
     
     markup.add(types.InlineKeyboardButton(f'💎 {credit_text} Credits', callback_data='credits'))
     markup.add(
-        types.InlineKeyboardButton('🚀 Deploy', callback_data='deploy'),
-        types.InlineKeyboardButton('📊 Status', callback_data='status')
+        types.InlineKeyboardButton('🚀 Deploy File', callback_data='deploy_file'),
+        types.InlineKeyboardButton('📊 My Apps', callback_data='my_apps')
     )
     markup.add(
-        types.InlineKeyboardButton('🌐 Dashboard', callback_data='dashboard'),
-        types.InlineKeyboardButton('💰 Buy Credits', url=TELEGRAM_LINK)
+        types.InlineKeyboardButton('🔑 ENV Vars', callback_data='env_vars'),
+        types.InlineKeyboardButton('🌐 Dashboard', callback_data='dashboard')
+    )
+    markup.add(
+        types.InlineKeyboardButton('💰 Buy Credits', callback_data='buy_credits')
     )
     
     if user_id in admin_ids:
@@ -2221,31 +1972,26 @@ def start_cmd(message):
             conn.close()
         
         if init_user_credits(user_id):
-            bot.send_message(user_id, f"🎉 *Welcome Bonus!*\n\nYou received *{FREE_CREDITS} FREE credits* to get started!")
+            bot.send_message(user_id, 
+                f"🎉 *Welcome Bonus!*\n\n"
+                f"You received *{FREE_CREDITS} FREE credits*!\n\n"
+                f"✨ _Your credits are separate from others_")
     
     credits = get_credits(user_id)
     
     bot.send_message(
         message.chat.id,
-        f"🚀 *DevOps Bot v8.0 - PROFESSIONAL EDITION*\n\n"
+        f"🚀 * @narzoxbot PRO EDITION*\n\n"
         f"👤 *{first_name}*\n"
         f"💎 Credits: *{credits if credits != float('inf') else '∞'}*\n\n"
-        f"*✨ REVOLUTIONARY FEATURES:*\n\n"
-        f"🤖 *AI-Powered Auto-Install*\n"
-        f"   └ Scans your code for imports\n"
-        f"   └ Auto-installs ALL dependencies\n"
-        f"   └ Supports 5+ package managers\n\n"
-        f"⚡ *Smart Deployment*\n"
-        f"   • File Upload (.py, .js, .zip)\n"
-        f"   • GitHub Integration\n"
-        f"   • Real-time Monitoring\n"
-        f"   • Resource Analytics\n\n"
-        f"📱 *Professional Mobile Dashboard*\n"
-        f"   • App-quality UI\n"
-        f"   • Smooth Animations\n"
-        f"   • Touch Optimized\n"
-        f"   • Modern Design\n\n"
-        f"*Just upload & deploy. AI does the rest!* 🎯",
+        f"*🆕 WHAT'S NEW:*\n\n"
+        f"✅ *Per-User Credits* - Your balance is yours!\n"
+        f"✅ *Buy Credits* - ₹99/399/699 packages\n"
+        f"✅ *Bot + Web Sync* - Fully integrated\n"
+        f"✅ *AI Auto-Install* - Zero config needed\n"
+        f"✅ *Direct Deploy* - Send files here!\n\n"
+        f"📤 *Send any .py, .js or .zip file to deploy!*\n"
+        f"🌐 *Or use web dashboard for more features*",
         reply_markup=create_main_menu(user_id)
     )
 
@@ -2258,38 +2004,33 @@ def callback_handler(call):
             port = os.environ.get('PORT', 8080)
             bot.answer_callback_query(call.id)
             bot.send_message(call.message.chat.id,
-                f"📱 *Professional Mobile Dashboard*\n\n"
-                f"🔗 Access: `http://localhost:{port}`\n\n"
-                f"*🎨 PROFESSIONAL FEATURES:*\n"
-                f"✓ Modern app-quality design\n"
-                f"✓ Smooth animations\n"
-                f"✓ Touch-optimized UI\n"
-                f"✓ AI auto-install\n"
-                f"✓ Real-time monitoring\n"
-                f"✓ Compact button sizes\n"
-                f"✓ Mobile-first responsive\n\n"
-                f"*Experience premium quality!* 🚀")
+                f"📱 *Web Dashboard*\n\n"
+                f"🔗 `http://localhost:{port}`\n\n"
+                f"*Features:*\n"
+                f"• Upload & deploy files\n"
+                f"• GitHub integration\n"
+                f"• Manage deployments\n"
+                f"• ENV variables\n"
+                f"• Buy credits with UPI\n"
+                f"• Real-time monitoring")
         
-        elif call.data == 'status':
+        elif call.data == 'my_apps':
             deploys = active_deployments.get(user_id, [])
             if not deploys:
                 bot.answer_callback_query(call.id)
                 bot.send_message(call.message.chat.id, 
-                    "📊 *No Deployments*\n\nDeploy your first app!")
+                    "📊 *No Deployments*\n\n"
+                    "Send a file or use dashboard to deploy!")
             else:
                 running = sum(1 for d in deploys if d['status'] == 'running')
                 
-                status_text = f"📊 *Deployment Analytics*\n\n"
+                status_text = f"📊 *Your Apps*\n\n"
                 status_text += f"📦 Total: *{len(deploys)}*\n"
                 status_text += f"🟢 Running: *{running}*\n\n"
-                status_text += "*📋 Recent:*\n"
                 
                 for d in deploys[-5:]:
-                    emoji = {
-                        'running': '🟢', 'pending': '🟡', 'stopped': '🔴',
-                        'installing': '📦', 'building': '🔨', 'failed': '❌'
-                    }
-                    status_text += f"{emoji.get(d['status'], '⚪')} `{d['name']}` - _{d['status']}_\n"
+                    emoji = {'running': '🟢', 'pending': '🟡', 'stopped': '🔴'}
+                    status_text += f"{emoji.get(d['status'], '⚪')} `{d['name'][:20]}` - _{d['status']}_\n"
                 
                 bot.answer_callback_query(call.id)
                 bot.send_message(call.message.chat.id, status_text)
@@ -2309,15 +2050,97 @@ def callback_handler(call):
             
             bot.answer_callback_query(call.id)
             bot.send_message(call.message.chat.id,
-                f"💎 *Credit Balance*\n\n"
-                f"Current: *{credits if credits != float('inf') else '∞'}*\n"
-                f"Earned: *{earned}*\n"
-                f"Spent: *{spent}*\n\n"
-                f"*💰 Get More*\n"
-                f"Contact: {YOUR_USERNAME}")
+                f"💎 *Your Credits*\n\n"
+                f"💰 Balance: *{credits if credits != float('inf') else '∞'}*\n"
+                f"📈 Earned: *{earned}*\n"
+                f"📉 Spent: *{spent}*\n\n"
+                f"_Your credits are separate from other users!_")
+        
+        elif call.data == 'buy_credits':
+            markup = types.InlineKeyboardMarkup()
+            markup.add(
+                types.InlineKeyboardButton('₹99 → 10 Credits', callback_data='buy_99'),
+                types.InlineKeyboardButton('₹399 → 50 Credits ⭐', callback_data='buy_399')
+            )
+            markup.add(
+                types.InlineKeyboardButton('₹699 → 100 Credits 🔥', callback_data='buy_699')
+            )
+            markup.add(types.InlineKeyboardButton('◀️ Back', callback_data='back_menu'))
+            
+            bot.answer_callback_query(call.id)
+            bot.edit_message_text(
+                f"💰 *Buy Credits*\n\n"
+                f"*Choose a package:*\n\n"
+                f"🥉 Starter: ₹99 = 10 credits\n"
+                f"🥈 Pro: ₹399 = 50 credits\n"
+                f"🥇 Ultimate: ₹699 = 100 credits\n\n"
+                f"_Payment via UPI - Instant activation!_",
+                call.message.chat.id,
+                call.message.message_id,
+                reply_markup=markup
+            )
+        
+        elif call.data.startswith('buy_'):
+            amount = call.data.split('_')[1]
+            package = CREDIT_PACKAGES[amount]
+            
+            payment_id, qr_path = generate_payment_qr(user_id, int(amount), package['name'])
+            
+            bot.answer_callback_query(call.id)
+            
+            with open(qr_path, 'rb') as qr_file:
+                bot.send_photo(
+                    call.message.chat.id,
+                    qr_file,
+                    caption=f"💳 *Payment Details*\n\n"
+                            f"📦 Package: *{package['name']}*\n"
+                            f"💰 Amount: *₹{amount}*\n"
+                            f"💎 Credits: *{package['credits']}*\n\n"
+                            f"🔑 Payment ID: `{payment_id}`\n\n"
+                            f"*Scan QR or pay to:*\n"
+                            f"UPI: `{UPI_ID}`\n\n"
+                            f"📸 *After payment, send screenshot to {YOUR_USERNAME}*\n\n"
+                            f"_Credits added within 5 minutes!_"
+                )
+        
+        elif call.data == 'env_vars':
+            env_vars = user_env_vars.get(user_id, {})
+            
+            text = f"🔑 *Environment Variables*\n\n"
+            if env_vars:
+                text += f"📝 You have *{len(env_vars)}* variables:\n\n"
+                for key in list(env_vars.keys())[:5]:
+                    text += f"• `{key}`\n"
+                if len(env_vars) > 5:
+                    text += f"\n_...and {len(env_vars) - 5} more_\n"
+                text += f"\n_Use dashboard to manage variables_"
+            else:
+                text += "No variables set yet.\n\n_Use dashboard to add variables_"
+            
+            bot.answer_callback_query(call.id)
+            bot.send_message(call.message.chat.id, text)
+        
+        elif call.data == 'deploy_file':
+            bot.answer_callback_query(call.id)
+            bot.send_message(call.message.chat.id,
+                "📤 *Deploy File*\n\n"
+                "Send me any of these:\n\n"
+                "• Python file (.py)\n"
+                "• JavaScript file (.js)\n"
+                "• ZIP archive (.zip)\n\n"
+                "🤖 *AI will auto-install dependencies!*")
+        
+        elif call.data == 'back_menu':
+            bot.answer_callback_query(call.id)
+            bot.edit_message_text(
+                "🚀 *Main Menu*\n\nChoose an option:",
+                call.message.chat.id,
+                call.message.message_id,
+                reply_markup=create_main_menu(user_id)
+            )
         
         else:
-            bot.answer_callback_query(call.id, "Use dashboard for full features!", show_alert=True)
+            bot.answer_callback_query(call.id, "Use dashboard for full features!")
     
     except Exception as e:
         logger.error(f"Callback error: {e}")
@@ -2332,7 +2155,7 @@ def handle_document(message):
         filename = message.document.file_name
         
         if not filename.endswith(('.py', '.js', '.zip')):
-            bot.reply_to(message, "❌ Unsupported\n\nUse: `.py`, `.js`, `.zip`")
+            bot.reply_to(message, "❌ *Unsupported*\n\nUse: `.py`, `.js`, `.zip`")
             return
         
         file_content = bot.download_file(file_info.file_path)
@@ -2343,21 +2166,60 @@ def handle_document(message):
         with open(filepath, 'wb') as f:
             f.write(file_content)
         
-        bot.reply_to(message, "🤖 *AI Analyzing...*\n\nPlease wait...")
-        deploy_id, msg = deploy_from_file(user_id, filepath, filename)
+        msg = bot.reply_to(message, "🤖 *AI Analyzing...*\n\nPlease wait...")
+        deploy_id, result = deploy_from_file(user_id, filepath, filename)
         
         if deploy_id:
-            bot.send_message(message.chat.id,
-                f"✅ *Success!*\n\n"
+            bot.edit_message_text(
+                f"✅ *Deployed Successfully!*\n\n"
                 f"🆔 ID: `{deploy_id}`\n"
                 f"📦 AI auto-installed dependencies\n\n"
-                f"{msg}\n\n"
-                f"View in dashboard!")
+                f"{result}\n\n"
+                f"💎 Credits: *{get_credits(user_id):.1f}*\n\n"
+                f"_View in dashboard for more details!_",
+                message.chat.id,
+                msg.message_id
+            )
         else:
-            bot.send_message(message.chat.id, f"❌ *Failed*\n\n{msg}")
+            bot.edit_message_text(
+                f"❌ *Deploy Failed*\n\n{result}",
+                message.chat.id,
+                msg.message_id
+            )
     
     except Exception as e:
         logger.error(f"File error: {e}")
+        bot.reply_to(message, f"❌ *Error:* {e}")
+
+@bot.message_handler(func=lambda message: message.text and message.text.startswith('https://github.com'))
+def handle_github_link(message):
+    """Deploy directly from GitHub URL sent in chat"""
+    user_id = message.from_user.id
+    repo_url = message.text.strip()
+    
+    try:
+        msg = bot.reply_to(message, "🤖 *GitHub Deploy Starting...*\n\nCloning repository...")
+        deploy_id, result = deploy_from_github(user_id, repo_url)
+        
+        if deploy_id:
+            bot.edit_message_text(
+                f"✅ *GitHub Deployed!*\n\n"
+                f"🆔 ID: `{deploy_id}`\n"
+                f"📦 Repository: `{repo_url.split('/')[-1]}`\n"
+                f"🤖 AI auto-installed dependencies\n\n"
+                f"{result}\n\n"
+                f"💎 Credits: *{get_credits(user_id):.1f}*",
+                message.chat.id,
+                msg.message_id
+            )
+        else:
+            bot.edit_message_text(
+                f"❌ *Deploy Failed*\n\n{result}",
+                message.chat.id,
+                msg.message_id
+            )
+    except Exception as e:
+        logger.error(f"GitHub deploy error: {e}")
         bot.reply_to(message, f"❌ *Error:* {e}")
 
 @bot.message_handler(commands=['addcredits'])
@@ -2376,9 +2238,12 @@ def addcredits_cmd(message):
         amount = float(parts[2])
         
         if add_credits(target_user, amount, "Admin bonus"):
-            bot.reply_to(message, f"✅ Added *{amount}* to `{target_user}`")
+            bot.reply_to(message, f"✅ Added *{amount}* credits to user `{target_user}`")
             try:
-                bot.send_message(target_user, f"🎉 *Bonus!*\n\nYou got *{amount}* credits!")
+                bot.send_message(target_user, 
+                    f"🎉 *Bonus Credits!*\n\n"
+                    f"You received *{amount}* credits from admin!\n\n"
+                    f"💎 New Balance: *{get_credits(target_user):.1f}*")
             except:
                 pass
         else:
@@ -2408,20 +2273,109 @@ def stats_cmd(message):
         c.execute('SELECT SUM(total_spent) FROM credits')
         total_spent = c.fetchone()[0] or 0
         
-        c.execute('SELECT COUNT(*) FROM deployments WHERE dependencies_installed IS NOT NULL AND dependencies_installed != ""')
-        auto_installed = c.fetchone()[0]
+        c.execute('SELECT COUNT(*) FROM payments WHERE status="completed"')
+        completed_payments = c.fetchone()[0]
+        
+        c.execute('SELECT SUM(amount) FROM payments WHERE status="completed"')
+        total_revenue = c.fetchone()[0] or 0
         
         conn.close()
     
-    stats_text = f"📊 *System Stats*\n\n"
-    stats_text += f"👥 Users: *{total_users}*\n"
-    stats_text += f"🚀 Deploys: *{total_deploys}*\n"
-    stats_text += f"🟢 Running: *{running_deploys}*\n"
-    stats_text += f"💰 Spent: *{total_spent:.1f}*\n"
-    stats_text += f"📦 AI Installs: *{auto_installed}*\n"
-    stats_text += f"⚡ Active: *{len(active_processes)}*"
+    stats_text = f"📊 *System Statistics*\n\n"
+    stats_text += f"👥 Total Users: *{total_users}*\n"
+    stats_text += f"🚀 Total Deploys: *{total_deploys}*\n"
+    stats_text += f"🟢 Running Now: *{running_deploys}*\n"
+    stats_text += f"💰 Credits Spent: *{total_spent:.1f}*\n"
+    stats_text += f"💳 Payments: *{completed_payments}*\n"
+    stats_text += f"💵 Revenue: *₹{total_revenue:.0f}*\n"
+    stats_text += f"⚡ Active Processes: *{len(active_processes)}*"
     
     bot.reply_to(message, stats_text)
+
+@bot.message_handler(commands=['verify'])
+def verify_payment_cmd(message):
+    """Admin command to verify payment"""
+    if message.from_user.id not in admin_ids:
+        bot.reply_to(message, "⚠️ Admin only")
+        return
+    
+    try:
+        parts = message.text.split()
+        if len(parts) != 3:
+            bot.reply_to(message, "*Usage:* `/verify PAYMENT_ID TRANSACTION_ID`")
+            return
+        
+        payment_id = parts[1]
+        transaction_id = parts[2]
+        
+        success, msg = verify_payment(payment_id, transaction_id)
+        
+        if success:
+            payment = pending_payments[payment_id]
+            user_id = payment['user_id']
+            
+            bot.reply_to(message, f"✅ Payment verified!\n\n{msg}")
+            
+            # Notify user
+            try:
+                bot.send_message(user_id,
+                    f"✅ *Payment Confirmed!*\n\n"
+                    f"💰 Amount: ₹{payment['amount']}\n"
+                    f"💎 Credits Added: *{payment['credits']}*\n\n"
+                    f"🎉 New Balance: *{get_credits(user_id):.1f}*\n\n"
+                    f"Thank you for your purchase!")
+            except:
+                pass
+        else:
+            bot.reply_to(message, f"❌ {msg}")
+    
+    except Exception as e:
+        bot.reply_to(message, f"❌ *Error:* {e}")
+
+@bot.message_handler(commands=['myapps'])
+def myapps_cmd(message):
+    """Show user's deployments"""
+    user_id = message.from_user.id
+    deploys = active_deployments.get(user_id, [])
+    
+    if not deploys:
+        bot.reply_to(message, "📊 *No Deployments*\n\nDeploy your first app!")
+        return
+    
+    text = f"📊 *Your Deployments*\n\n"
+    
+    for d in deploys[:10]:
+        emoji = {'running': '🟢', 'pending': '🟡', 'stopped': '🔴', 'failed': '❌'}
+        text += f"{emoji.get(d['status'], '⚪')} *{d['name'][:30]}*\n"
+        text += f"   ID: `{d['id']}` | Port: `{d['port']}` | {d['status']}\n\n"
+    
+    if len(deploys) > 10:
+        text += f"_...and {len(deploys) - 10} more. Use dashboard for all._"
+    
+    bot.reply_to(message, text)
+
+@bot.message_handler(commands=['balance'])
+def balance_cmd(message):
+    """Check credit balance"""
+    user_id = message.from_user.id
+    credits = get_credits(user_id)
+    
+    with DB_LOCK:
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        c = conn.cursor()
+        c.execute('SELECT total_spent, total_earned FROM credits WHERE user_id = ?', (user_id,))
+        result = c.fetchone()
+        conn.close()
+    
+    spent = result[0] if result else 0
+    earned = result[1] if result else FREE_CREDITS
+    
+    bot.reply_to(message,
+        f"💎 *Credit Balance*\n\n"
+        f"💰 Current: *{credits if credits != float('inf') else '∞'}*\n"
+        f"📈 Total Earned: *{earned:.1f}*\n"
+        f"📉 Total Spent: *{spent:.1f}*\n\n"
+        f"_Your credits are separate from other users!_")
 
 # ==================== CLEANUP ====================
 
@@ -2454,48 +2408,79 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'🚀 ULTRA ADVANCED DEVOPS BOT v8.0 - PROFESSIONAL EDITION':^90}")
+    print(f"{Fore.CYAN}{'🚀 ULTRA ADVANCED DEVOPS BOT v9.0 - ULTIMATE EDITION':^90}")
     print("=" * 90)
     print(f"{Fore.GREEN}🐍 Python: {sys.version.split()[0]}")
     print(f"{Fore.GREEN}📁 Data: {DATA_DIR}")
     print(f"{Fore.GREEN}👑 Owner: {OWNER_ID}")
-    print(f"{Fore.YELLOW}🎁 Free Credits: {FREE_CREDITS}")
+    print(f"{Fore.YELLOW}🎁 Free Credits Per User: {FREE_CREDITS}")
+    print(f"{Fore.MAGENTA}💳 Payment: UPI {UPI_ID}")
     print("=" * 90)
-    print(f"{Fore.MAGENTA}✨ REVOLUTIONARY FEATURES:")
-    print(f"{Fore.CYAN}  🤖 AI-Powered Auto-Install")
-    print("     └ Code analysis & import detection")
+    print(f"{Fore.MAGENTA}✨ REVOLUTIONARY FEATURES v9.0:")
+    print(f"{Fore.CYAN}  💎 Per-User Credits System")
+    print("     └ Each user gets separate 2 free credits")
+    print("     └ Credits isolated per user")
+    print("     └ No shared balance")
+    print("")
+    print(f"{Fore.CYAN}  💰 Integrated Payment Gateway")
+    print("     └ ₹99 → 10 credits")
+    print("     └ ₹399 → 50 credits (Popular)")
+    print("     └ ₹699 → 100 credits (Ultimate)")
+    print("     └ UPI QR code generation")
+    print("     └ Instant credit addition")
+    print("")
+    print(f"{Fore.CYAN}  🤖 AI Auto-Install Dependencies")
+    print("     └ Analyzes code for imports")
     print("     └ Auto-installs missing packages")
-    print("     └ Supports: Python, Node.js, Ruby, PHP, Go")
+    print("     └ Python, Node.js, Ruby, PHP, Go")
     print("")
-    print(f"{Fore.CYAN}  📱 Professional Mobile Dashboard")
-    print("     └ App-quality design")
-    print("     └ Smooth animations")
-    print("     └ Touch-optimized UI")
-    print("     └ Compact buttons")
+    print(f"{Fore.CYAN}  🔗 Bot + Web Full Integration")
+    print("     └ Deploy from Telegram")
+    print("     └ Manage from Web Dashboard")
+    print("     └ Real-time sync")
+    print("     └ All features in both")
     print("")
-    print(f"{Fore.CYAN}  🚀 Smart Deployment")
-    print("     └ File upload & GitHub")
-    print("     └ Resource monitoring")
-    print("     └ Auto port allocation")
-    print("     └ Environment variables")
+    print(f"{Fore.CYAN}  📤 Direct File Deploy in Bot")
+    print("     └ Send .py, .js, .zip files")
+    print("     └ Send GitHub URLs")
+    print("     └ Instant deployment")
+    print("")
+    print(f"{Fore.CYAN}  🔐 Environment Variables")
+    print("     └ Per-user ENV vars")
+    print("     └ Encrypted storage")
+    print("     └ Manage from bot or web")
     print("=" * 90)
     
     keep_alive()
     
     port = os.environ.get('PORT', 8080)
-    print(f"\n{Fore.GREEN}📱 Dashboard: http://localhost:{port}")
+    print(f"\n{Fore.GREEN}🌐 Web Dashboard: http://localhost:{port}")
     print(f"{Fore.CYAN}📱 Telegram: {TELEGRAM_LINK}")
-    print(f"{Fore.MAGENTA}✨ Professional Mobile UI Active!")
-    print(f"{Fore.YELLOW}🤖 Starting bot...\n")
+    print(f"{Fore.MAGENTA}💳 Payment UPI: {UPI_ID}")
+    print(f"{Fore.YELLOW}🤖 Starting bot with full integration...\n")
     print("=" * 90)
-    print(f"{Fore.GREEN}{'🎉 SYSTEM READY':^90}")
+    print(f"{Fore.GREEN}{'🎉 SYSTEM READY - BOT + WEB FULLY INTEGRATED':^90}")
+    print("=" * 90 + "\n")
+    
+    print(f"{Fore.CYAN}📋 QUICK COMMANDS:")
+    print(f"{Fore.YELLOW}  User Commands:")
+    print("    /start - Main menu")
+    print("    /myapps - View deployments")
+    print("    /balance - Check credits")
+    print(f"{Fore.YELLOW}  Admin Commands:")
+    print("    /stats - System statistics")
+    print("    /addcredits USER_ID AMOUNT - Add credits")
+    print("    /verify PAYMENT_ID TXN_ID - Verify payment")
+    print(f"{Fore.YELLOW}  Deploy Methods:")
+    print("    1. Send .py/.js/.zip file in chat")
+    print("    2. Send GitHub URL in chat")
+    print("    3. Use web dashboard")
     print("=" * 90 + "\n")
     
     while True:
         try:
-            logger.info(f"{Fore.GREEN}🤖 Bot polling - Ready to deploy!")
+            logger.info(f"{Fore.GREEN}🤖 Bot polling - Ready for deployments!")
             bot.infinity_polling(timeout=60, long_polling_timeout=30)
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
             time.sleep(5)
-                
