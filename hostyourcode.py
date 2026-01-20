@@ -93,7 +93,7 @@ import re
 init(autoreset=True)
 
 # ==================== ADVANCED CONFIGURATION ====================
-TOKEN = '8451737127:AAGRbO0CygbnYuqMCBolTP8_EG7NLrh5d04'
+TOKEN = '8133133627:AAHXG1M3I_5yV6mIo2IRl61h8zRUvg6Nn2Y'
 OWNER_ID = 7524032836
 ADMIN_ID = 8285724366
 YOUR_USERNAME = '@Zolvit'
