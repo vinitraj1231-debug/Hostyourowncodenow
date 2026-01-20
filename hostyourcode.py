@@ -41,7 +41,7 @@ ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
 # Credits
-FREE_CREDITS = 10.0
+FREE_CREDITS = 1.0
 CREDIT_COSTS = {
     'file_upload': 1.0,
     'github_deploy': 2.0,
