@@ -614,7 +614,6 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
         'port': port,
         'pid':         .modal-content {
             background: rgba(30, 30, 46, 0.95);
-            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 24px;
             padding: 28px;
