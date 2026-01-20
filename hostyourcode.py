@@ -92,7 +92,7 @@ WEB_SECRET_KEY = secrets.token_hex(32)
 ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
-FREE_CREDITS = 2.0
+FREE_CREDITS = 3.0
 CREDIT_COSTS = {
     'file_upload': 1.0,
     'github_deploy': 2.0,
@@ -1240,7 +1240,7 @@ ENHANCED_HTML = """
 <body>
     <div class="header">
         <div class="logo">
-            <i class="fas fa-rocket"></i> DevOps Bot v5.0
+            <i class="fas fa-rocket"></i> @narzoxbot
             <span style="font-size: 11px; background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-left: 8px;">AUTO-INSTALL</span>
         </div>
         <div class="credit-display">
