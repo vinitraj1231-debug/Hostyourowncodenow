@@ -103,7 +103,7 @@ ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
 # Enhanced credit system
-FREE_CREDITS = 5.0
+FREE_CREDITS = 2.0
 CREDIT_COSTS = {
     'file_upload': 0.5,
     'github_deploy': 1.0,
@@ -1494,7 +1494,7 @@ PROFESSIONAL_DASHBOARD_HTML = """
                     <i class="fas fa-rocket"></i>
                 </div>
                 <div class="logo-text">
-                    <h1>DevOps Pro</h1>
+                    <h1> narzohost</h1>
                     <p>AI Platform</p>
                 </div>
             </div>
