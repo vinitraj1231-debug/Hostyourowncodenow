@@ -3793,7 +3793,7 @@ if __name__ == '__main__':
     port = os.environ.get('PORT', 8080)
     print(f"\n{Fore.GREEN}📱 Mobile App: http://localhost:{port}")
     print(f"{Fore.CYAN}📱 Telegram Bot: {TELEGRAM_LINK}")
-    print(f"{Fore.MAGENTA}🔐 Admin Panel Login: Kvinit6421@gmail.com / 28@RajPapa")
+    print(f"{Fore.MAGENTA}🔐 Admin Panel Login: / ")
     print(f"{Fore.YELLOW}💰 Add qr.jpg for payment QR code")
     print(f"{Fore.YELLOW}🤖 Starting Telegram bot...\n")
     print("=" * 90)
