@@ -3213,8 +3213,7 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
             time.sleep(5)
-                
-    
+
         // GitHub Deploy
         async function deployGithub() {
             const url = document.getElementById('repoUrl').value;
@@ -3267,7 +3266,7 @@ if __name__ == '__main__':
                 if (!data.deployments || !data.deployments.length) {
                     const emptyHtml = `
                         <div class="empty-state">
-                            <div class="empty-icon">🚀</div>
+                            
                             <div class="empty-title">No Deployments</div>
                             <div class="empty-desc">Deploy your first app</div>
                         </div>
