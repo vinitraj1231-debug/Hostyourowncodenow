@@ -3521,11 +3521,4 @@ if __name__ == '__main__':
             bot.infinity_polling(timeout=60, long_polling_timeout=30)
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
-            time.sleep(5)<div class="admin-stat-value">${health.cpu_percent.toFixed(1)}%</div>
-                                <div class="admin-stat-label">CPU Usage</div>
-                            </div>
-                            <div class="admin-stat">
-                                <div class="admin-stat-value">${health.memory_percent.toFixed(1)}%</div>
-                                <div class="admin-stat-label">Memory Usage</div>
-                            </div>
-                            <div class="admin-stat">
+            time.sleep(5)
