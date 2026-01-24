@@ -3214,23 +3214,7 @@ if __name__ == '__main__':
             logger.error(f"{Fore.RED}Polling error: {e}")
             time.sleep(5)
                 
-                if (data.success) {
-                    showToast('success', '✅ ' + data.message);
-                    setTimeout(() => {
-                        updateCredits();
-                        loadDeployments();
-                        switchPage('deploymentsPage', document.querySelectorAll('.nav-item')[1]);
-                    }, 1500);
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Upload failed');
-            }
-            
-            input.value = '';
-        }
-
+    
         // GitHub Deploy
         async function deployGithub() {
             const url = document.getElementById('repoUrl').value;
