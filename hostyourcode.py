@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-🚀 ULTRA ADVANCED DEVOPS BOT v9.0 - MOBILE APP EDITION
+🚀 ULTRA ADVANCED DEVOPS BOT v9.1 - MOBILE APP EDITION
 Revolutionary AI-Powered Deployment Platform with Native App Design
-Mobile-First | Authentication | Bottom Nav | Pull-to-Refresh | Admin Panel
+Mobile-First | Selective Admin Auth | Bottom Nav | Payment Integration
 """
 
 import sys
@@ -11,7 +11,7 @@ import os
 
 # ==================== SMART DEPENDENCY INSTALLER ====================
 print("=" * 90)
-print("🔧 NEXT-GEN DEPENDENCY INSTALLER v9.0")
+print("🔧 NEXT-GEN DEPENDENCY INSTALLER v9.1")
 print("=" * 90)
 
 REQUIRED_PACKAGES = {
@@ -102,7 +102,7 @@ WEB_SECRET_KEY = secrets.token_hex(32)
 ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
-# Admin credentials
+# Admin credentials (ONLY for Admin Panel access)
 ADMIN_EMAIL = 'Kvinit6421@gmail.com'
 ADMIN_PASSWORD = '28@RajPapa'
 
@@ -127,8 +127,9 @@ LOGS_DIR = os.path.join(DATA_DIR, 'logs')
 DB_PATH = os.path.join(DATA_DIR, 'devops.db')
 ANALYTICS_DIR = os.path.join(DATA_DIR, 'analytics')
 DOCKER_DIR = os.path.join(DATA_DIR, 'docker')
+PAYMENTS_DIR = os.path.join(DATA_DIR, 'payments')
 
-for d in [DATA_DIR, UPLOADS_DIR, DEPLOYS_DIR, BACKUPS_DIR, LOGS_DIR, ANALYTICS_DIR, DOCKER_DIR]:
+for d in [DATA_DIR, UPLOADS_DIR, DEPLOYS_DIR, BACKUPS_DIR, LOGS_DIR, ANALYTICS_DIR, DOCKER_DIR, PAYMENTS_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # Flask & Bot
@@ -164,7 +165,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ==================== 🤖 AI DEPENDENCY DETECTOR (Keeping original) ====================
+# ==================== AI DEPENDENCY DETECTOR ====================
 
 def extract_imports_from_code(code_content):
     """Extract all import statements from Python code"""
@@ -208,8 +209,8 @@ def detect_and_install_deps(project_path):
     installed = []
     install_log = []
     
-    logger.info(f"{Fore.CYAN}🤖 AI DEPENDENCY ANALYZER v9.0 - STARTING...")
-    install_log.append("🤖 AI DEPENDENCY ANALYZER v9.0 - ENTERPRISE")
+    logger.info(f"{Fore.CYAN}🤖 AI DEPENDENCY ANALYZER v9.1 - STARTING...")
+    install_log.append("🤖 AI DEPENDENCY ANALYZER v9.1 - ENTERPRISE")
     install_log.append("=" * 60)
     
     # Python requirements.txt
@@ -339,7 +340,7 @@ def detect_and_install_deps(project_path):
     
     return installed, "\n".join(install_log)
 
-# ==================== DATABASE (Keeping original) ====================
+# ==================== DATABASE ====================
 
 def init_db():
     with DB_LOCK:
@@ -431,6 +432,16 @@ def init_db():
             created_at TEXT
         )''')
         
+        c.execute('''CREATE TABLE IF NOT EXISTS payment_requests (
+            id TEXT PRIMARY KEY,
+            user_id INTEGER,
+            amount REAL,
+            screenshot_path TEXT,
+            status TEXT,
+            created_at TEXT,
+            processed_at TEXT
+        )''')
+        
         c.execute('INSERT OR IGNORE INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
                  (OWNER_ID, 'owner', 'Owner', datetime.now().isoformat(), 
                   datetime.now().isoformat(), 0, 0, 0, 1, None, None))
@@ -483,7 +494,7 @@ def load_data():
 init_db()
 load_data()
 
-# ==================== CREDIT SYSTEM (Keeping original) ====================
+# ==================== CREDIT SYSTEM ====================
 
 def get_credits(user_id):
     if user_id in admin_ids:
@@ -547,7 +558,7 @@ def init_user_credits(user_id):
         return True
     return False
 
-# ==================== DEPLOYMENT FUNCTIONS (Keeping all original) ====================
+# ==================== DEPLOYMENT FUNCTIONS (Same as before) ====================
 
 def find_free_port():
     import socket
@@ -598,7 +609,6 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
         'custom_domain': None
     })
     
-    # Notify bot
     try:
         bot.send_message(OWNER_ID, 
             f"🚀 *New Deployment*\n\n"
@@ -779,7 +789,6 @@ def deploy_from_file(user_id, file_path, filename):
         
         Thread(target=log_monitor, daemon=True).start()
         
-        # Notify bot
         try:
             bot.send_message(OWNER_ID, 
                 f"✅ *Deployment Success*\n\n"
@@ -899,7 +908,6 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         
         Thread(target=log_monitor, daemon=True).start()
         
-        # Notify bot
         try:
             bot.send_message(OWNER_ID, 
                 f"✅ *GitHub Deploy Success*\n\n"
@@ -1050,8 +1058,8 @@ MOBILE_APP_HTML = """
             padding-bottom: 80px;
         }
         
-        /* Login Screen */
-        .login-screen {
+        /* Admin Login Screen */
+        .admin-login-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -1059,10 +1067,14 @@ MOBILE_APP_HTML = """
             height: 100%;
             background: linear-gradient(135deg, var(--dark) 0%, var(--dark-lighter) 100%);
             z-index: 10000;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
+        }
+        
+        .admin-login-screen.show {
+            display: flex;
         }
         
         .login-box {
@@ -1171,7 +1183,7 @@ MOBILE_APP_HTML = """
         
         /* App Container */
         .app-container {
-            display: none;
+            display: block;
         }
         
         /* Top Bar */
@@ -1456,7 +1468,7 @@ MOBILE_APP_HTML = """
             transform: scale(0.98);
         }
         
-        /* Bottom Navigation */
+        /* Bottom Navigation - 5 items now */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -1504,7 +1516,7 @@ MOBILE_APP_HTML = """
             letter-spacing: 0.5px;
         }
         
-        /* Admin Panel */
+        /* Admin Panel Styles */
         .admin-stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -1552,26 +1564,77 @@ MOBILE_APP_HTML = """
             gap: 8px;
         }
         
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 80px;
-            left: 20px;
-            right: 20px;
-            background: rgba(30, 41, 59, 0.98);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 14px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 10001;
-            transform: translateY(-150px);
-            transition: transform 0.4s cubic-bezier(0.68,-0.55,0.265,1.55);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        /* Buy Credits Page */
+        .qr-container {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
         }
         
+        .qr-image {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 16px;
+            border: 4px solid var(--primary);
+            border-radius: 12px;
+        }
+        
+        .payment-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .payment-info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .payment-info-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .payment-label {
+            font-size: 12px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .payment-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .screenshot-upload-zone {
+            border: 2px dashed rgba(16, 185, 129, 0.5);
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(16, 185, 129, 0.05);
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+        
+        .screenshot-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+        
+        /* Toast */
         .toast.show {
             transform: translateY(0);
         }
@@ -1803,34 +1866,34 @@ MOBILE_APP_HTML = """
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div class="login-screen" id="loginScreen">
+    <!-- Admin Login Screen (Only for Admin Panel) -->
+    <div class="admin-login-screen" id="adminLoginScreen">
         <div class="login-box">
             <div class="login-logo">
-                <i class="fas fa-rocket"></i>
+                <i class="fas fa-crown"></i>
             </div>
-            <h1 class="login-title">EliteHost</h1>
-            <p class="login-subtitle">Admin Panel Login</p>
+            <h1 class="login-title">Admin Panel</h1>
+            <p class="login-subtitle">Secure Admin Access</p>
             
-            <form onsubmit="handleLogin(event)">
+            <form onsubmit="handleAdminLogin(event)">
                 <div class="form-group">
                     <label class="form-label">Email Address</label>
-                    <input type="email" class="form-input" id="loginEmail" placeholder="admin@elitehost.com" required>
+                    <input type="email" class="form-input" id="adminEmail" placeholder="admin@elitehost.com" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required>
+                    <input type="password" class="form-input" id="adminPassword" placeholder="Enter password" required>
                 </div>
                 
                 <button type="submit" class="btn-login">
-                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                    <i class="fas fa-sign-in-alt"></i> Login to Admin Panel
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- App Container -->
+    <!-- App Container (Accessible to all users) -->
     <div class="app-container" id="appContainer">
         <!-- Top Bar -->
         <div class="top-bar">
@@ -1949,7 +2012,67 @@ MOBILE_APP_HTML = """
             </div>
         </div>
 
-        <!-- Admin Page -->
+        <!-- Buy Credits Page -->
+        <div class="page" id="buyCreditsPage">
+            <div class="page-content">
+                <h2 class="section-title" style="margin-bottom: 16px;">
+                    <i class="fas fa-coins"></i> Buy Credits
+                </h2>
+
+                <div class="payment-info">
+                    <div class="payment-info-item">
+                        <span class="payment-label">Credit Price</span>
+                        <span class="payment-value">₹10 = 1 Credit</span>
+                    </div>
+                    <div class="payment-info-item">
+                        <span class="payment-label">Min Purchase</span>
+                        <span class="payment-value">5 Credits (₹50)</span>
+                    </div>
+                    <div class="payment-info-item">
+                        <span class="payment-label">Payment Method</span>
+                        <span class="payment-value">UPI / QR Code</span>
+                    </div>
+                </div>
+
+                <div class="qr-container">
+                    <img src="/qr.jpg" alt="Payment QR Code" class="qr-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%233b82f6%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2216%22 font-family=%22Arial%22%3EPayment QR%3C/text%3E%3C/svg%3E'">
+                    <div style="color: var(--dark); font-size: 14px; font-weight: 700; margin-bottom: 8px;">Scan to Pay</div>
+                    <div style="color: var(--gray); font-size: 12px;">After payment, upload screenshot below</div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Amount (Credits)</label>
+                    <input type="number" class="input-field" id="creditAmount" placeholder="5" min="5" step="1">
+                </div>
+
+                <div class="screenshot-upload-zone" onclick="document.getElementById('screenshotInput').click()">
+                    <div class="upload-icon" style="font-size: 36px; color: var(--success);">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div class="upload-text">Upload Payment Screenshot</div>
+                    <div class="upload-hint">Tap to select image</div>
+                    <input type="file" id="screenshotInput" hidden accept="image/*" onchange="previewScreenshot(this)">
+                    <img id="screenshotPreview" class="screenshot-preview" style="display: none;">
+                </div>
+
+                <button class="btn" onclick="submitPayment()" style="background: linear-gradient(135deg, var(--success), #059669);">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Payment Request
+                </button>
+
+                <div style="margin-top: 20px; padding: 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px;">
+                    <div style="font-size: 12px; color: var(--warning); line-height: 1.6;">
+                        <strong>⚠️ Important:</strong><br>
+                        • Credits will be added after verification<br>
+                        • Keep your payment screenshot safe<br>
+                        • Processing time: 5-30 minutes<br>
+                        • For issues, contact {{ username }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Page (Requires Login) -->
         <div class="page" id="adminPage">
             <div class="page-content">
                 <h2 class="section-title" style="margin-bottom: 16px;">
@@ -1977,7 +2100,10 @@ MOBILE_APP_HTML = """
 
                 <div class="admin-actions">
                     <button class="admin-btn" style="background: linear-gradient(135deg, var(--success), #059669);" onclick="showAddCreditsModal()">
-                        <i class="fas fa-coins"></i> Add Credits
+                        <i class="fas fa-coins"></i> Add Credits to User
+                    </button>
+                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--warning), #d97706);" onclick="viewPaymentRequests()">
+                        <i class="fas fa-receipt"></i> Payment Requests
                     </button>
                     <button class="admin-btn" style="background: linear-gradient(135deg, var(--secondary), #7c3aed);" onclick="viewAllUsers()">
                         <i class="fas fa-users"></i> View All Users
@@ -1991,7 +2117,7 @@ MOBILE_APP_HTML = """
                     <button class="admin-btn" style="background: linear-gradient(135deg, var(--info), #0e7490);" onclick="systemHealth()">
                         <i class="fas fa-heartbeat"></i> System Health
                     </button>
-                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--warning), #d97706);" onclick="logout()">
+                    <button class="admin-btn" style="background: linear-gradient(135deg, #64748b, #475569);" onclick="adminLogout()">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
@@ -2013,17 +2139,18 @@ MOBILE_APP_HTML = """
                 <div style="margin-top: 32px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.1);">
                     <h2 class="section-title" style="margin-bottom: 16px;">About</h2>
                     <div style="background: rgba(30, 41, 59, 0.6); border-radius: 12px; padding: 16px; font-size: 13px; color: var(--gray); line-height: 1.6;">
-                        <div style="margin-bottom: 8px;"><strong style="color: white;">EliteHost v9.0</strong></div>
+                        <div style="margin-bottom: 8px;"><strong style="color: white;">EliteHost v9.1</strong></div>
                         <div>🤖 AI-Powered Deployment</div>
                         <div>🚀 Enterprise Edition</div>
                         <div>📱 Mobile First Design</div>
+                        <div>💳 Integrated Payment System</div>
                         <div style="margin-top: 12px;">Contact: {{ username }}</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Navigation -->
+        <!-- Bottom Navigation - 5 Items -->
         <div class="bottom-nav">
             <button class="nav-item active" onclick="switchPage('homePage', this)">
                 <div class="nav-icon"><i class="fas fa-home"></i></div>
@@ -2037,13 +2164,13 @@ MOBILE_APP_HTML = """
                 <div class="nav-icon"><i class="fas fa-plus-circle"></i></div>
                 <div class="nav-label">Upload</div>
             </button>
-            <button class="nav-item" onclick="switchPage('adminPage', this)">
+            <button class="nav-item" onclick="switchPage('buyCreditsPage', this)">
+                <div class="nav-icon"><i class="fas fa-coins"></i></div>
+                <div class="nav-label">Buy</div>
+            </button>
+            <button class="nav-item" onclick="checkAdminAccess(this)">
                 <div class="nav-icon"><i class="fas fa-crown"></i></div>
                 <div class="nav-label">Admin</div>
-            </button>
-            <button class="nav-item" onclick="switchPage('profilePage', this)">
-                <div class="nav-icon"><i class="fas fa-user"></i></div>
-                <div class="nav-label">Profile</div>
             </button>
         </div>
     </div>
@@ -2068,44 +2195,55 @@ MOBILE_APP_HTML = """
     </div>
 
     <script>
-        let isLoggedIn = false;
+        let isAdminLoggedIn = false;
         let touchStartY = 0;
         let pulling = false;
+        let currentScreenshotFile = null;
 
-        // Login Handler
-        function handleLogin(event) {
+        // Check Admin Session
+        window.addEventListener('load', () => {
+            if (sessionStorage.getItem('elitehost_admin') === 'true') {
+                isAdminLoggedIn = true;
+            }
+            loadData();
+        });
+
+        // Admin Login Handler
+        function handleAdminLogin(event) {
             event.preventDefault();
             
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
             
             if (email === 'Kvinit6421@gmail.com' && password === '28@RajPapa') {
-                isLoggedIn = true;
-                sessionStorage.setItem('elitehost_auth', 'true');
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('appContainer').style.display = 'block';
-                showToast('success', '✅ Login successful!');
-                loadData();
+                isAdminLoggedIn = true;
+                sessionStorage.setItem('elitehost_admin', 'true');
+                document.getElementById('adminLoginScreen').classList.remove('show');
+                showToast('success', '✅ Admin login successful!');
+                switchPage('adminPage');
+                loadAdminStats();
             } else {
-                showToast('error', '❌ Invalid credentials');
+                showToast('error', '❌ Invalid admin credentials');
             }
         }
 
-        // Check if already logged in
-        window.addEventListener('load', () => {
-            if (sessionStorage.getItem('elitehost_auth') === 'true') {
-                isLoggedIn = true;
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('appContainer').style.display = 'block';
-                loadData();
+        // Check Admin Access
+        function checkAdminAccess(navBtn) {
+            if (!isAdminLoggedIn) {
+                document.getElementById('adminLoginScreen').classList.add('show');
+            } else {
+                switchPage('adminPage', navBtn);
+                loadAdminStats();
             }
-        });
+        }
 
-        // Logout
-        function logout() {
+        // Admin Logout
+        function adminLogout() {
             if (confirm('Logout from admin panel?')) {
-                sessionStorage.removeItem('elitehost_auth');
-                location.reload();
+                sessionStorage.removeItem('elitehost_admin');
+                isAdminLoggedIn = false;
+                showToast('info', '👋 Logged out from admin panel');
+                switchPage('homePage');
             }
         }
 
@@ -2141,7 +2279,7 @@ MOBILE_APP_HTML = """
             if (pulling && document.getElementById('pullRefresh').classList.contains('active')) {
                 loadDeployments();
                 updateCredits();
-                if (document.getElementById('adminPage').classList.contains('active')) {
+                if (document.getElementById('adminPage').classList.contains('active') && isAdminLoggedIn) {
                     loadAdminStats();
                 }
             }
@@ -2149,27 +2287,149 @@ MOBILE_APP_HTML = """
             pulling = false;
         });
 
-        // File Upload
-        async function handleFileUpload(input) {
+        // Screenshot Preview
+        function previewScreenshot(input) {
             const file = input.files[0];
             if (!file) return;
             
-            const formData = new FormData();
-            formData.append('file', file);
+            currentScreenshotFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('screenshotPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Submit Payment
+        async function submitPayment() {
+            const amount = document.getElementById('creditAmount').value;
             
-            showToast('info', '🤖 AI analyzing...');
+            if (!amount || amount < 5) {
+                showToast('warning', '⚠️ Minimum 5 credits');
+                return;
+            }
+            
+            if (!currentScreenshotFile) {
+                showToast('warning', '⚠️ Upload payment screenshot');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('amount', amount);
+            formData.append('screenshot', currentScreenshotFile);
+            
+            showToast('info', '📤 Submitting payment request...');
             
             try {
-                const res = await fetch('/api/deploy/upload', {
+                const res = await fetch('/api/payment/submit', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    showToast('success', '✅ Variable added');
-                    closeModal();
-                    loadEnv();
+                    const deployments = data.deployments;
+                    const listHtml = deployments.map(d => `
+                        <div class="deploy-card">
+                            <div class="deploy-header">
+                                <div>
+                                    <div class="deploy-name">${d.name}</div>
+                                    <div class="deploy-meta">
+                                        <span class="meta-item"><i class="fas fa-fingerprint"></i> ${d.id}</span>
+                                        <span class="meta-item"><i class="fas fa-network-wired"></i> Port ${d.port || 'N/A'}</span>
+                                    </div>
+                                </div>
+                                <span class="status-badge status-${d.status}">${d.status}</span>
+                            </div>
+                            <div class="deploy-actions">
+                                <button class="action-btn-small" style="background: var(--info);" onclick="viewLogs('${d.id}')">
+                                    <i class="fas fa-terminal"></i>
+                                    <span>Logs</span>
+                                </button>
+                                <button class="action-btn-small" style="background: var(--warning);" onclick="stopDeploy('${d.id}')">
+                                    <i class="fas fa-stop"></i>
+                                    <span>Stop</span>
+                                </button>
+                                <button class="action-btn-small" style="background: var(--success);" onclick="backupDeploy('${d.id}')">
+                                    <i class="fas fa-save"></i>
+                                    <span>Backup</span>
+                                </button>
+                                <button class="action-btn-small" style="background: var(--danger);" onclick="deleteDeploy('${d.id}')">
+                                    <i class="fas fa-trash"></i>
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('deploymentsList').innerHTML = listHtml || '<div class="empty-state"><div class="empty-icon">🚀</div><div class="empty-desc">No deployments yet</div></div>';
+                    document.getElementById('recentDeployments').innerHTML = deployments.slice(0, 3).map(d => `
+                        <div class="deploy-card" style="margin-bottom: 8px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${d.name}</div>
+                                    <div style="font-size: 11px; color: var(--gray);">Port ${d.port || 'N/A'}</div>
+                                </div>
+                                <span class="status-badge status-${d.status}">${d.status}</span>
+                            </div>
+                        </div>
+                    `).join('') || '<div class="empty-desc" style="padding: 20px; text-align: center;">No recent deployments</div>';
+                    
+                    document.getElementById('totalDeploys').textContent = deployments.length;
+                    document.getElementById('activeDeploys').textContent = deployments.filter(d => d.status === 'running').length;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // View Logs
+        async function viewLogs(deployId) {
+            try {
+                const res = await fetch(`/api/deployment/${deployId}/logs`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    showModal('Deployment Logs', `<div class="terminal">${data.logs || 'No logs available'}</div>`);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed to load logs');
+            }
+        }
+
+        // Stop Deployment
+        async function stopDeploy(deployId) {
+            if (!confirm('Stop this deployment?')) return;
+            
+            try {
+                const res = await fetch(`/api/deployment/${deployId}/stop`, {method: 'POST'});
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ Deployment stopped');
+                    loadDeployments();
+                } else {
+                    showToast('error', '❌ ' + data.message);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        // Backup Deployment
+        async function backupDeploy(deployId) {
+            if (!confirm('Create backup of this deployment?')) return;
+            
+            showToast('info', '📦 Creating backup...');
+            
+            try {
+                const res = await fetch(`/api/deployment/${deployId}/backup`, {method: 'POST'});
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ ' + data.message);
                 } else {
                     showToast('error', '❌ ' + data.error);
                 }
@@ -2178,6 +2438,26 @@ MOBILE_APP_HTML = """
             }
         }
 
+        // Delete Deployment
+        async function deleteDeploy(deployId) {
+            if (!confirm('Delete this deployment permanently?')) return;
+            
+            try {
+                const res = await fetch(`/api/deployment/${deployId}`, {method: 'DELETE'});
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ Deployment deleted');
+                    loadDeployments();
+                } else {
+                    showToast('error', '❌ Failed');
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        // Load Environment Variables
         async function loadEnv() {
             try {
                 const res = await fetch('/api/env/list');
@@ -2205,6 +2485,54 @@ MOBILE_APP_HTML = """
             }
         }
 
+        // Show Add Env Modal
+        function showAddEnv() {
+            showModal('Add Environment Variable', `
+                <div class="input-group">
+                    <label class="input-label">Variable Name</label>
+                    <input type="text" class="input-field" id="envKey" placeholder="API_KEY">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Variable Value</label>
+                    <input type="text" class="input-field" id="envValue" placeholder="your-secret-value">
+                </div>
+                <button class="btn" onclick="addEnv()">
+                    <i class="fas fa-plus"></i> Add Variable
+                </button>
+            `);
+        }
+
+        // Add Environment Variable
+        async function addEnv() {
+            const key = document.getElementById('envKey').value;
+            const value = document.getElementById('envValue').value;
+            
+            if (!key || !value) {
+                showToast('warning', '⚠️ Fill all fields');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/env/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({key, value})
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ Variable added');
+                    closeModal();
+                    loadEnv();
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        // Delete Environment Variable
         async function deleteEnv(key) {
             if (!confirm(`Delete "${key}"?`)) return;
             
@@ -2252,7 +2580,7 @@ MOBILE_APP_HTML = """
                 </div>
                 <div class="input-group">
                     <label class="input-label">Amount</label>
-                    <input type="number" class="input-field" id="creditAmount" placeholder="10.0" step="0.5">
+                    <input type="number" class="input-field" id="creditAmountAdmin" placeholder="10.0" step="0.5">
                 </div>
                 <button class="btn" onclick="adminAddCredits()" style="background: var(--success);">
                     <i class="fas fa-coins"></i> Add Credits
@@ -2262,7 +2590,7 @@ MOBILE_APP_HTML = """
 
         async function adminAddCredits() {
             const userId = document.getElementById('targetUserId').value;
-            const amount = document.getElementById('creditAmount').value;
+            const amount = document.getElementById('creditAmountAdmin').value;
             
             if (!userId || !amount) {
                 showToast('warning', '⚠️ Fill all fields');
@@ -2279,6 +2607,82 @@ MOBILE_APP_HTML = """
                 
                 if (data.success) {
                     showToast('success', '✅ Credits added');
+                    closeModal();
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        async function viewPaymentRequests() {
+            try {
+                const res = await fetch('/api/admin/payment-requests');
+                const data = await res.json();
+                
+                if (data.success) {
+                    const requestsHtml = data.requests.map(r => `
+                        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; margin-bottom: 10px;">
+                            <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px;">User ID: ${r.user_id}</div>
+                            <div style="font-size: 11px; color: var(--gray); line-height: 1.6; margin-bottom: 12px;">
+                                <div>Amount: ${r.amount} Credits (₹${r.amount * 10})</div>
+                                <div>Status: <span class="status-badge status-${r.status}">${r.status}</span></div>
+                                <div>Date: ${new Date(r.created_at).toLocaleString()}</div>
+                            </div>
+                            ${r.status === 'pending' ? `
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                    <button class="btn" onclick="approvePayment('${r.id}', ${r.user_id}, ${r.amount})" style="background: var(--success); padding: 10px; font-size: 12px;">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button class="btn" onclick="rejectPayment('${r.id}')" style="background: var(--danger); padding: 10px; font-size: 12px;">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                    
+                    showModal(`Payment Requests (${data.requests.length})`, requestsHtml || '<div class="empty-desc">No payment requests</div>');
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        async function approvePayment(requestId, userId, amount) {
+            try {
+                const res = await fetch('/api/admin/approve-payment', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({request_id: requestId, user_id: userId, amount: amount})
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ Payment approved!');
+                    closeModal();
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        async function rejectPayment(requestId) {
+            if (!confirm('Reject this payment request?')) return;
+            
+            try {
+                const res = await fetch('/api/admin/reject-payment', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({request_id: requestId})
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ Payment rejected');
                     closeModal();
                 } else {
                     showToast('error', '❌ ' + data.error);
@@ -2443,14 +2847,14 @@ MOBILE_APP_HTML = """
         function loadData() {
             loadDeployments();
             loadEnv();
-            loadAdminStats();
+            updateCredits();
         }
 
         // Auto-refresh
         setInterval(updateCredits, 15000);
         setInterval(() => {
             loadDeployments();
-            if (document.getElementById('adminPage').classList.contains('active')) {
+            if (document.getElementById('adminPage').classList.contains('active') && isAdminLoggedIn) {
                 loadAdminStats();
             }
         }, 10000);
@@ -2459,7 +2863,7 @@ MOBILE_APP_HTML = """
 </html>
 """
 
-# ==================== FLASK ROUTES ====================
+# ==================== FLASK ROUTES (continued) ====================
 
 @app.route('/')
 def index():
@@ -2483,6 +2887,16 @@ def index():
         vps_count=vps_count,
         username=YOUR_USERNAME
     )
+
+@app.route('/qr.jpg')
+def serve_qr():
+    """Serve QR code image"""
+    qr_path = os.path.join(BASE_DIR, 'qr.jpg')
+    if os.path.exists(qr_path):
+        return send_file(qr_path, mimetype='image/jpeg')
+    else:
+        # Return placeholder if QR not found
+        return "QR Code not found. Please add qr.jpg to the project directory.", 404
 
 @app.route('/api/credits')
 def api_credits():
@@ -2537,6 +2951,56 @@ def api_deploy_github():
         return jsonify({'success': True, 'deployment_id': deploy_id, 'message': msg})
     else:
         return jsonify({'success': False, 'error': msg})
+
+@app.route('/api/payment/submit', methods=['POST'])
+def api_payment_submit():
+    user_id = session.get('user_id', 999999)
+    
+    try:
+        amount = float(request.form.get('amount'))
+        screenshot = request.files.get('screenshot')
+        
+        if not amount or amount < 5:
+            return jsonify({'success': False, 'error': 'Minimum 5 credits required'})
+        
+        if not screenshot:
+            return jsonify({'success': False, 'error': 'Screenshot required'})
+        
+        # Save screenshot
+        payment_id = str(uuid.uuid4())[:8]
+        screenshot_filename = f"{payment_id}_{user_id}.jpg"
+        screenshot_path = os.path.join(PAYMENTS_DIR, screenshot_filename)
+        screenshot.save(screenshot_path)
+        
+        # Store payment request
+        with DB_LOCK:
+            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+            c = conn.cursor()
+            c.execute('''INSERT INTO payment_requests 
+                        (id, user_id, amount, screenshot_path, status, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?)''',
+                     (payment_id, user_id, amount, screenshot_path, 'pending', datetime.now().isoformat()))
+            conn.commit()
+            conn.close()
+        
+        # Notify admin via bot
+        try:
+            bot.send_photo(
+                OWNER_ID,
+                photo=open(screenshot_path, 'rb'),
+                caption=f"💳 *New Payment Request*\n\n"
+                       f"User ID: `{user_id}`\n"
+                       f"Amount: *{amount} Credits* (₹{amount * 10})\n"
+                       f"Request ID: `{payment_id}`\n\n"
+                       f"Check admin panel to approve/reject"
+            )
+        except Exception as e:
+            logger.error(f"Failed to send payment notification: {e}")
+        
+        return jsonify({'success': True, 'request_id': payment_id})
+    except Exception as e:
+        logger.error(f"Payment submit error: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployments')
 def api_deployments():
@@ -2646,8 +3110,6 @@ def api_delete_env():
 
 @app.route('/api/admin/stats')
 def api_admin_stats():
-    user_id = session.get('user_id', 999999)
-    
     try:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -2753,7 +3215,6 @@ def api_admin_add_credits():
         return jsonify({'success': False, 'error': 'Missing parameters'})
     
     if add_credits(target_user, amount, "Admin bonus"):
-        # Notify bot
         try:
             bot.send_message(target_user, f"🎉 *Bonus Credits!*\n\nYou received *{amount}* credits from admin!")
         except:
@@ -2761,6 +3222,87 @@ def api_admin_add_credits():
         return jsonify({'success': True})
     else:
         return jsonify({'success': False, 'error': 'Failed to add credits'})
+
+@app.route('/api/admin/payment-requests')
+def api_admin_payment_requests():
+    try:
+        with DB_LOCK:
+            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+            c = conn.cursor()
+            c.execute('SELECT id, user_id, amount, screenshot_path, status, created_at FROM payment_requests ORDER BY created_at DESC LIMIT 50')
+            requests = [{'id': r[0], 'user_id': r[1], 'amount': r[2], 'screenshot_path': r[3], 'status': r[4], 'created_at': r[5]} for r in c.fetchall()]
+            conn.close()
+        
+        return jsonify({'success': True, 'requests': requests})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/admin/approve-payment', methods=['POST'])
+def api_admin_approve_payment():
+    data = request.get_json()
+    request_id = data.get('request_id')
+    user_id = data.get('user_id')
+    amount = data.get('amount')
+    
+    try:
+        # Add credits to user
+        add_credits(user_id, amount, f"Payment approved: {request_id}")
+        
+        # Update payment request status
+        with DB_LOCK:
+            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+            c = conn.cursor()
+            c.execute('UPDATE payment_requests SET status = ?, processed_at = ? WHERE id = ?',
+                     ('approved', datetime.now().isoformat(), request_id))
+            conn.commit()
+            conn.close()
+        
+        # Notify user via bot
+        try:
+            bot.send_message(user_id, 
+                f"✅ *Payment Approved!*\n\n"
+                f"Your payment has been verified.\n"
+                f"*{amount} credits* added to your account!\n\n"
+                f"Current Balance: *{get_credits(user_id):.1f}* credits")
+        except:
+            pass
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/admin/reject-payment', methods=['POST'])
+def api_admin_reject_payment():
+    data = request.get_json()
+    request_id = data.get('request_id')
+    
+    try:
+        # Get user_id before rejecting
+        with DB_LOCK:
+            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+            c = conn.cursor()
+            c.execute('SELECT user_id FROM payment_requests WHERE id = ?', (request_id,))
+            result = c.fetchone()
+            user_id = result[0] if result else None
+            
+            c.execute('UPDATE payment_requests SET status = ?, processed_at = ? WHERE id = ?',
+                     ('rejected', datetime.now().isoformat(), request_id))
+            conn.commit()
+            conn.close()
+        
+        # Notify user via bot
+        if user_id:
+            try:
+                bot.send_message(user_id, 
+                    f"❌ *Payment Rejected*\n\n"
+                    f"Your payment request was not approved.\n"
+                    f"Please contact {YOUR_USERNAME} for details.")
+            except:
+                pass
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
@@ -2771,7 +3313,7 @@ def keep_alive():
     t.start()
     logger.info(f"{Fore.GREEN}✅ Mobile App: http://localhost:{os.environ.get('PORT', 8080)}")
 
-# ==================== TELEGRAM BOT (All original functions kept) ====================
+# ==================== TELEGRAM BOT ====================
 
 def create_main_menu(user_id):
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -2785,7 +3327,7 @@ def create_main_menu(user_id):
     )
     markup.add(
         types.InlineKeyboardButton('📱 Mobile App', callback_data='dashboard'),
-        types.InlineKeyboardButton('💰 Buy Credits', url=TELEGRAM_LINK)
+        types.InlineKeyboardButton('💰 Buy Credits', callback_data='buy_credits')
     )
     
     if user_id in admin_ids:
@@ -2820,16 +3362,15 @@ def start_cmd(message):
     
     bot.send_message(
         message.chat.id,
-        f"📱 *EliteHost Mobile App v9.0*\n\n"
+        f"📱 *EliteHost Mobile App v9.1*\n\n"
         f"👤 *{first_name}*\n"
         f"💎 Credits: *{credits if credits != float('inf') else '∞'}*\n\n"
-        f"*🎨 NEW MOBILE APP DESIGN:*\n"
-        f"✓ Native app interface\n"
-        f"✓ Bottom navigation\n"
-        f"✓ Pull-to-refresh\n"
-        f"✓ Touch optimized\n"
-        f"✓ Admin authentication\n"
-        f"✓ Real-time sync with bot\n\n"
+        f"*🎨 NEW FEATURES:*\n"
+        f"✓ Buy Credits via QR Payment\n"
+        f"✓ Admin login for panel only\n"
+        f"✓ Normal users can use freely\n"
+        f"✓ Payment screenshot to bot\n"
+        f"✓ Auto credit addition\n\n"
         f"*🤖 AI Features:*\n"
         f"• Smart dependency detection\n"
         f"• Auto package installation\n"
@@ -2849,16 +3390,33 @@ def callback_handler(call):
             bot.send_message(call.message.chat.id,
                 f"📱 *EliteHost Mobile App*\n\n"
                 f"🔗 Access: `http://localhost:{port}`\n\n"
-                f"*📱 MOBILE APP FEATURES:*\n"
-                f"✓ App-like bottom navigation\n"
-                f"✓ Pull-to-refresh\n"
-                f"✓ Admin login (secure)\n"
-                f"✓ Touch-optimized UI\n"
-                f"✓ Real-time sync\n"
-                f"✓ AI auto-install\n\n"
-                f"*🔐 Admin Login:*\n"
+                f"*✨ NEW v9.1 FEATURES:*\n"
+                f"✓ Buy credits with QR payment\n"
+                f"✓ Upload payment screenshot\n"
+                f"✓ Admin approval system\n"
+                f"✓ Auto credit addition\n"
+                f"✓ Bottom navigation with Buy button\n\n"
+                f"*🔐 Admin Panel Login:*\n"
+                f"(Only for Admin Panel access)\n"
                 f"Email: `Kvinit6421@gmail.com`\n"
-                f"Password: `28@RajPapa`")
+                f"Password: `28@RajPapa`\n\n"
+                f"*👥 Normal users can use all features without login!*")
+        
+        elif call.data == 'buy_credits':
+            bot.answer_callback_query(call.id)
+            bot.send_message(call.message.chat.id,
+                f"💰 *Buy Credits*\n\n"
+                f"*💎 Pricing:*\n"
+                f"₹10 = 1 Credit\n"
+                f"Minimum: 5 Credits (₹50)\n\n"
+                f"*📱 How to Buy:*\n"
+                f"1. Open mobile app\n"
+                f"2. Go to 'Buy' tab\n"
+                f"3. Scan QR code and pay\n"
+                f"4. Upload payment screenshot\n"
+                f"5. Wait for approval (5-30 min)\n\n"
+                f"*⚡ Credits will be added automatically after verification!*\n\n"
+                f"For instant credits, contact: {YOUR_USERNAME}")
         
         elif call.data == 'admin':
             if user_id not in admin_ids:
@@ -2878,8 +3436,8 @@ def callback_handler(call):
                 c.execute('SELECT COUNT(*) FROM deployments WHERE status="running"')
                 running = c.fetchone()[0]
                 
-                c.execute('SELECT SUM(total_spent) FROM credits')
-                spent = c.fetchone()[0] or 0
+                c.execute('SELECT COUNT(*) FROM payment_requests WHERE status="pending"')
+                pending_payments = c.fetchone()[0]
                 
                 conn.close()
             
@@ -2890,7 +3448,7 @@ def callback_handler(call):
                 f"👥 Total Users: *{total_users}*\n"
                 f"🚀 Total Deployments: *{total_deploys}*\n"
                 f"🟢 Active Now: *{running}*\n"
-                f"💰 Credits Spent: *{spent:.1f}*\n"
+                f"💳 Pending Payments: *{pending_payments}*\n"
                 f"⚡ Active Processes: *{len(active_processes)}*\n\n"
                 f"*Use mobile app for full admin panel!*")
         
@@ -2938,7 +3496,8 @@ def callback_handler(call):
                 f"Earned: *{earned}*\n"
                 f"Spent: *{spent}*\n\n"
                 f"*💰 Get More Credits*\n"
-                f"Contact: {YOUR_USERNAME}")
+                f"Use 'Buy Credits' in mobile app!\n"
+                f"Or contact: {YOUR_USERNAME}")
         
         else:
             bot.answer_callback_query(call.id, "Use mobile app!", show_alert=True)
@@ -2947,39 +3506,51 @@ def callback_handler(call):
         logger.error(f"Callback error: {e}")
         bot.answer_callback_query(call.id, "Error")
 
-@bot.message_handler(content_types=['document'])
-def handle_document(message):
+@bot.message_handler(content_types=['document', 'photo'])
+def handle_file(message):
     user_id = message.from_user.id
     
     try:
-        file_info = bot.get_file(message.document.file_id)
-        filename = message.document.file_name
+        # Handle document
+        if message.document:
+            file_info = bot.get_file(message.document.file_id)
+            filename = message.document.file_name
+            
+            if not filename.endswith(('.py', '.js', '.zip')):
+                bot.reply_to(message, "❌ *Unsupported File*\n\nSupported: `.py`, `.js`, `.zip`")
+                return
+            
+            file_content = bot.download_file(file_info.file_path)
+            user_dir = os.path.join(UPLOADS_DIR, str(user_id))
+            os.makedirs(user_dir, exist_ok=True)
+            filepath = os.path.join(user_dir, secure_filename(filename))
+            
+            with open(filepath, 'wb') as f:
+                f.write(file_content)
+            
+            bot.reply_to(message, "🤖 *AI Analyzing Project...*\n\nPlease wait...")
+            deploy_id, msg = deploy_from_file(user_id, filepath, filename)
+            
+            if deploy_id:
+                bot.send_message(message.chat.id,
+                    f"✅ *Deployment Successful!*\n\n"
+                    f"🆔 ID: `{deploy_id}`\n"
+                    f"🤖 AI auto-installed dependencies\n"
+                    f"📦 Project optimized\n\n"
+                    f"{msg}\n\n"
+                    f"*View in mobile app!* 📱")
+            else:
+                bot.send_message(message.chat.id, f"❌ *Deployment Failed*\n\n{msg}")
         
-        if not filename.endswith(('.py', '.js', '.zip')):
-            bot.reply_to(message, "❌ *Unsupported File*\n\nSupported: `.py`, `.js`, `.zip`")
-            return
-        
-        file_content = bot.download_file(file_info.file_path)
-        user_dir = os.path.join(UPLOADS_DIR, str(user_id))
-        os.makedirs(user_dir, exist_ok=True)
-        filepath = os.path.join(user_dir, secure_filename(filename))
-        
-        with open(filepath, 'wb') as f:
-            f.write(file_content)
-        
-        bot.reply_to(message, "🤖 *AI Analyzing Project...*\n\nPlease wait...")
-        deploy_id, msg = deploy_from_file(user_id, filepath, filename)
-        
-        if deploy_id:
-            bot.send_message(message.chat.id,
-                f"✅ *Deployment Successful!*\n\n"
-                f"🆔 ID: `{deploy_id}`\n"
-                f"🤖 AI auto-installed dependencies\n"
-                f"📦 Project optimized\n\n"
-                f"{msg}\n\n"
-                f"*View in mobile app!* 📱")
-        else:
-            bot.send_message(message.chat.id, f"❌ *Deployment Failed*\n\n{msg}")
+        # Handle photo (payment screenshot)
+        elif message.photo:
+            bot.reply_to(message, 
+                "📸 *Payment Screenshot Received!*\n\n"
+                "To submit payment:\n"
+                "1. Open mobile app\n"
+                "2. Go to 'Buy' tab\n"
+                "3. Upload screenshot there\n\n"
+                "Or use /buy command for manual submission")
     
     except Exception as e:
         logger.error(f"File error: {e}")
@@ -3033,11 +3604,11 @@ def stats_cmd(message):
         c.execute('SELECT SUM(total_spent) FROM credits')
         total_spent = c.fetchone()[0] or 0
         
+        c.execute('SELECT COUNT(*) FROM payment_requests WHERE status="pending"')
+        pending_payments = c.fetchone()[0]
+        
         c.execute('SELECT COUNT(*) FROM deployments WHERE dependencies_installed IS NOT NULL AND dependencies_installed != ""')
         auto_installed = c.fetchone()[0]
-        
-        c.execute('SELECT COUNT(*) FROM backups')
-        total_backups = c.fetchone()[0]
         
         conn.close()
     
@@ -3051,11 +3622,11 @@ def stats_cmd(message):
     stats_text += f"• Total Deploys: *{total_deploys}*\n"
     stats_text += f"• Running Now: *{running_deploys}*\n"
     stats_text += f"• Active Processes: *{len(active_processes)}*\n\n"
-    stats_text += f"*🤖 AI Features:*\n"
-    stats_text += f"• AI Auto-Installs: *{auto_installed}*\n"
-    stats_text += f"• Backups Created: *{total_backups}*\n\n"
-    stats_text += f"*💰 Credits:*\n"
+    stats_text += f"*💰 Payments:*\n"
+    stats_text += f"• Pending Requests: *{pending_payments}*\n"
     stats_text += f"• Total Spent: *{total_spent:.1f}*\n\n"
+    stats_text += f"*🤖 AI Features:*\n"
+    stats_text += f"• AI Auto-Installs: *{auto_installed}*\n\n"
     stats_text += f"*⚡ System Health:*\n"
     stats_text += f"• CPU Usage: *{cpu:.1f}%*\n"
     stats_text += f"• Memory: *{memory:.1f}%*\n"
@@ -3105,6 +3676,7 @@ def help_cmd(message):
     help_text += f"• AI auto-installs dependencies\n"
     help_text += f"• GitHub/GitLab integration\n"
     help_text += f"• Real-time monitoring\n"
+    help_text += f"• Buy credits via QR payment\n"
     help_text += f"• Environment variables\n"
     help_text += f"• Mobile app interface\n\n"
     
@@ -3115,9 +3687,14 @@ def help_cmd(message):
     
     help_text += f"*📱 Mobile App:*\n"
     help_text += f"Open the mobile app for full features!\n"
-    help_text += f"Login: `Kvinit6421@gmail.com`\n"
-    help_text += f"Password: `28@RajPapa`\n\n"
-    help_text += f"📱 URL: `http://localhost:{os.environ.get('PORT', 8080)}`"
+    help_text += f"URL: `http://localhost:{os.environ.get('PORT', 8080)}`\n\n"
+    help_text += f"*💰 Buy Credits:*\n"
+    help_text += f"1. Open mobile app\n"
+    help_text += f"2. Click 'Buy' tab in bottom nav\n"
+    help_text += f"3. Scan QR code and pay\n"
+    help_text += f"4. Upload screenshot\n"
+    help_text += f"5. Wait for approval!\n\n"
+    help_text += f"Contact: {YOUR_USERNAME}"
     
     bot.reply_to(message, help_text)
 
@@ -3152,7 +3729,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'📱 ELITEHOST MOBILE APP v9.0 - ENTERPRISE EDITION':^90}")
+    print(f"{Fore.CYAN}{'📱 ELITEHOST MOBILE APP v9.1 - ENHANCED EDITION':^90}")
     print("=" * 90)
     print(f"{Fore.GREEN}🐍 Python: {sys.version.split()[0]}")
     print(f"{Fore.GREEN}📁 Data Directory: {DATA_DIR}")
@@ -3160,20 +3737,28 @@ if __name__ == '__main__':
     print(f"{Fore.GREEN}👨‍💼 Admin ID: {ADMIN_ID}")
     print(f"{Fore.YELLOW}🎁 Free Credits: {FREE_CREDITS}")
     print("=" * 90)
-    print(f"{Fore.MAGENTA}📱 MOBILE APP FEATURES:")
+    print(f"{Fore.MAGENTA}📱 MOBILE APP v9.1 FEATURES:")
     print("")
     print(f"{Fore.CYAN}🎨 Native App Design")
-    print("   └ Bottom navigation bar (fixed)")
+    print("   └ Bottom navigation bar (5 items)")
     print("   └ Pull-to-refresh functionality")
     print("   └ Slide-up modals & panels")
     print("   └ Touch-optimized controls")
     print("   └ App-like transitions")
     print("")
-    print(f"{Fore.CYAN}🔐 Admin Authentication")
-    print("   └ Secure login page")
+    print(f"{Fore.CYAN}🔐 Selective Admin Authentication")
+    print("   └ Admin login ONLY for Admin Panel")
+    print("   └ Normal users can use all features freely")
     print("   └ Email: Kvinit6421@gmail.com")
     print("   └ Password: 28@RajPapa")
-    print("   └ Session management")
+    print("")
+    print(f"{Fore.CYAN}💰 Integrated Payment System")
+    print("   └ Buy Credits tab in bottom nav")
+    print("   └ QR code payment (qr.jpg)")
+    print("   └ Screenshot upload from app")
+    print("   └ Auto-send to bot for approval")
+    print("   └ Admin approve/reject payments")
+    print("   └ Auto credit addition after approval")
     print("")
     print(f"{Fore.CYAN}🤖 AI-Powered Auto-Install")
     print("   └ Smart dependency detection")
@@ -3183,6 +3768,7 @@ if __name__ == '__main__':
     print("")
     print(f"{Fore.CYAN}🔄 Real-Time Bot Sync")
     print("   └ All deployments sync to bot")
+    print("   └ Payment screenshots to admin bot")
     print("   └ Telegram notifications")
     print("   └ Unified tracking")
     print("")
@@ -3191,8 +3777,15 @@ if __name__ == '__main__':
     print("   └ Environment variables")
     print("   └ GitHub integration")
     print("   └ Backup system")
-    print("   └ Admin panel")
+    print("   └ Payment management")
     print("")
+    print("=" * 90)
+    print(f"{Fore.YELLOW}💡 IMPORTANT NOTES:")
+    print(f"{Fore.CYAN}   • Add 'qr.jpg' to project root for QR payment")
+    print(f"{Fore.CYAN}   • Admin panel requires login (secure)")
+    print(f"{Fore.CYAN}   • Normal users can use without login")
+    print(f"{Fore.CYAN}   • Payment screenshots auto-forward to bot")
+    print(f"{Fore.CYAN}   • 5 bottom nav items: Home, Deploys, Upload, Buy, Admin")
     print("=" * 90)
     
     keep_alive()
@@ -3200,16 +3793,18 @@ if __name__ == '__main__':
     port = os.environ.get('PORT', 8080)
     print(f"\n{Fore.GREEN}📱 Mobile App: http://localhost:{port}")
     print(f"{Fore.CYAN}📱 Telegram Bot: {TELEGRAM_LINK}")
-    print(f"{Fore.MAGENTA}🔐 Admin Login: Kvinit6421@gmail.com / 28@RajPapa")
+    print(f"{Fore.MAGENTA}🔐 Admin Panel Login: Kvinit6421@gmail.com / 28@RajPapa")
+    print(f"{Fore.YELLOW}💰 Add qr.jpg for payment QR code")
     print(f"{Fore.YELLOW}🤖 Starting Telegram bot...\n")
     print("=" * 90)
-    print(f"{Fore.GREEN}{'🎉 ELITEHOST MOBILE APP READY':^90}")
+    print(f"{Fore.GREEN}{'🎉 ELITEHOST v9.1 READY - BUY CREDITS ENABLED':^90}")
     print("=" * 90 + "\n")
     
     while True:
         try:
-            logger.info(f"{Fore.GREEN}🤖 EliteHost bot polling - Mobile app syncing!")
+            logger.info(f"{Fore.GREEN}🤖 EliteHost bot polling - Payment system active!")
             bot.infinity_polling(timeout=60, long_polling_timeout=30)
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
             time.sleep(5)
+                                
