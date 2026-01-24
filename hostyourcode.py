@@ -2676,7 +2676,9 @@ ELITEHOST_DASHBOARD_HTML = """
 
 @app.route('/')
 def index():
-    user_id = session.get('user_id', 999999)
+    # Get user_id from query param or session (for testing, default to OWNER_ID)
+    user_id = request.args.get('user_id', session.get('user_id', OWNER_ID))
+    user_id = int(user_id)
     session['user_id'] = user_id
     
     if user_id not in user_credits and user_id not in admin_ids:
