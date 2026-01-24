@@ -3214,7 +3214,8 @@ if __name__ == '__main__':
             logger.error(f"{Fore.RED}Polling error: {e}")
             time.sleep(5)
 
-        // GitHub Deploy
+
+        
         async function deployGithub() {
             const url = document.getElementById('repoUrl').value;
             const branch = document.getElementById('repoBranch').value;
