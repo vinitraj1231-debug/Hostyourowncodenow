@@ -107,7 +107,7 @@ ADMIN_EMAIL = 'Kvinit6421@gmail.com'
 ADMIN_PASSWORD = '28@RajPapa'
 
 # Enhanced credit system
-FREE_CREDITS = 2.0
+FREE_CREDITS = 3.0
 CREDIT_COSTS = {
     'file_upload': 0.5,
     'github_deploy': 1.0,
