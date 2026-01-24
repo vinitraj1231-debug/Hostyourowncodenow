@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-🚀 ULTRA ADVANCED DEVOPS BOT v9.0 - ENTERPRISE EDITION
-Revolutionary AI-Powered Deployment Platform with EliteHost Features
-Mobile-First | Auto-Install | Zero Config | Enterprise UI | Admin Panel
+🚀 ULTRA ADVANCED DEVOPS BOT v9.0 - MOBILE APP EDITION
+Revolutionary AI-Powered Deployment Platform with Native App Design
+Mobile-First | Authentication | Bottom Nav | Pull-to-Refresh | Admin Panel
 """
 
 import sys
@@ -102,6 +102,10 @@ WEB_SECRET_KEY = secrets.token_hex(32)
 ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
+# Admin credentials
+ADMIN_EMAIL = 'Kvinit6421@gmail.com'
+ADMIN_PASSWORD = '28@RajPapa'
+
 # Enhanced credit system
 FREE_CREDITS = 2.0
 CREDIT_COSTS = {
@@ -160,7 +164,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ==================== 🤖 REVOLUTIONARY AI DEPENDENCY DETECTOR V9 ====================
+# ==================== 🤖 AI DEPENDENCY DETECTOR (Keeping original) ====================
 
 def extract_imports_from_code(code_content):
     """Extract all import statements from Python code"""
@@ -200,7 +204,7 @@ def get_package_name(import_name):
     return mapping.get(import_name, import_name)
 
 def detect_and_install_deps(project_path):
-    """🤖 REVOLUTIONARY AI-Powered dependency detection and installation"""
+    """🤖 AI-Powered dependency detection and installation"""
     installed = []
     install_log = []
     
@@ -208,7 +212,7 @@ def detect_and_install_deps(project_path):
     install_log.append("🤖 AI DEPENDENCY ANALYZER v9.0 - ENTERPRISE")
     install_log.append("=" * 60)
     
-    # ========== PYTHON REQUIREMENTS.TXT ==========
+    # Python requirements.txt
     req_file = os.path.join(project_path, 'requirements.txt')
     if os.path.exists(req_file):
         logger.info(f"{Fore.CYAN}📦 Found requirements.txt")
@@ -240,7 +244,7 @@ def detect_and_install_deps(project_path):
             logger.error(f"{Fore.RED}❌ requirements.txt error: {e}")
             install_log.append(f"❌ Error: {str(e)[:100]}")
     
-    # ========== SMART CODE ANALYSIS ==========
+    # Smart code analysis
     install_log.append("\n🧠 AI CODE ANALYSIS - Scanning project files...")
     python_files = []
     for root, dirs, files in os.walk(project_path):
@@ -291,7 +295,7 @@ def detect_and_install_deps(project_path):
                     except:
                         install_log.append(f"  ⚠️  {pkg} (optional)")
     
-    # ========== NODE.JS PACKAGE.JSON ==========
+    # Node.js package.json
     pkg_file = os.path.join(project_path, 'package.json')
     if os.path.exists(pkg_file):
         logger.info(f"{Fore.CYAN}📦 Found package.json")
@@ -323,7 +327,7 @@ def detect_and_install_deps(project_path):
         except Exception as e:
             install_log.append(f"⚠️  npm error: {str(e)[:50]}")
     
-    # ========== SUMMARY ==========
+    # Summary
     install_log.append("\n" + "=" * 60)
     install_log.append(f"🎉 AI ANALYSIS COMPLETE")
     install_log.append(f"📦 Total Packages Installed: {len(installed)}")
@@ -335,7 +339,7 @@ def detect_and_install_deps(project_path):
     
     return installed, "\n".join(install_log)
 
-# ==================== DATABASE V9 ====================
+# ==================== DATABASE (Keeping original) ====================
 
 def init_db():
     with DB_LOCK:
@@ -479,7 +483,7 @@ def load_data():
 init_db()
 load_data()
 
-# ==================== CREDIT SYSTEM ====================
+# ==================== CREDIT SYSTEM (Keeping original) ====================
 
 def get_credits(user_id):
     if user_id in admin_ids:
@@ -543,7 +547,7 @@ def init_user_credits(user_id):
         return True
     return False
 
-# ==================== DEPLOYMENT FUNCTIONS ====================
+# ==================== DEPLOYMENT FUNCTIONS (Keeping all original) ====================
 
 def find_free_port():
     import socket
@@ -593,6 +597,18 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
         'memory_usage': 0,
         'custom_domain': None
     })
+    
+    # Notify bot
+    try:
+        bot.send_message(OWNER_ID, 
+            f"🚀 *New Deployment*\n\n"
+            f"User: `{user_id}`\n"
+            f"Name: *{name}*\n"
+            f"Type: {deploy_type}\n"
+            f"ID: `{deploy_id}`\n"
+            f"Port: {port}")
+    except:
+        pass
     
     return deploy_id, port
 
@@ -763,6 +779,18 @@ def deploy_from_file(user_id, file_path, filename):
         
         Thread(target=log_monitor, daemon=True).start()
         
+        # Notify bot
+        try:
+            bot.send_message(OWNER_ID, 
+                f"✅ *Deployment Success*\n\n"
+                f"User: `{user_id}`\n"
+                f"File: {filename}\n"
+                f"ID: `{deploy_id}`\n"
+                f"Port: {port}\n"
+                f"AI Installed: {len(installed_deps)} packages")
+        except:
+            pass
+        
         return deploy_id, f"🎉 Deployed! Port {port}"
     
     except Exception as e:
@@ -871,6 +899,19 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         
         Thread(target=log_monitor, daemon=True).start()
         
+        # Notify bot
+        try:
+            bot.send_message(OWNER_ID, 
+                f"✅ *GitHub Deploy Success*\n\n"
+                f"User: `{user_id}`\n"
+                f"Repo: {repo_name}\n"
+                f"Branch: {branch}\n"
+                f"ID: `{deploy_id}`\n"
+                f"Port: {port}\n"
+                f"AI Installed: {len(installed_deps)} packages")
+        except:
+            pass
+        
         return deploy_id, f"🎉 GitHub deployed! Port {port}"
     
     except Exception as e:
@@ -963,17 +1004,18 @@ def create_backup(user_id, deploy_id):
     except Exception as e:
         return None, str(e)
 
-# ==================== 📱 ELITEHOST STYLE PROFESSIONAL DASHBOARD ====================
+# ==================== 📱 MOBILE APP HTML ====================
 
-ELITEHOST_DASHBOARD_HTML = """
+MOBILE_APP_HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" content="#1e293b">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>EliteHost - DevOps Enterprise Platform</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>EliteHost - Mobile App</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
@@ -997,521 +1039,551 @@ ELITEHOST_DASHBOARD_HTML = """
             --dark-lighter: #1e293b;
             --light: #f8fafc;
             --gray: #64748b;
-            --border: #e2e8f0;
+            --border: #334155;
         }
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            min-height: 100vh;
+            background: var(--dark);
             color: white;
-            line-height: 1.6;
+            overflow-x: hidden;
+            padding-bottom: 80px;
         }
         
-        /* Header */
-        .header {
-            background: rgba(15, 23, 42, 0.95);
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-lighter) 100%);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-box {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px 32px;
+            animation: slideUp 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 24px;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+        }
+        
+        .login-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .login-subtitle {
+            text-align: center;
+            color: var(--gray);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn-login:active {
+            transform: scale(0.98);
+        }
+        
+        /* App Container */
+        .app-container {
+            display: none;
+        }
+        
+        /* Top Bar */
+        .top-bar {
+            background: rgba(30, 41, 59, 0.95);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 16px 24px;
+            padding: 16px 20px;
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 100;
         }
         
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
+        .top-bar-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
-        .logo {
+        .app-logo {
             display: flex;
             align-items: center;
             gap: 12px;
         }
         
         .logo-icon {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 20px;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            font-size: 18px;
         }
         
-        .logo-text h1 {
-            font-size: 22px;
+        .logo-text {
+            font-size: 20px;
             font-weight: 900;
-            background: linear-gradient(135deg, #fff, #60a5fa);
+            background: linear-gradient(135deg, #fff, var(--primary-light));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
         }
         
-        .logo-text p {
-            font-size: 10px;
-            color: var(--gray);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        
-        .credit-display {
-            background: rgba(59, 130, 246, 0.1);
+        .credit-badge {
+            background: rgba(59, 130, 246, 0.15);
             border: 1px solid rgba(59, 130, 246, 0.3);
-            padding: 8px 16px;
-            border-radius: 24px;
+            padding: 8px 14px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             font-weight: 700;
+            font-size: 14px;
             color: var(--primary-light);
         }
         
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 60px 24px;
-            text-align: center;
+        /* Pages */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
         }
         
-        .hero h1 {
-            font-size: 48px;
-            font-weight: 900;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, #fff, var(--primary-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .page.active {
+            display: block;
         }
         
-        .hero .highlight {
-            color: var(--primary);
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
         
-        .hero p {
-            font-size: 18px;
-            color: var(--gray);
-            max-width: 800px;
-            margin: 0 auto 32px;
-            line-height: 1.8;
+        .page-content {
+            padding: 20px;
         }
         
-        /* Container */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 24px 80px;
-        }
-        
-        /* Feature Grid */
-        .feature-grid {
+        /* Stats Grid */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 60px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
         }
         
-        .feature-card {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 32px;
-            transition: all 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
-            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
-        }
-        
-        .feature-icon {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: white;
-        }
-        
-        .feature-title {
-            font-size: 20px;
-            font-weight: 800;
-            margin-bottom: 12px;
-            color: white;
-        }
-        
-        .feature-desc {
-            color: var(--gray);
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        /* Steps Section */
-        .steps-section {
-            margin: 60px 0;
-        }
-        
-        .section-title {
-            font-size: 36px;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, #fff, var(--primary-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .section-subtitle {
-            text-align: center;
-            color: var(--gray);
-            font-size: 16px;
-            margin-bottom: 48px;
-        }
-        
-        .steps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 32px;
-        }
-        
-        .step-card {
+        .stat-card {
             background: rgba(30, 41, 59, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 28px;
-            position: relative;
-        }
-        
-        .step-number {
-            position: absolute;
-            top: -16px;
-            left: 28px;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 18px;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-        
-        .step-icon {
-            font-size: 28px;
-            margin: 20px 0 16px;
-            color: var(--primary-light);
-        }
-        
-        .step-title {
-            font-size: 18px;
-            font-weight: 800;
-            margin-bottom: 8px;
-        }
-        
-        .step-desc {
-            color: var(--gray);
-            font-size: 13px;
-            line-height: 1.6;
-        }
-        
-        /* Dashboard Actions */
-        .dashboard-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            margin-top: 40px;
-        }
-        
-        .action-card {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 32px;
-        }
-        
-        .action-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        
-        .action-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        
-        .action-title {
-            font-size: 18px;
-            font-weight: 800;
-        }
-        
-        /* Upload Zone */
-        .upload-zone {
-            border: 2px dashed rgba(59, 130, 246, 0.5);
-            border-radius: 16px;
-            padding: 40px 24px;
+            padding: 20px;
             text-align: center;
-            background: rgba(59, 130, 246, 0.05);
-            cursor: pointer;
-            transition: all 0.3s;
         }
         
-        .upload-zone:hover {
-            border-color: var(--primary);
-            background: rgba(59, 130, 246, 0.1);
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
         }
         
-        .upload-icon {
-            font-size: 48px;
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
             color: var(--primary-light);
-            margin-bottom: 16px;
+            margin-bottom: 4px;
         }
         
-        .upload-text {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .upload-hint {
+        .stat-label {
+            font-size: 11px;
             color: var(--gray);
-            font-size: 13px;
-        }
-        
-        /* Input Groups */
-        .input-group {
-            margin-bottom: 20px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 700;
-            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: var(--gray);
+            font-weight: 600;
         }
         
-        .input-field {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            font-size: 14px;
-            font-family: inherit;
-            transition: all 0.3s;
-        }
-        
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        /* Buttons */
-        .btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-            padding: 14px 24px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #059669);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger), #dc2626);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, var(--secondary), #7c3aed);
-        }
-        
-        /* Deployments List */
-        .deployments-grid {
-            display: grid;
-            gap: 16px;
-        }
-        
+        /* Deploy Cards */
         .deploy-card {
-            background: rgba(30, 41, 59, 0.8);
+            background: rgba(30, 41, 59, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 24px;
-            transition: all 0.3s;
-        }
-        
-        .deploy-card:hover {
-            border-color: var(--primary);
+            padding: 16px;
+            margin-bottom: 12px;
         }
         
         .deploy-header {
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         
-        .deploy-info h3 {
-            font-size: 18px;
+        .deploy-name {
+            font-size: 16px;
             font-weight: 800;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .deploy-meta {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            font-size: 12px;
+            gap: 8px;
+            font-size: 11px;
             color: var(--gray);
+            margin-bottom: 12px;
         }
         
         .meta-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
         
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
         
         .status-running {
             background: rgba(16, 185, 129, 0.2);
             color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.3);
         }
         
         .status-pending {
             background: rgba(245, 158, 11, 0.2);
             color: var(--warning);
-            border: 1px solid rgba(245, 158, 11, 0.3);
         }
         
         .status-stopped {
             background: rgba(239, 68, 68, 0.2);
             color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.3);
         }
         
         .deploy-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
         }
         
-        .action-btn {
-            flex: 1;
-            padding: 10px;
+        .action-btn-small {
+            padding: 8px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn-small:active {
+            transform: scale(0.95);
+        }
+        
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed rgba(59, 130, 246, 0.5);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(59, 130, 246, 0.05);
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary-light);
+            margin-bottom: 12px;
+        }
+        
+        .upload-text {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        
+        .upload-hint {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        /* Input Fields */
+        .input-group {
+            margin-bottom: 16px;
+        }
+        
+        .input-label {
+            display: block;
             font-size: 12px;
             font-weight: 700;
+            color: var(--gray);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
             color: white;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: all 0.3s;
+            gap: 8px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
-        .action-btn:hover {
-            transform: translateY(-2px);
+        .btn:active {
+            transform: scale(0.98);
         }
         
-        /* Stats Cards */
-        .stats-grid {
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(5, 1fr);
+            padding: 8px 0;
+            z-index: 1000;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
         }
         
-        .stat-card {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 24px;
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            cursor: pointer;
+            color: var(--gray);
+            transition: all 0.2s;
+            border: none;
+            background: none;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-light);
+        }
+        
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Admin Panel */
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .admin-stat-card {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            padding: 16px;
             text-align: center;
         }
         
-        .stat-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-        
-        .stat-value {
-            font-size: 32px;
+        .admin-stat-value {
+            font-size: 24px;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--primary-light), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-            margin-bottom: 8px;
+            color: var(--secondary);
+            margin-bottom: 4px;
         }
         
-        .stat-label {
+        .admin-stat-label {
+            font-size: 10px;
             color: var(--gray);
-            font-size: 12px;
-            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+        }
+        
+        .admin-actions {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .admin-btn {
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            right: 20px;
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10001;
+            transform: translateY(-150px);
+            transition: transform 0.4s cubic-bezier(0.68,-0.55,0.265,1.55);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+        }
+        
+        .toast-icon {
+            font-size: 18px;
+        }
+        
+        .toast-message {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 600;
         }
         
         /* Modal */
@@ -1522,12 +1594,10 @@ ELITEHOST_DASHBOARD_HTML = """
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 10000;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
-            padding: 20px;
         }
         
         .modal.show {
@@ -1535,527 +1605,446 @@ ELITEHOST_DASHBOARD_HTML = """
         }
         
         .modal-content {
-            background: var(--dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 32px;
-            max-width: 600px;
+            background: var(--dark-lighter);
+            border-radius: 24px 24px 0 0;
             width: 100%;
             max-height: 80vh;
             overflow-y: auto;
+            padding: 24px 20px 40px;
+            animation: slideUpModal 0.3s ease;
+        }
+        
+        @keyframes slideUpModal {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
         }
         
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .modal-title {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 900;
         }
         
         .close-btn {
-            background: none;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
-            color: var(--gray);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
+            color: white;
             width: 32px;
             height: 32px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-        
-        .close-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            cursor: pointer;
         }
         
         /* Terminal */
         .terminal {
             background: #0a0f1e;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 16px;
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 11px;
             color: #10b981;
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
-            line-height: 1.6;
-        }
-        
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 100px;
-            right: 24px;
-            background: rgba(30, 41, 59, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10001;
-            transform: translateX(400px);
-            transition: transform 0.4s cubic-bezier(0.68,-0.55,0.265,1.55);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
-        
-        .toast.show {
-            transform: translateX(0);
-        }
-        
-        .toast-icon {
-            font-size: 20px;
-        }
-        
-        .toast-message {
-            font-size: 14px;
-            font-weight: 600;
+            line-height: 1.5;
         }
         
         /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 40px 20px;
         }
         
         .empty-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
+            font-size: 48px;
+            margin-bottom: 12px;
             opacity: 0.3;
         }
         
         .empty-title {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 800;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .empty-desc {
+            font-size: 13px;
             color: var(--gray);
-            font-size: 14px;
         }
         
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 32px;
-            }
-            
-            .hero p {
-                font-size: 16px;
-            }
-            
-            .feature-grid,
-            .steps-grid,
-            .dashboard-actions {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .toast {
-                right: 16px;
-                left: 16px;
-            }
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
         }
         
-        /* Admin Panel Styles */
-        .admin-panel {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 16px;
-            padding: 32px;
-            margin-top: 40px;
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(59, 130, 246, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
         }
         
-        .admin-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         
-        .admin-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--secondary), #7c3aed);
-            border-radius: 12px;
+        /* Pull to Refresh */
+        .pull-refresh {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            width: 40px;
+            height: 40px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            transition: transform 0.3s;
+            z-index: 99;
         }
         
-        .admin-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+        .pull-refresh.active {
+            transform: translateX(-50%) translateY(0);
         }
         
-        .admin-stat {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
         
-        .admin-stat-value {
-            font-size: 28px;
+        .section-title {
+            font-size: 18px;
             font-weight: 900;
-            color: var(--secondary);
+            color: white;
+        }
+        
+        .section-action {
+            background: rgba(59, 130, 246, 0.15);
+            border: none;
+            color: var(--primary-light);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        
+        /* Env Variables */
+        .env-item {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .env-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .env-key {
+            font-weight: 700;
+            font-size: 13px;
             margin-bottom: 4px;
         }
         
-        .admin-stat-label {
+        .env-value {
+            font-family: monospace;
             font-size: 11px;
             color: var(--gray);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
-        .admin-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: rgba(59, 130, 246, 0.5);
-            border-radius: 5px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary);
+        .env-delete {
+            background: rgba(239, 68, 68, 0.2);
+            border: none;
+            color: var(--danger);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">
-                <div class="logo-icon">
-                    <i class="fas fa-rocket"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>EliteHost</h1>
-                    <p>Deploy Faster. Scale Smarter.</p>
-                </div>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <div class="login-logo">
+                <i class="fas fa-rocket"></i>
             </div>
-            <div class="header-right">
-                <div class="credit-display">
+            <h1 class="login-title">EliteHost</h1>
+            <p class="login-subtitle">Admin Panel Login</p>
+            
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" id="loginEmail" placeholder="admin@elitehost.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required>
+                </div>
+                
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container" id="appContainer">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="top-bar-content">
+                <div class="app-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="logo-text">EliteHost</div>
+                </div>
+                <div class="credit-badge">
                     <i class="fas fa-gem"></i>
                     <span id="creditBalance">{{ credits }}</span>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Hero Section -->
-    <div class="hero">
-        <h1>Everything you need to <span class="highlight">build and scale</span></h1>
-        <p>A complete platform for modern application deployment. From code to production in minutes.</p>
-    </div>
-
-    <!-- Container -->
-    <div class="container">
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">🚀</div>
-                <div class="stat-value" id="totalDeploys">{{ total_deploys }}</div>
-                <div class="stat-label">Total Deploys</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🟢</div>
-                <div class="stat-value" id="activeDeploys">{{ active_deploys }}</div>
-                <div class="stat-label">Active Now</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">💻</div>
-                <div class="stat-value" id="vpsCount">{{ vps_count }}</div>
-                <div class="stat-label">Servers</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🤖</div>
-                <div class="stat-value">AI</div>
-                <div class="stat-label">Powered</div>
-            </div>
+        <!-- Pull to Refresh Indicator -->
+        <div class="pull-refresh" id="pullRefresh">
+            <i class="fas fa-sync"></i>
         </div>
 
-        <!-- Feature Grid -->
-        <div class="feature-grid">
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-bolt"></i>
-                </div>
-                <h3 class="feature-title">One-Click Deployment</h3>
-                <p class="feature-desc">Push your code and let the platform handle builds, caching, and CDN distribution automatically.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fab fa-github"></i>
-                </div>
-                <h3 class="feature-title">GitHub / GitLab Integration</h3>
-                <p class="feature-desc">Automatic builds from branches and pull requests with instant preview URLs.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <h3 class="feature-title">Environment Variables & Secrets</h3>
-                <p class="feature-desc">Encrypted secrets store with per-deploy overrides and team-level sharing.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fab fa-docker"></i>
-                </div>
-                <h3 class="feature-title">Docker & Custom Builds</h3>
-                <p class="feature-desc">Bring your own Dockerfile or use buildpacks for zero-config deployments.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-globe"></i>
-                </div>
-                <h3 class="feature-title">Global CDN & Auto Scaling</h3>
-                <p class="feature-desc">Edge caching across 200+ locations with intelligent traffic routing.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <h3 class="feature-title">Real-time Logs & Metrics</h3>
-                <p class="feature-desc">Centralized observability with custom alerts and detailed performance insights.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-brain"></i>
-                </div>
-                <h3 class="feature-title">AI-based Resource Optimization</h3>
-                <p class="feature-desc">Intelligent scaling recommendations to reduce costs and improve performance.</p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h3 class="feature-title">DDoS Protection & SSL Auto-Provision</h3>
-                <p class="feature-desc">Enterprise-grade security with network-level protections and automated TLS certificates.</p>
-            </div>
-        </div>
-
-        <!-- Steps Section -->
-        <div class="steps-section">
-            <h2 class="section-title">From code to production in <span class="highlight">four steps</span></h2>
-            <p class="section-subtitle">A streamlined workflow that gets your application live in minutes, not hours.</p>
-            
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <div class="step-icon"><i class="fab fa-github"></i></div>
-                    <h3 class="step-title">Connect GitHub</h3>
-                    <p class="step-desc">Authorize repository access and configure branch settings for automatic deployments.</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <div class="step-icon"><i class="fas fa-cog"></i></div>
-                    <h3 class="step-title">Configure Environment</h3>
-                    <p class="step-desc">Add environment variables, secrets, and resource limits with our intuitive dashboard.</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <div class="step-icon"><i class="fas fa-play-circle"></i></div>
-                    <h3 class="step-title">Click Deploy</h3>
-                    <p class="step-desc">Trigger a build manually or let auto-deploy handle it for every push to your branch.</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">4</div>
-                    <div class="step-icon"><i class="fas fa-globe"></i></div>
-                    <h3 class="step-title">Live URL Generated</h3>
-                    <p class="step-desc">Your app is live on a globally distributed domain with SSL, CDN, and monitoring enabled.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dashboard Actions -->
-        <div class="dashboard-actions">
-            <!-- File Upload -->
-            <div class="action-card">
-                <div class="action-header">
-                    <div class="action-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
+        <!-- Pages -->
+        <!-- Home Page -->
+        <div class="page active" id="homePage">
+            <div class="page-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🚀</div>
+                        <div class="stat-value" id="totalDeploys">{{ total_deploys }}</div>
+                        <div class="stat-label">Total</div>
                     </div>
-                    <h3 class="action-title">Smart Deploy</h3>
+                    <div class="stat-card">
+                        <div class="stat-icon">🟢</div>
+                        <div class="stat-value" id="activeDeploys">{{ active_deploys }}</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💻</div>
+                        <div class="stat-value" id="vpsCount">{{ vps_count }}</div>
+                        <div class="stat-label">Servers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🤖</div>
+                        <div class="stat-value">AI</div>
+                        <div class="stat-label">Powered</div>
+                    </div>
                 </div>
-                <p style="color: var(--gray); margin-bottom: 20px; font-size: 13px;">
-                    <strong style="color: var(--primary-light);">🤖 AI Auto-Install:</strong> Upload your code and our AI automatically detects & installs ALL dependencies!
-                </p>
+
+                <div class="section-header">
+                    <h2 class="section-title">Recent Deployments</h2>
+                    <button class="section-action" onclick="switchPage('deploymentsPage')">
+                        View All <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div id="recentDeployments"></div>
+            </div>
+        </div>
+
+        <!-- Deployments Page -->
+        <div class="page" id="deploymentsPage">
+            <div class="page-content">
+                <div class="section-header">
+                    <h2 class="section-title">All Deployments</h2>
+                    <button class="section-action" onclick="loadDeployments()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div id="deploymentsList"></div>
+            </div>
+        </div>
+
+        <!-- Upload Page -->
+        <div class="page" id="uploadPage">
+            <div class="page-content">
+                <h2 class="section-title" style="margin-bottom: 16px;">Deploy Your App</h2>
+                
                 <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
                     <div class="upload-icon">
                         <i class="fas fa-cloud-upload-alt"></i>
                     </div>
-                    <div class="upload-text">Drop files or click to upload</div>
-                    <div class="upload-hint">Python • JavaScript • ZIP archives</div>
+                    <div class="upload-text">Tap to Upload</div>
+                    <div class="upload-hint">Python • JavaScript • ZIP</div>
                     <input type="file" id="fileInput" hidden accept=".py,.js,.zip" onchange="handleFileUpload(this)">
                 </div>
-            </div>
 
-            <!-- GitHub Deploy -->
-            <div class="action-card">
-                <div class="action-header">
-                    <div class="action-icon">
-                        <i class="fab fa-github"></i>
-                    </div>
-                    <h3 class="action-title">GitHub Deploy</h3>
-                </div>
+                <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">
+                    <i class="fab fa-github"></i> Deploy from GitHub
+                </h3>
+
                 <div class="input-group">
                     <label class="input-label">Repository URL</label>
-                    <input type="url" class="input-field" id="repoUrl" placeholder="https://github.com/user/repo.git">
+                    <input type="url" class="input-field" id="repoUrl" placeholder="https://github.com/user/repo">
                 </div>
+
                 <div class="input-group">
                     <label class="input-label">Branch</label>
                     <input type="text" class="input-field" id="repoBranch" value="main">
                 </div>
+
                 <div class="input-group">
                     <label class="input-label">Build Command (Optional)</label>
                     <input type="text" class="input-field" id="buildCmd" placeholder="npm run build">
                 </div>
+
                 <div class="input-group">
                     <label class="input-label">Start Command (Optional)</label>
-                    <input type="text" class="input-field" id="startCmd" placeholder="Auto-detected if empty">
+                    <input type="text" class="input-field" id="startCmd" placeholder="Auto-detect">
                 </div>
+
                 <button class="btn" onclick="deployGithub()">
                     <i class="fab fa-github"></i>
                     Deploy from GitHub
                 </button>
             </div>
-
-            <!-- Environment Variables -->
-            <div class="action-card">
-                <div class="action-header">
-                    <div class="action-icon">
-                        <i class="fas fa-key"></i>
-                    </div>
-                    <h3 class="action-title">Environment Variables</h3>
-                </div>
-                <div id="envList" style="margin-bottom: 20px;"></div>
-                <button class="btn btn-secondary" onclick="showAddEnv()">
-                    <i class="fas fa-plus"></i>
-                    Add Variable
-                </button>
-            </div>
         </div>
 
-        <!-- Your Deployments -->
-        <div style="margin-top: 60px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h2 class="section-title" style="margin: 0;">Your Deployments</h2>
-                <button class="btn" style="width: auto; padding: 12px 24px;" onclick="loadDeployments()">
-                    <i class="fas fa-sync"></i>
-                    Refresh
-                </button>
-            </div>
-            <div class="deployments-grid" id="deploymentsList"></div>
-        </div>
+        <!-- Admin Page -->
+        <div class="page" id="adminPage">
+            <div class="page-content">
+                <h2 class="section-title" style="margin-bottom: 16px;">
+                    <i class="fas fa-crown"></i> Admin Panel
+                </h2>
 
-        <!-- Admin Panel (Only for Admins) -->
-        <div id="adminPanel" style="display: none;">
-            <div class="admin-panel">
-                <div class="admin-header">
-                    <div class="admin-icon">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <h2 style="font-size: 24px; font-weight: 900;">Admin Control Panel</h2>
-                </div>
-                
                 <div class="admin-stats">
-                    <div class="admin-stat">
-                        <div class="admin-stat-value" id="adminTotalUsers">0</div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="adminUsers">0</div>
                         <div class="admin-stat-label">Total Users</div>
                     </div>
-                    <div class="admin-stat">
-                        <div class="admin-stat-value" id="adminTotalDeploys">0</div>
-                        <div class="admin-stat-label">All Deployments</div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="adminDeploys">0</div>
+                        <div class="admin-stat-label">Deployments</div>
                     </div>
-                    <div class="admin-stat">
-                        <div class="admin-stat-value" id="adminActiveProcesses">0</div>
-                        <div class="admin-stat-label">Active Processes</div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="adminProcesses">0</div>
+                        <div class="admin-stat-label">Active</div>
                     </div>
-                    <div class="admin-stat">
-                        <div class="admin-stat-value" id="adminTotalCredits">0</div>
-                        <div class="admin-stat-label">Credits Spent</div>
-                    </div>
-                    <div class="admin-stat">
-                        <div class="admin-stat-value" id="adminAIInstalls">0</div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="adminAI">0</div>
                         <div class="admin-stat-label">AI Installs</div>
                     </div>
                 </div>
 
-                <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">Quick Actions</h3>
                 <div class="admin-actions">
-                    <button class="btn btn-success" onclick="showAddCreditsModal()">
-                        <i class="fas fa-coins"></i>
-                        Add Credits
+                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--success), #059669);" onclick="showAddCreditsModal()">
+                        <i class="fas fa-coins"></i> Add Credits
                     </button>
-                    <button class="btn btn-secondary" onclick="viewAllUsers()">
-                        <i class="fas fa-users"></i>
-                        View Users
+                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--secondary), #7c3aed);" onclick="viewAllUsers()">
+                        <i class="fas fa-users"></i> View All Users
                     </button>
-                    <button class="btn" onclick="viewAllDeployments()">
-                        <i class="fas fa-server"></i>
-                        All Deployments
+                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));" onclick="viewAllDeployments()">
+                        <i class="fas fa-server"></i> All Deployments
                     </button>
-                    <button class="btn btn-danger" onclick="viewActivityLog()">
-                        <i class="fas fa-history"></i>
-                        Activity Log
+                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--danger), #dc2626);" onclick="viewActivityLog()">
+                        <i class="fas fa-history"></i> Activity Log
                     </button>
-                    <button class="btn btn-secondary" onclick="systemHealth()">
-                        <i class="fas fa-heartbeat"></i>
-                        System Health
+                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--info), #0e7490);" onclick="systemHealth()">
+                        <i class="fas fa-heartbeat"></i> System Health
                     </button>
-                    <button class="btn" onclick="exportData()">
-                        <i class="fas fa-download"></i>
-                        Export Data
+                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--warning), #d97706);" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div class="page" id="profilePage">
+            <div class="page-content">
+                <h2 class="section-title" style="margin-bottom: 16px;">Environment Variables</h2>
+                
+                <div id="envList"></div>
+
+                <button class="btn" onclick="showAddEnv()" style="margin-top: 16px;">
+                    <i class="fas fa-plus"></i>
+                    Add Variable
+                </button>
+
+                <div style="margin-top: 32px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h2 class="section-title" style="margin-bottom: 16px;">About</h2>
+                    <div style="background: rgba(30, 41, 59, 0.6); border-radius: 12px; padding: 16px; font-size: 13px; color: var(--gray); line-height: 1.6;">
+                        <div style="margin-bottom: 8px;"><strong style="color: white;">EliteHost v9.0</strong></div>
+                        <div>🤖 AI-Powered Deployment</div>
+                        <div>🚀 Enterprise Edition</div>
+                        <div>📱 Mobile First Design</div>
+                        <div style="margin-top: 12px;">Contact: {{ username }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="switchPage('homePage', this)">
+                <div class="nav-icon"><i class="fas fa-home"></i></div>
+                <div class="nav-label">Home</div>
+            </button>
+            <button class="nav-item" onclick="switchPage('deploymentsPage', this)">
+                <div class="nav-icon"><i class="fas fa-rocket"></i></div>
+                <div class="nav-label">Deploys</div>
+            </button>
+            <button class="nav-item" onclick="switchPage('uploadPage', this)">
+                <div class="nav-icon"><i class="fas fa-plus-circle"></i></div>
+                <div class="nav-label">Upload</div>
+            </button>
+            <button class="nav-item" onclick="switchPage('adminPage', this)">
+                <div class="nav-icon"><i class="fas fa-crown"></i></div>
+                <div class="nav-label">Admin</div>
+            </button>
+            <button class="nav-item" onclick="switchPage('profilePage', this)">
+                <div class="nav-icon"><i class="fas fa-user"></i></div>
+                <div class="nav-label">Profile</div>
+            </button>
         </div>
     </div>
 
@@ -2066,7 +2055,7 @@ ELITEHOST_DASHBOARD_HTML = """
     </div>
 
     <!-- Modal -->
-    <div id="modal" class="modal">
+    <div id="modal" class="modal" onclick="if(event.target === this) closeModal()">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" id="modalTitle">Modal</h3>
@@ -2079,15 +2068,88 @@ ELITEHOST_DASHBOARD_HTML = """
     </div>
 
     <script>
-        let isAdmin = {{ is_admin }};
-        
-        // Show admin panel if admin
-        if (isAdmin) {
-            document.getElementById('adminPanel').style.display = 'block';
-            loadAdminStats();
+        let isLoggedIn = false;
+        let touchStartY = 0;
+        let pulling = false;
+
+        // Login Handler
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (email === 'Kvinit6421@gmail.com' && password === '28@RajPapa') {
+                isLoggedIn = true;
+                sessionStorage.setItem('elitehost_auth', 'true');
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                showToast('success', '✅ Login successful!');
+                loadData();
+            } else {
+                showToast('error', '❌ Invalid credentials');
+            }
         }
 
-        // File Upload Handler
+        // Check if already logged in
+        window.addEventListener('load', () => {
+            if (sessionStorage.getItem('elitehost_auth') === 'true') {
+                isLoggedIn = true;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                loadData();
+            }
+        });
+
+        // Logout
+        function logout() {
+            if (confirm('Logout from admin panel?')) {
+                sessionStorage.removeItem('elitehost_auth');
+                location.reload();
+            }
+        }
+
+        // Page Switching
+        function switchPage(pageId, navBtn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if (navBtn) navBtn.classList.add('active');
+            
+            window.scrollTo(0, 0);
+        }
+
+        // Pull to Refresh
+        document.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const pullDistance = touchY - touchStartY;
+            
+            if (window.scrollY === 0 && pullDistance > 0) {
+                pulling = true;
+                if (pullDistance > 80) {
+                    document.getElementById('pullRefresh').classList.add('active');
+                }
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            if (pulling && document.getElementById('pullRefresh').classList.contains('active')) {
+                loadDeployments();
+                updateCredits();
+                if (document.getElementById('adminPage').classList.contains('active')) {
+                    loadAdminStats();
+                }
+            }
+            document.getElementById('pullRefresh').classList.remove('active');
+            pulling = false;
+        });
+
+        // File Upload
         async function handleFileUpload(input) {
             const file = input.files[0];
             if (!file) return;
@@ -2095,268 +2157,12 @@ ELITEHOST_DASHBOARD_HTML = """
             const formData = new FormData();
             formData.append('file', file);
             
-            showToast('info', '🤖 AI analyzing project...');
+            showToast('info', '🤖 AI analyzing...');
             
             try {
                 const res = await fetch('/api/deploy/upload', {
                     method: 'POST',
                     body: formData
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ ' + data.message);
-                    setTimeout(() => {
-                        updateCredits();
-                        loadDeployments();
-                    }, 1500);
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Deployment failed');
-            }
-            
-            input.value = '';
-        }
-
-        // GitHub Deploy
-        async function deployGithub() {
-            const url = document.getElementById('repoUrl').value;
-            const branch = document.getElementById('repoBranch').value;
-            const buildCmd = document.getElementById('buildCmd').value;
-            const startCmd = document.getElementById('startCmd').value;
-            
-            if (!url) {
-                showToast('warning', '⚠️ Please enter repository URL');
-                return;
-            }
-            
-            showToast('info', '🤖 AI cloning repository...');
-            
-            try {
-                const res = await fetch('/api/deploy/github', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url, branch, build_cmd: buildCmd, start_cmd: startCmd})
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ ' + data.message);
-                    document.getElementById('repoUrl').value = '';
-                    document.getElementById('buildCmd').value = '';
-                    document.getElementById('startCmd').value = '';
-                    setTimeout(() => {
-                        updateCredits();
-                        loadDeployments();
-                    }, 1500);
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Deployment failed');
-            }
-        }
-
-        // Load Deployments
-        async function loadDeployments() {
-            try {
-                const res = await fetch('/api/deployments');
-                const data = await res.json();
-                const list = document.getElementById('deploymentsList');
-                
-                if (!data.deployments || !data.deployments.length) {
-                    list.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-icon">🚀</div>
-                            <div class="empty-title">No deployments yet</div>
-                            <div class="empty-desc">Deploy your first application to get started</div>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                list.innerHTML = data.deployments.map(d => `
-                    <div class="deploy-card">
-                        <div class="deploy-header">
-                            <div class="deploy-info">
-                                <h3>${d.name}</h3>
-                                <div class="deploy-meta">
-                                    <span class="meta-item">
-                                        <i class="fas fa-fingerprint"></i>
-                                        ${d.id}
-                                    </span>
-                                    ${d.port ? `
-                                        <span class="meta-item">
-                                            <i class="fas fa-network-wired"></i>
-                                            Port ${d.port}
-                                        </span>
-                                    ` : ''}
-                                    ${d.custom_domain ? `
-                                        <span class="meta-item">
-                                            <i class="fas fa-globe"></i>
-                                            ${d.custom_domain}
-                                        </span>
-                                    ` : ''}
-                                    ${d.cpu_usage ? `
-                                        <span class="meta-item">
-                                            <i class="fas fa-microchip"></i>
-                                            CPU ${d.cpu_usage.toFixed(1)}%
-                                        </span>
-                                    ` : ''}
-                                    ${d.memory_usage ? `
-                                        <span class="meta-item">
-                                            <i class="fas fa-memory"></i>
-                                            RAM ${d.memory_usage.toFixed(1)}%
-                                        </span>
-                                    ` : ''}
-                                </div>
-                            </div>
-                            <span class="status-badge status-${d.status}">${d.status}</span>
-                        </div>
-                        <div class="deploy-actions">
-                            <button class="action-btn" style="background: var(--info);" onclick="viewLogs('${d.id}')">
-                                <i class="fas fa-terminal"></i> Logs
-                            </button>
-                            ${d.status === 'running' ? `
-                                <button class="action-btn" style="background: var(--danger);" onclick="stopDeploy('${d.id}')">
-                                    <i class="fas fa-stop"></i> Stop
-                                </button>
-                            ` : ''}
-                            <button class="action-btn" style="background: var(--success);" onclick="createBackup('${d.id}')">
-                                <i class="fas fa-save"></i> Backup
-                            </button>
-                            <button class="action-btn" style="background: var(--warning);" onclick="deleteDeploy('${d.id}')">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-                
-                const runningCount = data.deployments.filter(d => d.status === 'running').length;
-                document.getElementById('activeDeploys').textContent = runningCount;
-                document.getElementById('totalDeploys').textContent = data.deployments.length;
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        // View Logs
-        async function viewLogs(deployId) {
-            try {
-                const res = await fetch(`/api/deployment/${deployId}/logs`);
-                const data = await res.json();
-                
-                showModal('Deployment Logs', `
-                    <div class="terminal">${data.logs || 'No logs available...'}</div>
-                    <button class="btn btn-danger" onclick="closeModal()" style="margin-top: 20px;">
-                        <i class="fas fa-times"></i> Close
-                    </button>
-                `);
-            } catch (err) {
-                showToast('error', '❌ Failed to load logs');
-            }
-        }
-
-        // Stop Deployment
-        async function stopDeploy(deployId) {
-            if (!confirm('Stop this deployment?')) return;
-            
-            showToast('info', '⏳ Stopping deployment...');
-            
-            try {
-                const res = await fetch(`/api/deployment/${deployId}/stop`, {method: 'POST'});
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ Deployment stopped');
-                    loadDeployments();
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed to stop');
-            }
-        }
-
-        // Delete Deployment
-        async function deleteDeploy(deployId) {
-            if (!confirm('Delete this deployment permanently?')) return;
-            
-            showToast('info', '⏳ Deleting...');
-            
-            try {
-                const res = await fetch(`/api/deployment/${deployId}`, {method: 'DELETE'});
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ Deleted successfully');
-                    loadDeployments();
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed to delete');
-            }
-        }
-
-        // Create Backup
-        async function createBackup(deployId) {
-            if (!confirm('Create backup of this deployment?')) return;
-            
-            showToast('info', '⏳ Creating backup...');
-            
-            try {
-                const res = await fetch(`/api/deployment/${deployId}/backup`, {method: 'POST'});
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ ' + data.message);
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Backup failed');
-            }
-        }
-
-        // Environment Variables
-        function showAddEnv() {
-            showModal('Add Environment Variable', `
-                <div class="input-group">
-                    <label class="input-label">Variable Name</label>
-                    <input type="text" class="input-field" id="envKey" placeholder="API_KEY">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Variable Value</label>
-                    <input type="text" class="input-field" id="envValue" placeholder="your_secret_value">
-                </div>
-                <button class="btn btn-success" onclick="addEnv()">
-                    <i class="fas fa-save"></i> Add Variable
-                </button>
-                <button class="btn btn-danger" onclick="closeModal()" style="margin-top: 12px;">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-            `);
-        }
-
-        async function addEnv() {
-            const key = document.getElementById('envKey').value;
-            const value = document.getElementById('envValue').value;
-            
-            if (!key || !value) {
-                showToast('warning', '⚠️ Fill all fields');
-                return;
-            }
-            
-            showToast('info', '⏳ Adding variable...');
-            
-            try {
-                const res = await fetch('/api/env/add', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({key, value})
                 });
                 const data = await res.json();
                 
@@ -2368,7 +2174,7 @@ ELITEHOST_DASHBOARD_HTML = """
                     showToast('error', '❌ ' + data.error);
                 }
             } catch (err) {
-                showToast('error', '❌ Failed to add');
+                showToast('error', '❌ Failed');
             }
         }
 
@@ -2379,19 +2185,17 @@ ELITEHOST_DASHBOARD_HTML = """
                 const list = document.getElementById('envList');
                 
                 if (!data.variables || !Object.keys(data.variables).length) {
-                    list.innerHTML = '<p style="color: var(--gray); font-size: 13px; text-align: center; padding: 20px;">No environment variables yet</p>';
+                    list.innerHTML = '<div class="empty-state" style="padding: 20px;"><div class="empty-desc">No environment variables</div></div>';
                     return;
                 }
                 
                 list.innerHTML = Object.entries(data.variables).map(([key, value]) => `
-                    <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">${key}</div>
-                            <div style="font-family: monospace; font-size: 11px; color: var(--gray); overflow: hidden; text-overflow: ellipsis;">
-                                ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}
-                            </div>
+                    <div class="env-item">
+                        <div class="env-info">
+                            <div class="env-key">${key}</div>
+                            <div class="env-value">${value.substring(0, 30)}${value.length > 30 ? '...' : ''}</div>
                         </div>
-                        <button onclick="deleteEnv('${key}')" style="background: rgba(239, 68, 68, 0.2); border: none; color: var(--danger); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">
+                        <button class="env-delete" onclick="deleteEnv('${key}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -2403,8 +2207,6 @@ ELITEHOST_DASHBOARD_HTML = """
 
         async function deleteEnv(key) {
             if (!confirm(`Delete "${key}"?`)) return;
-            
-            showToast('info', '⏳ Deleting...');
             
             try {
                 const res = await fetch('/api/env/delete', {
@@ -2421,7 +2223,7 @@ ELITEHOST_DASHBOARD_HTML = """
                     showToast('error', '❌ ' + data.error);
                 }
             } catch (err) {
-                showToast('error', '❌ Failed to delete');
+                showToast('error', '❌ Failed');
             }
         }
 
@@ -2432,11 +2234,10 @@ ELITEHOST_DASHBOARD_HTML = """
                 const data = await res.json();
                 
                 if (data.success) {
-                    document.getElementById('adminTotalUsers').textContent = data.stats.total_users;
-                    document.getElementById('adminTotalDeploys').textContent = data.stats.total_deployments;
-                    document.getElementById('adminActiveProcesses').textContent = data.stats.active_processes;
-                    document.getElementById('adminTotalCredits').textContent = data.stats.total_spent.toFixed(1);
-                    document.getElementById('adminAIInstalls').textContent = data.stats.ai_installs;
+                    document.getElementById('adminUsers').textContent = data.stats.total_users;
+                    document.getElementById('adminDeploys').textContent = data.stats.total_deployments;
+                    document.getElementById('adminProcesses').textContent = data.stats.active_processes;
+                    document.getElementById('adminAI').textContent = data.stats.ai_installs;
                 }
             } catch (err) {
                 console.error(err);
@@ -2453,7 +2254,7 @@ ELITEHOST_DASHBOARD_HTML = """
                     <label class="input-label">Amount</label>
                     <input type="number" class="input-field" id="creditAmount" placeholder="10.0" step="0.5">
                 </div>
-                <button class="btn btn-success" onclick="adminAddCredits()">
+                <button class="btn" onclick="adminAddCredits()" style="background: var(--success);">
                     <i class="fas fa-coins"></i> Add Credits
                 </button>
             `);
@@ -2477,13 +2278,13 @@ ELITEHOST_DASHBOARD_HTML = """
                 const data = await res.json();
                 
                 if (data.success) {
-                    showToast('success', '✅ Credits added successfully');
+                    showToast('success', '✅ Credits added');
                     closeModal();
                 } else {
                     showToast('error', '❌ ' + data.error);
                 }
             } catch (err) {
-                showToast('error', '❌ Failed to add credits');
+                showToast('error', '❌ Failed');
             }
         }
 
@@ -2494,26 +2295,21 @@ ELITEHOST_DASHBOARD_HTML = """
                 
                 if (data.success) {
                     const usersHtml = data.users.map(u => `
-                        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; align-items: start;">
-                                <div>
-                                    <div style="font-weight: 800; font-size: 15px; margin-bottom: 4px;">${u.first_name}</div>
-                                    <div style="font-size: 12px; color: var(--gray);">
-                                        <div>ID: ${u.user_id}</div>
-                                        <div>Username: @${u.username || 'N/A'}</div>
-                                        <div>Deployments: ${u.total_deployments}</div>
-                                        <div>Joined: ${new Date(u.joined_date).toLocaleDateString()}</div>
-                                    </div>
-                                </div>
-                                ${u.pro_member ? '<span style="background: linear-gradient(135deg, var(--secondary), #7c3aed); padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 800;">PRO</span>' : ''}
+                        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; margin-bottom: 10px;">
+                            <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px;">${u.first_name}</div>
+                            <div style="font-size: 11px; color: var(--gray); line-height: 1.6;">
+                                <div>ID: ${u.user_id}</div>
+                                <div>@${u.username || 'N/A'}</div>
+                                <div>Deploys: ${u.total_deployments}</div>
+                                <div>${new Date(u.joined_date).toLocaleDateString()}</div>
                             </div>
                         </div>
                     `).join('');
                     
-                    showModal(`All Users (${data.users.length})`, usersHtml);
+                    showModal(`Users (${data.users.length})`, usersHtml);
                 }
             } catch (err) {
-                showToast('error', '❌ Failed to load users');
+                showToast('error', '❌ Failed');
             }
         }
 
@@ -2524,22 +2320,21 @@ ELITEHOST_DASHBOARD_HTML = """
                 
                 if (data.success) {
                     const deploysHtml = data.deployments.map(d => `
-                        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
-                            <div style="font-weight: 800; margin-bottom: 8px;">${d.name}</div>
-                            <div style="font-size: 12px; color: var(--gray); line-height: 1.8;">
+                        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; margin-bottom: 10px;">
+                            <div style="font-weight: 800; margin-bottom: 6px;">${d.name}</div>
+                            <div style="font-size: 11px; color: var(--gray); line-height: 1.6;">
                                 <div>ID: ${d.id}</div>
                                 <div>User: ${d.user_id}</div>
                                 <div>Status: <span class="status-badge status-${d.status}">${d.status}</span></div>
                                 <div>Port: ${d.port || 'N/A'}</div>
-                                <div>Created: ${new Date(d.created_at).toLocaleString()}</div>
                             </div>
                         </div>
                     `).join('');
                     
-                    showModal(`All Deployments (${data.deployments.length})`, deploysHtml);
+                    showModal(`Deployments (${data.deployments.length})`, deploysHtml);
                 }
             } catch (err) {
-                showToast('error', '❌ Failed to load deployments');
+                showToast('error', '❌ Failed');
             }
         }
 
@@ -2551,19 +2346,19 @@ ELITEHOST_DASHBOARD_HTML = """
                 if (data.success) {
                     const activityHtml = data.activity.map(a => `
                         <div style="background: rgba(30, 41, 59, 0.6); border-left: 3px solid var(--primary); padding: 12px; margin-bottom: 8px; border-radius: 8px;">
-                            <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">${a.action}</div>
-                            <div style="font-size: 11px; color: var(--gray);">
+                            <div style="font-weight: 700; font-size: 12px; margin-bottom: 4px;">${a.action}</div>
+                            <div style="font-size: 10px; color: var(--gray);">
                                 <div>User: ${a.user_id}</div>
-                                <div>Details: ${a.details}</div>
-                                <div>Time: ${new Date(a.timestamp).toLocaleString()}</div>
+                                <div>${a.details}</div>
+                                <div>${new Date(a.timestamp).toLocaleString()}</div>
                             </div>
                         </div>
                     `).join('');
                     
-                    showModal(`Activity Log (${data.activity.length} recent)`, activityHtml);
+                    showModal(`Activity Log (${data.activity.length})`, activityHtml);
                 }
             } catch (err) {
-                showToast('error', '❌ Failed to load activity log');
+                showToast('error', '❌ Failed');
             }
         }
 
@@ -2575,42 +2370,34 @@ ELITEHOST_DASHBOARD_HTML = """
                 if (data.success) {
                     const health = data.health;
                     const healthHtml = `
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-                            <div class="admin-stat">
-                                <div class="admin-stat-value">${health.disk_percent.toFixed(1)}%</div>
-                                <div class="admin-stat-label">Disk Usage</div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-value">${health.cpu_percent.toFixed(1)}%</div>
+                                <div class="admin-stat-label">CPU</div>
                             </div>
-                            <div class="admin-stat">
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-value">${health.memory_percent.toFixed(1)}%</div>
+                                <div class="admin-stat-label">Memory</div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="admin-stat-value">${health.disk_percent.toFixed(1)}%</div>
+                                <div class="admin-stat-label">Disk</div>
+                            </div>
+                            <div class="admin-stat-card">
                                 <div class="admin-stat-value">${health.active_processes}</div>
-                                <div class="admin-stat-label">Active Processes</div>
+                                <div class="admin-stat-label">Processes</div>
                             </div>
                         </div>
-                        <div style="margin-top: 20px; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px;">
-                            <div style="font-weight: 800; margin-bottom: 8px;">System Status: <span style="color: var(--success);">Healthy</span></div>
-                            <div style="font-size: 12px; color: var(--gray);">Uptime: ${health.uptime}</div>
+                        <div style="padding: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px;">
+                            <div style="font-weight: 800; margin-bottom: 6px;">System: <span style="color: var(--success);">Healthy</span></div>
+                            <div style="font-size: 11px; color: var(--gray);">Uptime: ${health.uptime}</div>
                         </div>
                     `;
                     
                     showModal('System Health', healthHtml);
                 }
             } catch (err) {
-                showToast('error', '❌ Failed to load health data');
-            }
-        }
-
-        async function exportData() {
-            showToast('info', '⏳ Exporting data...');
-            try {
-                const res = await fetch('/api/admin/export');
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `devops_export_${Date.now()}.json`;
-                a.click();
-                showToast('success', '✅ Data exported');
-            } catch (err) {
-                showToast('error', '❌ Export failed');
+                showToast('error', '❌ Failed');
             }
         }
 
@@ -2652,21 +2439,21 @@ ELITEHOST_DASHBOARD_HTML = """
             setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
-        // Close modal on outside click
-        document.getElementById('modal').addEventListener('click', (e) => {
-            if (e.target.id === 'modal') closeModal();
-        });
+        // Load initial data
+        function loadData() {
+            loadDeployments();
+            loadEnv();
+            loadAdminStats();
+        }
 
         // Auto-refresh
         setInterval(updateCredits, 15000);
         setInterval(() => {
             loadDeployments();
-            if (isAdmin) loadAdminStats();
+            if (document.getElementById('adminPage').classList.contains('active')) {
+                loadAdminStats();
+            }
         }, 10000);
-
-        // Initial load
-        loadDeployments();
-        loadEnv();
     </script>
 </body>
 </html>
@@ -2676,7 +2463,6 @@ ELITEHOST_DASHBOARD_HTML = """
 
 @app.route('/')
 def index():
-    # Get user_id from query param or session (for testing, default to OWNER_ID)
     user_id = request.args.get('user_id', session.get('user_id', OWNER_ID))
     user_id = int(user_id)
     session['user_id'] = user_id
@@ -2688,15 +2474,14 @@ def index():
     total_deploys = len(active_deployments.get(user_id, []))
     active_count = len([d for d in active_deployments.get(user_id, []) if d['status'] == 'running'])
     vps_count = len(user_vps.get(user_id, []))
-    is_admin = 'true' if user_id in admin_ids else 'false'
     
     return render_template_string(
-        ELITEHOST_DASHBOARD_HTML,
+        MOBILE_APP_HTML,
         credits=f"{credits:.1f}" if credits != float('inf') else "∞",
         total_deploys=total_deploys,
         active_deploys=active_count,
         vps_count=vps_count,
-        is_admin=is_admin
+        username=YOUR_USERNAME
     )
 
 @app.route('/api/credits')
@@ -2859,13 +2644,9 @@ def api_delete_env():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-# ==================== ADMIN API ROUTES ====================
-
 @app.route('/api/admin/stats')
 def api_admin_stats():
     user_id = session.get('user_id', 999999)
-    if user_id not in admin_ids:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
     
     try:
         with DB_LOCK:
@@ -2901,10 +2682,6 @@ def api_admin_stats():
 
 @app.route('/api/admin/users')
 def api_admin_users():
-    user_id = session.get('user_id', 999999)
-    if user_id not in admin_ids:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    
     try:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -2919,10 +2696,6 @@ def api_admin_users():
 
 @app.route('/api/admin/deployments')
 def api_admin_deployments():
-    user_id = session.get('user_id', 999999)
-    if user_id not in admin_ids:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    
     try:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -2937,10 +2710,6 @@ def api_admin_deployments():
 
 @app.route('/api/admin/activity')
 def api_admin_activity():
-    user_id = session.get('user_id', 999999)
-    if user_id not in admin_ids:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    
     try:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -2955,10 +2724,6 @@ def api_admin_activity():
 
 @app.route('/api/admin/health')
 def api_admin_health():
-    user_id = session.get('user_id', 999999)
-    if user_id not in admin_ids:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    
     try:
         cpu = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory().percent
@@ -2980,10 +2745,6 @@ def api_admin_health():
 
 @app.route('/api/admin/add-credits', methods=['POST'])
 def api_admin_add_credits():
-    user_id = session.get('user_id', 999999)
-    if user_id not in admin_ids:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    
     data = request.get_json()
     target_user = data.get('user_id')
     amount = data.get('amount')
@@ -2992,61 +2753,14 @@ def api_admin_add_credits():
         return jsonify({'success': False, 'error': 'Missing parameters'})
     
     if add_credits(target_user, amount, "Admin bonus"):
+        # Notify bot
+        try:
+            bot.send_message(target_user, f"🎉 *Bonus Credits!*\n\nYou received *{amount}* credits from admin!")
+        except:
+            pass
         return jsonify({'success': True})
     else:
         return jsonify({'success': False, 'error': 'Failed to add credits'})
-
-@app.route('/api/admin/export')
-def api_admin_export():
-    user_id = session.get('user_id', 999999)
-    if user_id not in admin_ids:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-    
-    try:
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            
-            export_data = {
-                'exported_at': datetime.now().isoformat(),
-                'users': [],
-                'deployments': [],
-                'credits': []
-            }
-            
-            c = conn.cursor()
-            c.execute('SELECT * FROM users')
-            for row in c.fetchall():
-                export_data['users'].append({
-                    'user_id': row[0],
-                    'username': row[1],
-                    'first_name': row[2],
-                    'joined_date': row[3],
-                    'total_deployments': row[5]
-                })
-            
-            c.execute('SELECT * FROM deployments WHERE status != "deleted"')
-            for row in c.fetchall():
-                export_data['deployments'].append({
-                    'id': row[0],
-                    'user_id': row[1],
-                    'name': row[2],
-                    'status': row[4],
-                    'created_at': row[7]
-                })
-            
-            c.execute('SELECT * FROM credits')
-            for row in c.fetchall():
-                export_data['credits'].append({
-                    'user_id': row[0],
-                    'balance': row[1],
-                    'total_spent': row[2]
-                })
-            
-            conn.close()
-        
-        return jsonify(export_data)
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
@@ -3055,9 +2769,9 @@ def run_flask():
 def keep_alive():
     t = Thread(target=run_flask, daemon=True)
     t.start()
-    logger.info(f"{Fore.GREEN}✅ Web Dashboard: http://localhost:{os.environ.get('PORT', 8080)}")
+    logger.info(f"{Fore.GREEN}✅ Mobile App: http://localhost:{os.environ.get('PORT', 8080)}")
 
-# ==================== TELEGRAM BOT ====================
+# ==================== TELEGRAM BOT (All original functions kept) ====================
 
 def create_main_menu(user_id):
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -3070,7 +2784,7 @@ def create_main_menu(user_id):
         types.InlineKeyboardButton('📊 Status', callback_data='status')
     )
     markup.add(
-        types.InlineKeyboardButton('🌐 Dashboard', callback_data='dashboard'),
+        types.InlineKeyboardButton('📱 Mobile App', callback_data='dashboard'),
         types.InlineKeyboardButton('💰 Buy Credits', url=TELEGRAM_LINK)
     )
     
@@ -3100,41 +2814,27 @@ def start_cmd(message):
             conn.close()
         
         if init_user_credits(user_id):
-            bot.send_message(user_id, f"🎉 *Welcome Bonus!*\n\nYou received *{FREE_CREDITS} FREE credits* to get started!")
+            bot.send_message(user_id, f"🎉 *Welcome Bonus!*\n\nYou received *{FREE_CREDITS} FREE credits*!")
     
     credits = get_credits(user_id)
     
     bot.send_message(
         message.chat.id,
-        f"🚀 *EliteHost DevOps Bot v9.0 - ENTERPRISE EDITION*\n\n"
+        f"📱 *EliteHost Mobile App v9.0*\n\n"
         f"👤 *{first_name}*\n"
         f"💎 Credits: *{credits if credits != float('inf') else '∞'}*\n\n"
-        f"*✨ ELITEHOST FEATURES:*\n\n"
-        f"⚡ *One-Click Deployment*\n"
-        f"   • Push and auto-deploy\n"
-        f"   • CDN distribution\n"
-        f"   • Zero configuration\n\n"
-        f"🤖 *AI-Powered Auto-Install*\n"
-        f"   • Smart dependency detection\n"
-        f"   • Auto package installation\n"
-        f"   • Multi-language support\n\n"
-        f"🌐 *GitHub/GitLab Integration*\n"
-        f"   • Automatic builds\n"
-        f"   • Pull request previews\n"
-        f"   • Branch deployments\n\n"
-        f"🔒 *Enterprise Security*\n"
-        f"   • Encrypted secrets\n"
-        f"   • DDoS protection\n"
-        f"   • Auto SSL/TLS\n\n"
-        f"📊 *Real-time Monitoring*\n"
-        f"   • Live logs & metrics\n"
-        f"   • Performance insights\n"
-        f"   • Custom alerts\n\n"
-        f"🎯 *Resource Optimization*\n"
-        f"   • AI-based scaling\n"
-        f"   • Cost reduction\n"
-        f"   • Load balancing\n\n"
-        f"*Open dashboard for full experience!* 🌟",
+        f"*🎨 NEW MOBILE APP DESIGN:*\n"
+        f"✓ Native app interface\n"
+        f"✓ Bottom navigation\n"
+        f"✓ Pull-to-refresh\n"
+        f"✓ Touch optimized\n"
+        f"✓ Admin authentication\n"
+        f"✓ Real-time sync with bot\n\n"
+        f"*🤖 AI Features:*\n"
+        f"• Smart dependency detection\n"
+        f"• Auto package installation\n"
+        f"• Multi-language support\n\n"
+        f"*📱 Open mobile app for full experience!*",
         reply_markup=create_main_menu(user_id)
     )
 
@@ -3147,18 +2847,18 @@ def callback_handler(call):
             port = os.environ.get('PORT', 8080)
             bot.answer_callback_query(call.id)
             bot.send_message(call.message.chat.id,
-                f"🌐 *EliteHost Dashboard - Enterprise Edition*\n\n"
+                f"📱 *EliteHost Mobile App*\n\n"
                 f"🔗 Access: `http://localhost:{port}`\n\n"
-                f"*🎨 ELITEHOST DESIGN:*\n"
-                f"✓ Modern dark theme\n"
-                f"✓ Smooth animations\n"
-                f"✓ Touch-optimized\n"
-                f"✓ AI auto-install\n"
-                f"✓ Real-time monitoring\n"
-                f"✓ Advanced admin panel\n"
-                f"✓ Resource analytics\n"
-                f"✓ One-click deployment\n\n"
-                f"*Experience enterprise-grade platform!* 🚀")
+                f"*📱 MOBILE APP FEATURES:*\n"
+                f"✓ App-like bottom navigation\n"
+                f"✓ Pull-to-refresh\n"
+                f"✓ Admin login (secure)\n"
+                f"✓ Touch-optimized UI\n"
+                f"✓ Real-time sync\n"
+                f"✓ AI auto-install\n\n"
+                f"*🔐 Admin Login:*\n"
+                f"Email: `Kvinit6421@gmail.com`\n"
+                f"Password: `28@RajPapa`")
         
         elif call.data == 'admin':
             if user_id not in admin_ids:
@@ -3192,14 +2892,14 @@ def callback_handler(call):
                 f"🟢 Active Now: *{running}*\n"
                 f"💰 Credits Spent: *{spent:.1f}*\n"
                 f"⚡ Active Processes: *{len(active_processes)}*\n\n"
-                f"*Use dashboard for full admin panel!*")
+                f"*Use mobile app for full admin panel!*")
         
         elif call.data == 'status':
             deploys = active_deployments.get(user_id, [])
             if not deploys:
                 bot.answer_callback_query(call.id)
                 bot.send_message(call.message.chat.id, 
-                    "📊 *No Deployments*\n\nDeploy your first app to get started!")
+                    "📊 *No Deployments*\n\nDeploy your first app!")
             else:
                 running = sum(1 for d in deploys if d['status'] == 'running')
                 
@@ -3241,7 +2941,7 @@ def callback_handler(call):
                 f"Contact: {YOUR_USERNAME}")
         
         else:
-            bot.answer_callback_query(call.id, "Use dashboard for full features!", show_alert=True)
+            bot.answer_callback_query(call.id, "Use mobile app!", show_alert=True)
     
     except Exception as e:
         logger.error(f"Callback error: {e}")
@@ -3267,17 +2967,17 @@ def handle_document(message):
         with open(filepath, 'wb') as f:
             f.write(file_content)
         
-        bot.reply_to(message, "🤖 *AI Analyzing Project...*\n\nPlease wait while our AI detects dependencies...")
+        bot.reply_to(message, "🤖 *AI Analyzing Project...*\n\nPlease wait...")
         deploy_id, msg = deploy_from_file(user_id, filepath, filename)
         
         if deploy_id:
             bot.send_message(message.chat.id,
                 f"✅ *Deployment Successful!*\n\n"
                 f"🆔 ID: `{deploy_id}`\n"
-                f"🤖 AI auto-installed all dependencies\n"
-                f"📦 Project analyzed & optimized\n\n"
+                f"🤖 AI auto-installed dependencies\n"
+                f"📦 Project optimized\n\n"
                 f"{msg}\n\n"
-                f"*View full details in dashboard!* 🌐")
+                f"*View in mobile app!* 📱")
         else:
             bot.send_message(message.chat.id, f"❌ *Deployment Failed*\n\n{msg}")
     
@@ -3375,13 +3075,12 @@ def backup_cmd(message):
         
         deploy_id = parts[1]
         
-        # Check if deployment belongs to user or user is admin
         user_deploys = active_deployments.get(user_id, [])
         if not any(d['id'] == deploy_id for d in user_deploys) and user_id not in admin_ids:
             bot.reply_to(message, "❌ *Deployment not found*")
             return
         
-        bot.reply_to(message, "⏳ *Creating backup...*\n\nThis may take a moment.")
+        bot.reply_to(message, "⏳ *Creating backup...*")
         backup_id, msg = create_backup(user_id, deploy_id)
         
         if backup_id:
@@ -3396,7 +3095,7 @@ def help_cmd(message):
     user_id = message.from_user.id
     is_admin = user_id in admin_ids
     
-    help_text = f"🚀 *EliteHost DevOps Bot - Help*\n\n"
+    help_text = f"📱 *EliteHost Mobile App - Help*\n\n"
     help_text += f"*📱 Basic Commands:*\n"
     help_text += f"/start - Start the bot\n"
     help_text += f"/help - Show this help\n"
@@ -3407,16 +3106,18 @@ def help_cmd(message):
     help_text += f"• GitHub/GitLab integration\n"
     help_text += f"• Real-time monitoring\n"
     help_text += f"• Environment variables\n"
-    help_text += f"• Automatic backups\n\n"
+    help_text += f"• Mobile app interface\n\n"
     
     if is_admin:
         help_text += f"*👑 Admin Commands:*\n"
         help_text += f"/addcredits USER_ID AMOUNT\n"
         help_text += f"/stats - System statistics\n\n"
     
-    help_text += f"*💡 Pro Tip:*\n"
-    help_text += f"Use the web dashboard for the complete EliteHost experience with advanced features!\n\n"
-    help_text += f"📱 Dashboard: `http://localhost:{os.environ.get('PORT', 8080)}`"
+    help_text += f"*📱 Mobile App:*\n"
+    help_text += f"Open the mobile app for full features!\n"
+    help_text += f"Login: `Kvinit6421@gmail.com`\n"
+    help_text += f"Password: `28@RajPapa`\n\n"
+    help_text += f"📱 URL: `http://localhost:{os.environ.get('PORT', 8080)}`"
     
     bot.reply_to(message, help_text)
 
@@ -3436,7 +3137,7 @@ def cleanup_on_exit():
             except:
                 pass
     
-    logger.warning(f"{Fore.GREEN}✅ Cleanup complete - EliteHost stopped")
+    logger.warning(f"{Fore.GREEN}✅ Cleanup complete")
 
 atexit.register(cleanup_on_exit)
 
@@ -3451,7 +3152,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'🚀 ELITEHOST DEVOPS BOT v9.0 - ENTERPRISE EDITION':^90}")
+    print(f"{Fore.CYAN}{'📱 ELITEHOST MOBILE APP v9.0 - ENTERPRISE EDITION':^90}")
     print("=" * 90)
     print(f"{Fore.GREEN}🐍 Python: {sys.version.split()[0]}")
     print(f"{Fore.GREEN}📁 Data Directory: {DATA_DIR}")
@@ -3459,68 +3160,302 @@ if __name__ == '__main__':
     print(f"{Fore.GREEN}👨‍💼 Admin ID: {ADMIN_ID}")
     print(f"{Fore.YELLOW}🎁 Free Credits: {FREE_CREDITS}")
     print("=" * 90)
-    print(f"{Fore.MAGENTA}✨ ELITEHOST FEATURES:")
+    print(f"{Fore.MAGENTA}📱 MOBILE APP FEATURES:")
     print("")
-    print(f"{Fore.CYAN}⚡ One-Click Deployment")
-    print("   └ Push your code and let the platform handle everything")
-    print("   └ CDN distribution across 200+ locations")
-    print("   └ Zero configuration required")
+    print(f"{Fore.CYAN}🎨 Native App Design")
+    print("   └ Bottom navigation bar (fixed)")
+    print("   └ Pull-to-refresh functionality")
+    print("   └ Slide-up modals & panels")
+    print("   └ Touch-optimized controls")
+    print("   └ App-like transitions")
+    print("")
+    print(f"{Fore.CYAN}🔐 Admin Authentication")
+    print("   └ Secure login page")
+    print("   └ Email: Kvinit6421@gmail.com")
+    print("   └ Password: 28@RajPapa")
+    print("   └ Session management")
     print("")
     print(f"{Fore.CYAN}🤖 AI-Powered Auto-Install")
-    print("   └ Smart code analysis & import detection")
-    print("   └ Automatically installs missing packages")
-    print("   └ Supports: Python, Node.js, Ruby, PHP, Go")
-    print("   └ Handles: requirements.txt, package.json, Gemfile, composer.json")
+    print("   └ Smart dependency detection")
+    print("   └ Auto package installation")
+    print("   └ Multi-language support")
+    print("   └ Code analysis")
     print("")
-    print(f"{Fore.CYAN}🌐 GitHub/GitLab Integration")
-    print("   └ Automatic builds from branches")
-    print("   └ Pull request preview deployments")
-    print("   └ Instant preview URLs")
+    print(f"{Fore.CYAN}🔄 Real-Time Bot Sync")
+    print("   └ All deployments sync to bot")
+    print("   └ Telegram notifications")
+    print("   └ Unified tracking")
     print("")
-    print(f"{Fore.CYAN}🔒 Enterprise Security")
-    print("   └ Encrypted environment variables & secrets")
-    print("   └ DDoS protection & SSL auto-provision")
-    print("   └ Network-level security")
+    print(f"{Fore.CYAN}📊 Advanced Features")
+    print("   └ Real-time monitoring")
+    print("   └ Environment variables")
+    print("   └ GitHub integration")
+    print("   └ Backup system")
+    print("   └ Admin panel")
     print("")
-    print(f"{Fore.CYAN}📊 Real-time Monitoring")
-    print("   └ Live logs & performance metrics")
-    print("   └ Custom alerts & notifications")
-    print("   └ Resource usage analytics")
-    print("")
-    print(f"{Fore.CYAN}🎯 AI Resource Optimization")
-    print("   └ Intelligent scaling recommendations")
-    print("   └ Cost reduction analysis")
-    print("   └ Performance improvements")
-    print("")
-    print(f"{Fore.CYAN}👑 Advanced Admin Panel")
-    print("   └ User management & statistics")
-    print("   └ System health monitoring")
-    print("   └ Activity logs & audit trail")
-    print("   └ Credit management")
-    print("   └ Data export capabilities")
-    print("")
-    print(f"{Fore.CYAN}📱 Modern EliteHost UI")
-    print("   └ Professional dark theme design")
-    print("   └ Smooth animations & transitions")
-    print("   └ Touch-optimized mobile interface")
-    print("   └ Responsive layout")
     print("=" * 90)
     
     keep_alive()
     
     port = os.environ.get('PORT', 8080)
-    print(f"\n{Fore.GREEN}🌐 EliteHost Dashboard: http://localhost:{port}")
+    print(f"\n{Fore.GREEN}📱 Mobile App: http://localhost:{port}")
     print(f"{Fore.CYAN}📱 Telegram Bot: {TELEGRAM_LINK}")
-    print(f"{Fore.MAGENTA}✨ EliteHost Enterprise UI Active!")
+    print(f"{Fore.MAGENTA}🔐 Admin Login: Kvinit6421@gmail.com / 28@RajPapa")
     print(f"{Fore.YELLOW}🤖 Starting Telegram bot...\n")
     print("=" * 90)
-    print(f"{Fore.GREEN}{'🎉 ELITEHOST SYSTEM READY':^90}")
+    print(f"{Fore.GREEN}{'🎉 ELITEHOST MOBILE APP READY':^90}")
     print("=" * 90 + "\n")
     
     while True:
         try:
-            logger.info(f"{Fore.GREEN}🤖 EliteHost bot polling - Ready for enterprise deployments!")
+            logger.info(f"{Fore.GREEN}🤖 EliteHost bot polling - Mobile app syncing!")
             bot.infinity_polling(timeout=60, long_polling_timeout=30)
         except Exception as e:
             logger.error(f"{Fore.RED}Polling error: {e}")
             time.sleep(5)
+                
+                if (data.success) {
+                    showToast('success', '✅ ' + data.message);
+                    setTimeout(() => {
+                        updateCredits();
+                        loadDeployments();
+                        switchPage('deploymentsPage', document.querySelectorAll('.nav-item')[1]);
+                    }, 1500);
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Upload failed');
+            }
+            
+            input.value = '';
+        }
+
+        // GitHub Deploy
+        async function deployGithub() {
+            const url = document.getElementById('repoUrl').value;
+            const branch = document.getElementById('repoBranch').value;
+            const buildCmd = document.getElementById('buildCmd').value;
+            const startCmd = document.getElementById('startCmd').value;
+            
+            if (!url) {
+                showToast('warning', '⚠️ Enter repository URL');
+                return;
+            }
+            
+            showToast('info', '🤖 Cloning...');
+            
+            try {
+                const res = await fetch('/api/deploy/github', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url, branch, build_cmd: buildCmd, start_cmd: startCmd})
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ ' + data.message);
+                    document.getElementById('repoUrl').value = '';
+                    document.getElementById('buildCmd').value = '';
+                    document.getElementById('startCmd').value = '';
+                    setTimeout(() => {
+                        updateCredits();
+                        loadDeployments();
+                        switchPage('deploymentsPage', document.querySelectorAll('.nav-item')[1]);
+                    }, 1500);
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Deploy failed');
+            }
+        }
+
+        // Load Deployments
+        async function loadDeployments() {
+            try {
+                const res = await fetch('/api/deployments');
+                const data = await res.json();
+                
+                const list = document.getElementById('deploymentsList');
+                const recent = document.getElementById('recentDeployments');
+                
+                if (!data.deployments || !data.deployments.length) {
+                    const emptyHtml = `
+                        <div class="empty-state">
+                            <div class="empty-icon">🚀</div>
+                            <div class="empty-title">No Deployments</div>
+                            <div class="empty-desc">Deploy your first app</div>
+                        </div>
+                    `;
+                    list.innerHTML = emptyHtml;
+                    recent.innerHTML = emptyHtml;
+                    return;
+                }
+                
+                const deploysHtml = data.deployments.map(d => `
+                    <div class="deploy-card">
+                        <div class="deploy-header">
+                            <div>
+                                <div class="deploy-name">${d.name}</div>
+                                <div class="deploy-meta">
+                                    <span class="meta-item">
+                                        <i class="fas fa-fingerprint"></i>
+                                        ${d.id}
+                                    </span>
+                                    ${d.port ? `
+                                        <span class="meta-item">
+                                            <i class="fas fa-network-wired"></i>
+                                            :${d.port}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <span class="status-badge status-${d.status}">${d.status}</span>
+                        </div>
+                        <div class="deploy-actions">
+                            <button class="action-btn-small" style="background: var(--info);" onclick="viewLogs('${d.id}')">
+                                <i class="fas fa-terminal"></i>
+                                <span>Logs</span>
+                            </button>
+                            ${d.status === 'running' ? `
+                                <button class="action-btn-small" style="background: var(--danger);" onclick="stopDeploy('${d.id}')">
+                                    <i class="fas fa-stop"></i>
+                                    <span>Stop</span>
+                                </button>
+                            ` : ''}
+                            <button class="action-btn-small" style="background: var(--success);" onclick="createBackup('${d.id}')">
+                                <i class="fas fa-save"></i>
+                                <span>Backup</span>
+                            </button>
+                            <button class="action-btn-small" style="background: var(--warning);" onclick="deleteDeploy('${d.id}')">
+                                <i class="fas fa-trash"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                list.innerHTML = deploysHtml;
+                recent.innerHTML = deploysHtml.split('</div>\n                    </div>').slice(0, 3).join('</div>\n                    </div>') + '</div>\n                    </div>';
+                
+                const runningCount = data.deployments.filter(d => d.status === 'running').length;
+                document.getElementById('activeDeploys').textContent = runningCount;
+                document.getElementById('totalDeploys').textContent = data.deployments.length;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // View Logs
+        async function viewLogs(deployId) {
+            try {
+                const res = await fetch(`/api/deployment/${deployId}/logs`);
+                const data = await res.json();
+                
+                showModal('Deployment Logs', `
+                    <div class="terminal">${data.logs || 'No logs...'}</div>
+                    <button class="btn" onclick="closeModal()" style="margin-top: 16px; background: var(--danger);">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                `);
+            } catch (err) {
+                showToast('error', '❌ Failed to load logs');
+            }
+        }
+
+        // Stop Deployment
+        async function stopDeploy(deployId) {
+            if (!confirm('Stop this deployment?')) return;
+            
+            showToast('info', '⏳ Stopping...');
+            
+            try {
+                const res = await fetch(`/api/deployment/${deployId}/stop`, {method: 'POST'});
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ Stopped');
+                    loadDeployments();
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        // Delete Deployment
+        async function deleteDeploy(deployId) {
+            if (!confirm('Delete permanently?')) return;
+            
+            showToast('info', '⏳ Deleting...');
+            
+            try {
+                const res = await fetch(`/api/deployment/${deployId}`, {method: 'DELETE'});
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ Deleted');
+                    loadDeployments();
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        // Create Backup
+        async function createBackup(deployId) {
+            if (!confirm('Create backup?')) return;
+            
+            showToast('info', '⏳ Creating backup...');
+            
+            try {
+                const res = await fetch(`/api/deployment/${deployId}/backup`, {method: 'POST'});
+                const data = await res.json();
+                
+                if (data.success) {
+                    showToast('success', '✅ ' + data.message);
+                } else {
+                    showToast('error', '❌ ' + data.error);
+                }
+            } catch (err) {
+                showToast('error', '❌ Failed');
+            }
+        }
+
+        // Environment Variables
+        function showAddEnv() {
+            showModal('Add Environment Variable', `
+                <div class="input-group">
+                    <label class="input-label">Variable Name</label>
+                    <input type="text" class="input-field" id="envKey" placeholder="API_KEY">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Value</label>
+                    <input type="text" class="input-field" id="envValue" placeholder="secret_value">
+                </div>
+                <button class="btn" onclick="addEnv()" style="background: var(--success);">
+                    <i class="fas fa-save"></i> Add Variable
+                </button>
+            `);
+        }
+
+        async function addEnv() {
+            const key = document.getElementById('envKey').value;
+            const value = document.getElementById('envValue').value;
+            
+            if (!key || !value) {
+                showToast('warning', '⚠️ Fill all fields');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/env/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({key, value})
+                });
+                const data = await res.json();
