@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-🚀 ELITEHOST v10.0 - ENTERPRISE EDITION
+🚀 ELITEHOST v11.0 - ULTIMATE EDITION
 Revolutionary AI-Powered Deployment Platform
-Advanced Authentication | Device Fingerprinting | Admin Control
+✨ NEW: Env Vars | Backups | File Manager | Live Console | Build Commands
 """
 
 import sys
@@ -11,7 +11,7 @@ import os
 
 # ==================== SMART DEPENDENCY INSTALLER ====================
 print("=" * 90)
-print("🔧 ENTERPRISE DEPENDENCY INSTALLER v10.0")
+print("🔧 ENTERPRISE DEPENDENCY INSTALLER v11.0")
 print("=" * 90)
 
 REQUIRED_PACKAGES = {
@@ -107,7 +107,7 @@ CREDIT_COSTS = {
     'file_upload': 0.5,
     'github_deploy': 1.0,
     'vps_command': 0.3,
-    'backup': 0.5,
+    'backup': 0.2,
 }
 
 # Directories
@@ -167,7 +167,6 @@ def load_db():
 def save_db(db):
     """Save database to JSON file"""
     with DB_LOCK:
-        # Convert sets to lists for JSON serialization
         db_copy = db.copy()
         if 'banned_devices' in db_copy and isinstance(db_copy['banned_devices'], set):
             db_copy['banned_devices'] = list(db_copy['banned_devices'])
@@ -179,6 +178,19 @@ def save_db(db):
 db = load_db()
 if 'banned_devices' in db and isinstance(db['banned_devices'], list):
     db['banned_devices'] = set(db['banned_devices'])
+
+# ==================== ENCRYPTION HELPERS ====================
+
+def encrypt_value(value):
+    """Encrypt sensitive value"""
+    return fernet.encrypt(value.encode()).decode()
+
+def decrypt_value(encrypted_value):
+    """Decrypt sensitive value"""
+    try:
+        return fernet.decrypt(encrypted_value.encode()).decode()
+    except:
+        return encrypted_value
 
 # ==================== DEVICE FINGERPRINTING ====================
 
@@ -264,13 +276,11 @@ def verify_session(session_token, fingerprint):
     
     session_data = db['sessions'][session_token]
     
-    # Check expiration
     if datetime.fromisoformat(session_data['expires_at']) < datetime.now():
         del db['sessions'][session_token]
         save_db(db)
         return None
     
-    # Check fingerprint match
     if session_data['fingerprint'] != fingerprint:
         return None
     
@@ -371,10 +381,9 @@ def detect_and_install_deps(project_path):
     installed = []
     install_log = []
     
-    install_log.append("🤖 AI DEPENDENCY ANALYZER v10.0")
+    install_log.append("🤖 AI DEPENDENCY ANALYZER v11.0")
     install_log.append("=" * 60)
     
-    # Check requirements.txt
     req_file = os.path.join(project_path, 'requirements.txt')
     if os.path.exists(req_file):
         install_log.append("\n📦 PYTHON REQUIREMENTS.TXT DETECTED")
@@ -397,7 +406,6 @@ def detect_and_install_deps(project_path):
         except Exception as e:
             install_log.append(f"❌ Error: {str(e)[:100]}")
     
-    # Smart code analysis
     python_files = []
     for root, dirs, files in os.walk(project_path):
         for file in files:
@@ -469,7 +477,11 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
         'logs': '',
         'dependencies': [],
         'repo_url': kwargs.get('repo_url', ''),
-        'branch': kwargs.get('branch', 'main')
+        'branch': kwargs.get('branch', 'main'),
+        'build_command': kwargs.get('build_command', ''),
+        'start_command': kwargs.get('start_command', ''),
+        'env_vars': {},
+        'backups': []
     }
     
     db['deployments'][deploy_id] = deployment
@@ -533,6 +545,10 @@ def deploy_from_file(user_id, file_path, filename):
         env = os.environ.copy()
         env['PORT'] = str(port)
         
+        deployment = db['deployments'][deploy_id]
+        for key, value in deployment.get('env_vars', {}).items():
+            env[key] = decrypt_value(value)
+        
         update_deployment(deploy_id, status='starting', logs=f'🚀 Launching on port {port}...')
         
         process = subprocess.Popen(
@@ -554,14 +570,18 @@ def deploy_from_file(user_id, file_path, filename):
             add_credits(user_id, cost, "Refund")
         return None, str(e)
 
-def deploy_from_github(user_id, repo_url, branch='main'):
+def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd=''):
     try:
         cost = CREDIT_COSTS['github_deploy']
         if not deduct_credits(user_id, cost, f"GitHub: {repo_url}"):
             return None, f"❌ Need {cost} credits"
         
         repo_name = repo_url.split('/')[-1].replace('.git', '')
-        deploy_id, port = create_deployment(user_id, repo_name, 'github', repo_url=repo_url, branch=branch)
+        deploy_id, port = create_deployment(
+            user_id, repo_name, 'github', 
+            repo_url=repo_url, branch=branch,
+            build_command=build_cmd, start_command=start_cmd
+        )
         
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         os.makedirs(deploy_dir, exist_ok=True)
@@ -585,31 +605,47 @@ def deploy_from_github(user_id, repo_url, branch='main'):
         
         update_deployment(deploy_id, dependencies=installed_deps)
         
-        # Find start command
-        main_files = {
-            'main.py': f'{sys.executable} main.py',
-            'app.py': f'{sys.executable} app.py',
-            'bot.py': f'{sys.executable} bot.py',
-        }
+        env = os.environ.copy()
+        env['PORT'] = str(port)
         
-        start_command = None
-        for file, cmd in main_files.items():
-            if os.path.exists(os.path.join(deploy_dir, file)):
-                start_command = cmd
-                break
+        deployment = db['deployments'][deploy_id]
+        for key, value in deployment.get('env_vars', {}).items():
+            env[key] = decrypt_value(value)
         
-        if not start_command:
+        # Build command
+        if build_cmd:
+            update_deployment(deploy_id, status='building', logs=f'🔨 Building: {build_cmd}')
+            result = subprocess.run(
+                build_cmd, shell=True, cwd=deploy_dir,
+                capture_output=True, text=True, timeout=600, env=env
+            )
+            if result.returncode != 0:
+                update_deployment(deploy_id, status='failed', logs=f'❌ Build failed:\n{result.stderr}')
+                add_credits(user_id, cost, "Refund")
+                return None, "❌ Build failed"
+        
+        # Start command
+        if not start_cmd:
+            main_files = {
+                'main.py': f'{sys.executable} main.py',
+                'app.py': f'{sys.executable} app.py',
+                'bot.py': f'{sys.executable} bot.py',
+            }
+            
+            for file, cmd in main_files.items():
+                if os.path.exists(os.path.join(deploy_dir, file)):
+                    start_cmd = cmd
+                    break
+        
+        if not start_cmd:
             update_deployment(deploy_id, status='failed', logs='❌ No start command')
             add_credits(user_id, cost, "Refund")
             return None, "❌ No start file found"
         
-        update_deployment(deploy_id, status='starting', logs=f'🚀 Starting...')
-        
-        env = os.environ.copy()
-        env['PORT'] = str(port)
+        update_deployment(deploy_id, status='starting', logs=f'🚀 Starting: {start_cmd}')
         
         process = subprocess.Popen(
-            start_command.split(),
+            start_cmd, shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=deploy_dir,
@@ -617,7 +653,8 @@ def deploy_from_github(user_id, repo_url, branch='main'):
         )
         
         active_processes[deploy_id] = process
-        update_deployment(deploy_id, status='running', pid=process.pid, logs=f'✅ Running on port {port}!')
+        update_deployment(deploy_id, status='running', pid=process.pid, 
+                         logs=f'✅ Running on port {port}!', start_command=start_cmd)
         
         return deploy_id, f"🎉 Deployed! Port {port}"
     
@@ -643,6 +680,85 @@ def stop_deployment(deploy_id):
     except Exception as e:
         return False, str(e)
 
+def create_backup(deploy_id, user_id):
+    """Create backup of deployment"""
+    try:
+        cost = CREDIT_COSTS['backup']
+        if not deduct_credits(user_id, cost, f"Backup: {deploy_id}"):
+            return None, f"❌ Need {cost} credits"
+        
+        deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+        if not os.path.exists(deploy_dir):
+            add_credits(user_id, cost, "Refund")
+            return None, "Deployment not found"
+        
+        backup_id = str(uuid.uuid4())[:8]
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f"{deploy_id}_backup_{timestamp}.zip"
+        backup_path = os.path.join(BACKUPS_DIR, backup_filename)
+        
+        with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(deploy_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, deploy_dir)
+                    zipf.write(file_path, arcname)
+        
+        backup_size = os.path.getsize(backup_path)
+        
+        backup_info = {
+            'id': backup_id,
+            'filename': backup_filename,
+            'created_at': datetime.now().isoformat(),
+            'size_bytes': backup_size
+        }
+        
+        deployment = db['deployments'][deploy_id]
+        deployment['backups'].append(backup_info)
+        save_db(db)
+        
+        return backup_filename, "Backup created successfully"
+    except Exception as e:
+        if 'cost' in locals():
+            add_credits(user_id, cost, "Refund")
+        return None, str(e)
+
+def get_file_tree(deploy_id):
+    """Get file tree structure"""
+    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+    if not os.path.exists(deploy_dir):
+        return []
+    
+    files = []
+    for root, dirs, filenames in os.walk(deploy_dir):
+        for filename in filenames:
+            filepath = os.path.join(root, filename)
+            rel_path = os.path.relpath(filepath, deploy_dir)
+            size = os.path.getsize(filepath)
+            
+            files.append({
+                'path': rel_path,
+                'name': filename,
+                'size': size,
+                'type': 'file'
+            })
+    
+    return files
+
+def read_file_content(deploy_id, file_path):
+    """Read file content"""
+    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+    full_path = os.path.join(deploy_dir, file_path)
+    
+    if not os.path.exists(full_path) or not full_path.startswith(deploy_dir):
+        return None
+    
+    try:
+        with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+            return f.read()
+    except:
+        return None
+
 # ==================== HTML TEMPLATES ====================
 
 LOGIN_PAGE = """
@@ -655,209 +771,49 @@ LOGIN_PAGE = """
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .login-container {
-            max-width: 450px;
-            width: 100%;
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .logo-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: white;
-            margin-bottom: 15px;
-        }
-        
-        h1 {
-            font-size: 32px;
-            font-weight: 900;
-            color: #1a202c;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #718096;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 15px;
-            transition: all 0.3s;
-            font-family: inherit;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.2s;
-            margin-top: 10px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .toggle-auth {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #718096;
-        }
-        
-        .toggle-auth a {
-            color: #667eea;
-            font-weight: 600;
-            text-decoration: none;
-        }
-        
-        .alert {
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        
-        .alert-error {
-            background: #fee;
-            color: #c00;
-            border: 1px solid #fcc;
-        }
-        
-        .alert-success {
-            background: #efe;
-            color: #0a0;
-            border: 1px solid #cfc;
-        }
-        
-        .device-info {
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 12px;
-            color: #4a5568;
-        }
-        
-        .device-info i {
-            margin-right: 8px;
-            color: #667eea;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-container { max-width: 450px; width: 100%; background: white; border-radius: 20px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 40px; color: white; margin-bottom: 15px; }
+        h1 { font-size: 32px; font-weight: 900; color: #1a202c; margin-bottom: 10px; }
+        .subtitle { color: #718096; font-size: 14px; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; color: #2d3748; margin-bottom: 8px; font-size: 14px; }
+        input { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; transition: all 0.3s; font-family: inherit; }
+        input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform 0.2s; margin-top: 10px; }
+        .btn:hover { transform: translateY(-2px); }
+        .toggle-auth { text-align: center; margin-top: 20px; font-size: 14px; color: #718096; }
+        .toggle-auth a { color: #667eea; font-weight: 600; text-decoration: none; }
+        .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; }
+        .alert-error { background: #fee; color: #c00; border: 1px solid #fcc; }
+        .alert-success { background: #efe; color: #0a0; border: 1px solid #cfc; }
+        .device-info { background: #f7fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 12px; color: #4a5568; }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <div class="logo-icon">
-                <i class="fas fa-rocket"></i>
-            </div>
+            <div class="logo-icon"><i class="fas fa-rocket"></i></div>
             <h1>EliteHost</h1>
             <p class="subtitle">Enterprise Deployment Platform</p>
         </div>
-        
-        {% if error %}
-        <div class="alert alert-error">
-            <i class="fas fa-exclamation-circle"></i> {{ error }}
-        </div>
-        {% endif %}
-        
-        {% if success %}
-        <div class="alert alert-success">
-            <i class="fas fa-check-circle"></i> {{ success }}
-        </div>
-        {% endif %}
-        
-        <div class="device-info">
-            <i class="fas fa-shield-alt"></i>
-            <strong>Secure Login:</strong> One account per device for maximum security
-        </div>
-        
+        {% if error %}<div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>{% endif %}
+        {% if success %}<div class="alert alert-success"><i class="fas fa-check-circle"></i> {{ success }}</div>{% endif %}
+        <div class="device-info"><i class="fas fa-shield-alt"></i> <strong>Secure Login:</strong> One account per device for maximum security</div>
         <form method="POST" action="{{ action }}">
             <div class="form-group">
-                <label for="email">
-                    <i class="fas fa-envelope"></i> Email Address
-                </label>
+                <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
                 <input type="email" id="email" name="email" placeholder="you@example.com" required>
             </div>
-            
             <div class="form-group">
-                <label for="password">
-                    <i class="fas fa-lock"></i> Password
-                </label>
+                <label for="password"><i class="fas fa-lock"></i> Password</label>
                 <input type="password" id="password" name="password" placeholder="Enter your password" required>
             </div>
-            
-            <button type="submit" class="btn">
-                <i class="fas fa-{{ icon }}"></i> {{ button_text }}
-            </button>
+            <button type="submit" class="btn"><i class="fas fa-{{ icon }}"></i> {{ button_text }}</button>
         </form>
-        
-        <div class="toggle-auth">
-            {{ toggle_text }} <a href="{{ toggle_link }}">{{ toggle_action }}</a>
-        </div>
+        <div class="toggle-auth">{{ toggle_text }} <a href="{{ toggle_link }}">{{ toggle_action }}</a></div>
     </div>
 </body>
 </html>
@@ -869,483 +825,95 @@ DASHBOARD_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EliteHost - Dashboard</title>
+    <title>EliteHost v11.0 - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        :root {
-            --primary: #667eea;
-            --primary-dark: #5568d3;
-            --secondary: #764ba2;
-            --success: #48bb78;
-            --danger: #f56565;
-            --warning: #ed8936;
-            --dark: #1a202c;
-            --gray: #718096;
-            --light: #f7fafc;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f7fafc;
-            color: #2d3748;
-            min-height: 100vh;
-            padding-bottom: 80px;
-        }
-        
-        /* Header */
-        .header {
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 24px;
-            font-weight: 900;
-            color: var(--dark);
-        }
-        
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-        
-        .header-nav {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        
-        .credit-badge {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .nav-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .nav-btn-admin {
-            background: var(--warning);
-            color: white;
-        }
-        
-        .nav-btn-logout {
-            background: var(--danger);
-            color: white;
-        }
-        
-        .nav-btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        /* Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px;
-        }
-        
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
-        .stat-value {
-            font-size: 32px;
-            font-weight: 900;
-            color: var(--dark);
-            margin-bottom: 4px;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: var(--gray);
-            font-weight: 600;
-        }
-        
-        /* Section */
-        .section {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .section-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--dark);
-        }
-        
-        /* Deploy Card */
-        .deploy-card {
-            background: var(--light);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            border: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        
-        .deploy-card:hover {
-            border-color: var(--primary);
-        }
-        
-        .deploy-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 12px;
-        }
-        
-        .deploy-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 6px;
-        }
-        
-        .deploy-meta {
-            font-size: 12px;
-            color: var(--gray);
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #667eea; --secondary: #764ba2; --success: #48bb78; --danger: #f56565; --warning: #ed8936; --dark: #1a202c; --gray: #718096; --light: #f7fafc; }
+        body { font-family: 'Inter', sans-serif; background: #f7fafc; color: #2d3748; min-height: 100vh; padding-bottom: 80px; }
+        .header { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        .logo { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 900; color: var(--dark); }
+        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
+        .header-nav { display: flex; gap: 20px; align-items: center; }
+        .credit-badge { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .nav-btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .nav-btn-admin { background: var(--warning); color: white; }
+        .nav-btn-logout { background: var(--danger); color: white; }
+        .nav-btn:hover { transform: translateY(-2px); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .stat-value { font-size: 32px; font-weight: 900; color: var(--dark); margin-bottom: 4px; }
+        .stat-label { font-size: 14px; color: var(--gray); font-weight: 600; }
+        .section { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-title { font-size: 20px; font-weight: 800; color: var(--dark); }
+        .deploy-card { background: var(--light); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 2px solid transparent; transition: all 0.2s; }
+        .deploy-card:hover { border-color: var(--primary); }
+        .deploy-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+        .deploy-name { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+        .deploy-meta { font-size: 12px; color: var(--gray); display: flex; gap: 12px; flex-wrap: wrap; }
+        .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .status-running { background: #c6f6d5; color: #22543d; }
         .status-pending { background: #feebc8; color: #7c2d12; }
         .status-stopped { background: #fed7d7; color: #742a2a; }
         .status-failed { background: #fed7d7; color: #742a2a; }
-        
-        .deploy-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .btn-small {
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: white;
-        }
-        
-        .btn-small:hover {
-            transform: translateY(-2px);
-        }
-        
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--gray);
-        }
-        
-        .empty-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.3;
-        }
-        
-        /* Fixed Bottom Buttons */
-        .fixed-buttons {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top: 1px solid #e2e8f0;
-            padding: 16px 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            max-width: 1200px;
-            margin: 0 auto;
-            z-index: 50;
-        }
-        
-        .btn-deploy {
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .btn-file {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-        }
-        
-        .btn-github {
-            background: linear-gradient(135deg, #24292e, #000);
-        }
-        
-        .btn-deploy:hover {
-            transform: translateY(-2px);
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .modal.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 500px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-title {
-            font-size: 24px;
-            font-weight: 800;
-        }
-        
-        .close-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: none;
-            background: var(--light);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .form-group {
-            margin-bottom: 16px;
-        }
-        
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
-        
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 14px;
-        }
-        
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        
-        .btn-primary {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        
-        .upload-zone {
-            border: 2px dashed var(--primary);
-            border-radius: 12px;
-            padding: 40px 20px;
-            text-align: center;
-            background: #f0f4ff;
-            cursor: pointer;
-            margin-bottom: 16px;
-        }
-        
-        .upload-icon {
-            font-size: 48px;
-            color: var(--primary);
-            margin-bottom: 12px;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                height: auto;
-                padding: 16px 20px;
-                gap: 12px;
-            }
-            
-            .header-nav {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+        .deploy-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .btn-small { padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; color: white; }
+        .btn-small:hover { transform: translateY(-2px); }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--gray); }
+        .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.3; }
+        .fixed-buttons { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e2e8f0; padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 1200px; margin: 0 auto; z-index: 50; }
+        .btn-deploy { padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-file { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .btn-github { background: linear-gradient(135deg, #24292e, #000); }
+        .btn-deploy:hover { transform: translateY(-2px); }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 16px; padding: 30px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; margin: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 24px; font-weight: 800; }
+        .close-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--light); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        input, textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 14px; }
+        input:focus, textarea:focus { outline: none; border-color: var(--primary); }
+        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .upload-zone { border: 2px dashed var(--primary); border-radius: 12px; padding: 40px 20px; text-align: center; background: #f0f4ff; cursor: pointer; margin-bottom: 16px; }
+        .upload-icon { font-size: 48px; color: var(--primary); margin-bottom: 12px; }
+        .env-var-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 8px; }
+        .file-tree { max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .file-item { padding: 8px; cursor: pointer; border-radius: 4px; }
+        .file-item:hover { background: var(--light); }
+        .file-viewer { background: #1a202c; color: #48bb78; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 500px; overflow: auto; white-space: pre-wrap; }
+        .logs-console { background: #1a202c; color: #48bb78; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 12px 20px; cursor: pointer; font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab.active { border-bottom-color: var(--primary); color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
-    <!-- Header -->
     <div class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon">
-                    <i class="fas fa-rocket"></i>
-                </div>
-                <span>EliteHost</span>
+                <div class="logo-icon"><i class="fas fa-rocket"></i></div>
+                <span>EliteHost v11</span>
             </div>
-            
             <div class="header-nav">
-                <div class="credit-badge">
-                    <i class="fas fa-gem"></i>
-                    <span id="creditBalance">{{ credits }}</span>
-                </div>
-                
-                {% if is_admin %}
-                <button class="nav-btn nav-btn-admin" onclick="window.location.href='/admin'">
-                    <i class="fas fa-crown"></i> Admin
-                </button>
-                {% endif %}
-                
-                <button class="nav-btn nav-btn-logout" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
+                <div class="credit-badge"><i class="fas fa-gem"></i> <span id="creditBalance">{{ credits }}</span></div>
+                {% if is_admin %}<button class="nav-btn nav-btn-admin" onclick="window.location.href='/admin'"><i class="fas fa-crown"></i> Admin</button>{% endif %}
+                <button class="nav-btn nav-btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </div>
     </div>
     
-    <!-- Main Container -->
     <div class="container">
-        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-header">
@@ -1353,73 +921,50 @@ DASHBOARD_HTML = """
                         <div class="stat-value" id="totalDeploys">{{ total_deploys }}</div>
                         <div class="stat-label">Total Deployments</div>
                     </div>
-                    <div class="stat-icon" style="background: #e6fffa; color: #319795;">
-                        <i class="fas fa-rocket"></i>
-                    </div>
+                    <div class="stat-icon" style="background: #e6fffa; color: #319795;"><i class="fas fa-rocket"></i></div>
                 </div>
             </div>
-            
             <div class="stat-card">
                 <div class="stat-header">
                     <div>
                         <div class="stat-value" id="activeDeploys">{{ active_deploys }}</div>
                         <div class="stat-label">Active Now</div>
                     </div>
-                    <div class="stat-icon" style="background: #c6f6d5; color: #22543d;">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
+                    <div class="stat-icon" style="background: #c6f6d5; color: #22543d;"><i class="fas fa-check-circle"></i></div>
                 </div>
             </div>
-            
             <div class="stat-card">
                 <div class="stat-header">
                     <div>
                         <div class="stat-value">{{ credits }}</div>
                         <div class="stat-label">Available Credits</div>
                     </div>
-                    <div class="stat-icon" style="background: #feebc8; color: #7c2d12;">
-                        <i class="fas fa-gem"></i>
-                    </div>
+                    <div class="stat-icon" style="background: #feebc8; color: #7c2d12;"><i class="fas fa-gem"></i></div>
                 </div>
             </div>
-            
             <div class="stat-card">
                 <div class="stat-header">
                     <div>
                         <div class="stat-value">AI</div>
                         <div class="stat-label">Auto Install</div>
                     </div>
-                    <div class="stat-icon" style="background: #e9d8fd; color: #553c9a;">
-                        <i class="fas fa-robot"></i>
-                    </div>
+                    <div class="stat-icon" style="background: #e9d8fd; color: #553c9a;"><i class="fas fa-robot"></i></div>
                 </div>
             </div>
         </div>
         
-        <!-- Deployments Section -->
         <div class="section">
             <div class="section-header">
                 <h2 class="section-title">Your Deployments</h2>
-                <button class="nav-btn" style="background: var(--primary); color: white;" onclick="loadDeployments()">
-                    <i class="fas fa-sync"></i> Refresh
-                </button>
+                <button class="nav-btn" style="background: var(--primary); color: white;" onclick="loadDeployments()"><i class="fas fa-sync"></i> Refresh</button>
             </div>
-            
             <div id="deploymentsList"></div>
         </div>
     </div>
     
-    <!-- Fixed Bottom Buttons -->
     <div class="fixed-buttons">
-        <button class="btn-deploy btn-file" onclick="showFileUpload()">
-            <i class="fas fa-cloud-upload-alt"></i>
-            Upload File
-        </button>
-        
-        <button class="btn-deploy btn-github" onclick="showGithubDeploy()">
-            <i class="fab fa-github"></i>
-            GitHub Deploy
-        </button>
+        <button class="btn-deploy btn-file" onclick="showFileUpload()"><i class="fas fa-cloud-upload-alt"></i> Upload File</button>
+        <button class="btn-deploy btn-github" onclick="showGithubDeploy()"><i class="fab fa-github"></i> GitHub Deploy</button>
     </div>
     
     <!-- File Upload Modal -->
@@ -1427,20 +972,14 @@ DASHBOARD_HTML = """
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Upload & Deploy</h3>
-                <button class="close-btn" onclick="closeModal('fileModal')">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button class="close-btn" onclick="closeModal('fileModal')"><i class="fas fa-times"></i></button>
             </div>
-            
             <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                <div class="upload-icon">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                </div>
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                 <div style="font-weight: 600; margin-bottom: 4px;">Click to Upload</div>
                 <div style="font-size: 12px; color: var(--gray);">Python, JavaScript, ZIP files</div>
                 <input type="file" id="fileInput" hidden accept=".py,.js,.zip" onchange="uploadFile(this)">
             </div>
-            
             <div style="padding: 12px; background: var(--light); border-radius: 8px; font-size: 13px;">
                 <strong>Cost:</strong> 0.5 credits per deployment<br>
                 <strong>AI Features:</strong> Auto-detects and installs dependencies
@@ -1453,66 +992,95 @@ DASHBOARD_HTML = """
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Deploy from GitHub</h3>
-                <button class="close-btn" onclick="closeModal('githubModal')">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button class="close-btn" onclick="closeModal('githubModal')"><i class="fas fa-times"></i></button>
             </div>
-            
             <form onsubmit="deployGithub(event)">
                 <div class="form-group">
-                    <label>Repository URL</label>
+                    <label>Repository URL *</label>
                     <input type="url" id="repoUrl" placeholder="https://github.com/user/repo" required>
                 </div>
-                
                 <div class="form-group">
                     <label>Branch</label>
                     <input type="text" id="repoBranch" value="main" required>
                 </div>
-                
-                <button type="submit" class="btn-primary">
-                    <i class="fab fa-github"></i> Deploy (1.0 credit)
-                </button>
+                <div class="form-group">
+                    <label>Build Command (optional)</label>
+                    <input type="text" id="buildCmd" placeholder="npm run build">
+                    <small style="color: var(--gray);">e.g., npm install, pip install -r requirements.txt</small>
+                </div>
+                <div class="form-group">
+                    <label>Start Command (optional)</label>
+                    <input type="text" id="startCmd" placeholder="python main.py">
+                    <small style="color: var(--gray);">Auto-detected if left empty</small>
+                </div>
+                <button type="submit" class="btn-primary"><i class="fab fa-github"></i> Deploy (1.0 credit)</button>
             </form>
-            
             <div style="padding: 12px; background: var(--light); border-radius: 8px; font-size: 13px; margin-top: 16px;">
-                <strong>AI Features:</strong> Auto-detects language, installs dependencies, and deploys
+                <strong>✨ NEW:</strong> Custom build & start commands supported!
             </div>
         </div>
     </div>
     
-    <!-- Logs Modal -->
-    <div class="modal" id="logsModal">
+    <!-- Deployment Details Modal -->
+    <div class="modal" id="detailsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Deployment Logs</h3>
-                <button class="close-btn" onclick="closeModal('logsModal')">
-                    <i class="fas fa-times"></i>
-                </button>
+                <h3 class="modal-title" id="detailsTitle">Deployment Details</h3>
+                <button class="close-btn" onclick="closeModal('detailsModal')"><i class="fas fa-times"></i></button>
             </div>
             
-            <div id="logsContent" style="background: #1a202c; color: #48bb78; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap;"></div>
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('logs')"><i class="fas fa-terminal"></i> Live Console</div>
+                <div class="tab" onclick="switchTab('env')"><i class="fas fa-key"></i> Environment</div>
+                <div class="tab" onclick="switchTab('files')"><i class="fas fa-folder"></i> Files</div>
+                <div class="tab" onclick="switchTab('backups')"><i class="fas fa-download"></i> Backups</div>
+            </div>
+            
+            <div id="tab-logs" class="tab-content active">
+                <div class="logs-console" id="logsContent">Loading...</div>
+                <button class="btn-primary" style="margin-top: 12px;" onclick="refreshLogs()"><i class="fas fa-sync"></i> Refresh Logs</button>
+            </div>
+            
+            <div id="tab-env" class="tab-content">
+                <div id="envVarsList"></div>
+                <button class="btn-primary" onclick="showAddEnvVar()"><i class="fas fa-plus"></i> Add Variable</button>
+            </div>
+            
+            <div id="tab-files" class="tab-content">
+                <div class="file-tree" id="fileTree">Loading...</div>
+            </div>
+            
+            <div id="tab-backups" class="tab-content">
+                <div id="backupsList">Loading...</div>
+                <button class="btn-primary" onclick="createBackup()"><i class="fas fa-archive"></i> Create New Backup (0.2 credits)</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File Viewer Modal -->
+    <div class="modal" id="fileViewerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="fileViewerTitle">File</h3>
+                <button class="close-btn" onclick="closeModal('fileViewerModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="file-viewer" id="fileViewerContent">Loading...</div>
         </div>
     </div>
     
     <script>
-        // Load deployments
+        let currentDeployId = null;
+        let logsInterval = null;
+        
         function loadDeployments() {
             fetch('/api/deployments')
                 .then(r => r.json())
                 .then(data => {
                     const list = document.getElementById('deploymentsList');
-                    
                     if (!data.deployments || data.deployments.length === 0) {
-                        list.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-icon"><i class="fas fa-rocket"></i></div>
-                                <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">No Deployments Yet</div>
-                                <div>Click the buttons below to deploy your first app!</div>
-                            </div>
-                        `;
+                        list.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="fas fa-rocket"></i></div><div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">No Deployments Yet</div><div>Click the buttons below to deploy your first app!</div></div>';
                         return;
                     }
-                    
                     list.innerHTML = data.deployments.map(d => `
                         <div class="deploy-card">
                             <div class="deploy-header">
@@ -1521,107 +1089,223 @@ DASHBOARD_HTML = """
                                     <div class="deploy-meta">
                                         <span><i class="fas fa-fingerprint"></i> ${d.id}</span>
                                         <span><i class="fas fa-network-wired"></i> Port ${d.port}</span>
-                                        ${d.dependencies && d.dependencies.length > 0 ? `<span><i class="fas fa-robot"></i> ${d.dependencies.length} AI installs</span>` : ''}
+                                        ${d.dependencies && d.dependencies.length > 0 ? `<span><i class="fas fa-robot"></i> ${d.dependencies.length} pkgs</span>` : ''}
+                                        ${d.env_vars && Object.keys(d.env_vars).length > 0 ? `<span><i class="fas fa-key"></i> ${Object.keys(d.env_vars).length} vars</span>` : ''}
                                     </div>
                                 </div>
                                 <span class="status-badge status-${d.status}">${d.status}</span>
                             </div>
-                            
                             <div class="deploy-actions">
-                                <button class="btn-small" style="background: #4299e1;" onclick="viewLogs('${d.id}')">
-                                    <i class="fas fa-terminal"></i> Logs
-                                </button>
-                                <button class="btn-small" style="background: #ed8936;" onclick="stopDeploy('${d.id}')">
-                                    <i class="fas fa-stop"></i> Stop
-                                </button>
-                                <button class="btn-small" style="background: #f56565;" onclick="deleteDeploy('${d.id}')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
+                                <button class="btn-small" style="background: #4299e1;" onclick="viewDetails('${d.id}')"><i class="fas fa-info-circle"></i> Details</button>
+                                <button class="btn-small" style="background: #48bb78;" onclick="restartDeploy('${d.id}')"><i class="fas fa-redo"></i> Restart</button>
+                                <button class="btn-small" style="background: #ed8936;" onclick="stopDeploy('${d.id}')"><i class="fas fa-stop"></i> Stop</button>
+                                <button class="btn-small" style="background: #f56565;" onclick="deleteDeploy('${d.id}')"><i class="fas fa-trash"></i> Delete</button>
                             </div>
                         </div>
                     `).join('');
-                    
                     document.getElementById('totalDeploys').textContent = data.deployments.length;
                     document.getElementById('activeDeploys').textContent = data.deployments.filter(d => d.status === 'running').length;
                 });
         }
         
-        function showFileUpload() {
-            document.getElementById('fileModal').classList.add('active');
-        }
-        
-        function showGithubDeploy() {
-            document.getElementById('githubModal').classList.add('active');
-        }
-        
+        function showFileUpload() { document.getElementById('fileModal').classList.add('active'); }
+        function showGithubDeploy() { document.getElementById('githubModal').classList.add('active'); }
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
+            if (id === 'detailsModal' && logsInterval) {
+                clearInterval(logsInterval);
+                logsInterval = null;
+            }
         }
         
         function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;
-            
             const formData = new FormData();
             formData.append('file', file);
-            
             alert('🤖 Uploading and deploying... Please wait!');
             closeModal('fileModal');
-            
-            fetch('/api/deploy/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('✅ Deployment successful!\\n\\n' + data.message);
+            fetch('/api/deploy/upload', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ Deployment successful!\\n\\n' + data.message : '❌ Error: ' + data.error);
                     loadDeployments();
                     updateCredits();
-                } else {
-                    alert('❌ Error: ' + data.error);
-                }
-            });
+                });
         }
         
         function deployGithub(e) {
             e.preventDefault();
-            
             const url = document.getElementById('repoUrl').value;
             const branch = document.getElementById('repoBranch').value;
-            
+            const buildCmd = document.getElementById('buildCmd').value;
+            const startCmd = document.getElementById('startCmd').value;
             alert('🤖 Cloning and deploying... This may take a minute!');
             closeModal('githubModal');
-            
             fetch('/api/deploy/github', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({url, branch})
+                body: JSON.stringify({url, branch, build_command: buildCmd, start_command: startCmd})
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    alert('✅ GitHub deployment successful!\\n\\n' + data.message);
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ GitHub deployment successful!\\n\\n' + data.message : '❌ Error: ' + data.error);
                     loadDeployments();
                     updateCredits();
-                } else {
-                    alert('❌ Error: ' + data.error);
-                }
-            });
+                });
         }
         
-        function viewLogs(deployId) {
+        function viewDetails(deployId) {
+            currentDeployId = deployId;
+            fetch(`/api/deployment/${deployId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('detailsTitle').textContent = data.deployment.name;
+                        loadLogs(deployId);
+                        loadEnvVars(deployId);
+                        loadFiles(deployId);
+                        loadBackups(deployId);
+                        document.getElementById('detailsModal').classList.add('active');
+                        switchTab('logs');
+                        logsInterval = setInterval(() => loadLogs(deployId), 3000);
+                    }
+                });
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+        
+        function loadLogs(deployId) {
             fetch(`/api/deployment/${deployId}/logs`)
                 .then(r => r.json())
                 .then(data => {
                     document.getElementById('logsContent').textContent = data.logs || 'No logs available';
-                    document.getElementById('logsModal').classList.add('active');
+                    const console = document.getElementById('logsContent');
+                    console.scrollTop = console.scrollHeight;
                 });
+        }
+        
+        function refreshLogs() { if (currentDeployId) loadLogs(currentDeployId); }
+        
+        function loadEnvVars(deployId) {
+            fetch(`/api/deployment/${deployId}/env`)
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('envVarsList');
+                    const vars = data.env_vars || {};
+                    if (Object.keys(vars).length === 0) {
+                        list.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 20px;">No environment variables</p>';
+                    } else {
+                        list.innerHTML = Object.entries(vars).map(([key, value]) => `
+                            <div class="env-var-row">
+                                <input type="text" value="${key}" readonly style="background: #f7fafc;">
+                                <input type="password" value="••••••••" readonly style="background: #f7fafc;">
+                                <button class="btn-small" style="background: #f56565;" onclick="deleteEnvVar('${deployId}', '${key}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        `).join('');
+                    }
+                });
+        }
+        
+        function showAddEnvVar() {
+            const key = prompt('Environment Variable Key:');
+            if (!key) return;
+            const value = prompt('Environment Variable Value:');
+            if (!value) return;
+            fetch(`/api/deployment/${currentDeployId}/env`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({key, value})
+            })
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ Variable added!' : '❌ ' + data.error);
+                    loadEnvVars(currentDeployId);
+                    updateCredits();
+                });
+        }
+        
+        function deleteEnvVar(deployId, key) {
+            if (!confirm(`Delete variable "${key}"?`)) return;
+            fetch(`/api/deployment/${deployId}/env/${key}`, {method: 'DELETE'})
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ Deleted' : '❌ Failed');
+                    loadEnvVars(deployId);
+                });
+        }
+        
+        function loadFiles(deployId) {
+            fetch(`/api/deployment/${deployId}/files`)
+                .then(r => r.json())
+                .then(data => {
+                    const tree = document.getElementById('fileTree');
+                    if (!data.files || data.files.length === 0) {
+                        tree.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 20px;">No files found</p>';
+                    } else {
+                        tree.innerHTML = data.files.map(f => `
+                            <div class="file-item" onclick="viewFile('${deployId}', '${f.path}', '${f.name}')">
+                                <i class="fas fa-file"></i> ${f.path} <span style="color: var(--gray); font-size: 10px;">(${(f.size/1024).toFixed(1)} KB)</span>
+                            </div>
+                        `).join('');
+                    }
+                });
+        }
+        
+        function viewFile(deployId, path, name) {
+            fetch(`/api/deployment/${deployId}/file?path=${encodeURIComponent(path)}`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('fileViewerTitle').textContent = name;
+                    document.getElementById('fileViewerContent').textContent = data.content || 'Cannot read file';
+                    document.getElementById('fileViewerModal').classList.add('active');
+                });
+        }
+        
+        function loadBackups(deployId) {
+            fetch(`/api/deployment/${deployId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('backupsList');
+                    const backups = data.deployment.backups || [];
+                    if (backups.length === 0) {
+                        list.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 20px;">No backups yet</p>';
+                    } else {
+                        list.innerHTML = backups.map(b => `
+                            <div style="background: var(--light); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                                <div style="font-weight: 600;"><i class="fas fa-archive"></i> ${b.filename}</div>
+                                <div style="font-size: 12px; color: var(--gray); margin-top: 4px;">
+                                    Size: ${(b.size_bytes/1024/1024).toFixed(2)} MB | Created: ${new Date(b.created_at).toLocaleString()}
+                                </div>
+                                <button class="btn-small" style="background: #4299e1; margin-top: 8px;" onclick="downloadBackup('${b.filename}')"><i class="fas fa-download"></i> Download</button>
+                            </div>
+                        `).join('');
+                    }
+                });
+        }
+        
+        function createBackup() {
+            if (!confirm('Create backup? (0.2 credits)')) return;
+            fetch(`/api/deployment/${currentDeployId}/backup`, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ Backup created!' : '❌ ' + data.error);
+                    loadBackups(currentDeployId);
+                    updateCredits();
+                });
+        }
+        
+        function downloadBackup(filename) {
+            window.location.href = `/api/backup/${filename}`;
         }
         
         function stopDeploy(deployId) {
             if (!confirm('Stop this deployment?')) return;
-            
             fetch(`/api/deployment/${deployId}/stop`, {method: 'POST'})
                 .then(r => r.json())
                 .then(data => {
@@ -1630,9 +1314,18 @@ DASHBOARD_HTML = """
                 });
         }
         
+        function restartDeploy(deployId) {
+            if (!confirm('Restart this deployment?')) return;
+            fetch(`/api/deployment/${deployId}/restart`, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ Restarting...' : '❌ ' + data.message);
+                    setTimeout(loadDeployments, 2000);
+                });
+        }
+        
         function deleteDeploy(deployId) {
             if (!confirm('Delete this deployment permanently?')) return;
-            
             fetch(`/api/deployment/${deployId}`, {method: 'DELETE'})
                 .then(r => r.json())
                 .then(data => {
@@ -1651,12 +1344,9 @@ DASHBOARD_HTML = """
         }
         
         function logout() {
-            if (confirm('Logout from EliteHost?')) {
-                window.location.href = '/logout';
-            }
+            if (confirm('Logout from EliteHost?')) window.location.href = '/logout';
         }
         
-        // Load on page load
         loadDeployments();
         setInterval(loadDeployments, 10000);
         setInterval(updateCredits, 15000);
@@ -1664,860 +1354,3 @@ DASHBOARD_HTML = """
 </body>
 </html>
 """
-
-ADMIN_PANEL_HTML = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EliteHost - Admin Panel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        :root {
-            --primary: #667eea;
-            --danger: #f56565;
-            --success: #48bb78;
-            --warning: #ed8936;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f7fafc;
-            color: #2d3748;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, var(--primary), #764ba2);
-            color: white;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .header h1 {
-            font-size: 28px;
-            font-weight: 900;
-            margin-bottom: 8px;
-        }
-        
-        .header-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-light {
-            background: white;
-            color: var(--primary);
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 30px 20px;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .stat-value {
-            font-size: 36px;
-            font-weight: 900;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: #718096;
-            font-weight: 600;
-        }
-        
-        .section {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .section-title {
-            font-size: 20px;
-            font-weight: 800;
-            margin-bottom: 20px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th {
-            text-align: left;
-            padding: 12px;
-            background: #f7fafc;
-            font-weight: 700;
-            font-size: 13px;
-            color: #4a5568;
-            text-transform: uppercase;
-        }
-        
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        
-        .badge-success { background: #c6f6d5; color: #22543d; }
-        .badge-danger { background: #fed7d7; color: #742a2a; }
-        .badge-warning { background: #feebc8; color: #7c2d12; }
-        
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            margin-right: 6px;
-        }
-        
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-warning { background: var(--warning); color: white; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1><i class="fas fa-crown"></i> Admin Control Panel</h1>
-        <p>Manage users, deployments, and system settings</p>
-        <div class="header-actions">
-            <button class="btn btn-light" onclick="window.location.href='/dashboard'">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </button>
-            <button class="btn btn-light" onclick="location.reload()">
-                <i class="fas fa-sync"></i> Refresh
-            </button>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.total_users }}</div>
-                <div class="stat-label">Total Users</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.total_deployments }}</div>
-                <div class="stat-label">Deployments</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.active_processes }}</div>
-                <div class="stat-label">Active Now</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.pending_payments }}</div>
-                <div class="stat-label">Pending Payments</div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2 class="section-title">All Users</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Credits</th>
-                        <th>Deployments</th>
-                        <th>Joined</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.credits }}</td>
-                        <td>{{ user.deployments|length }}</td>
-                        <td>{{ user.created_at[:10] }}</td>
-                        <td>
-                            {% if user.is_banned %}
-                            <span class="badge badge-danger">Banned</span>
-                            {% else %}
-                            <span class="badge badge-success">Active</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button class="btn-small btn-success" onclick="addCreditsPrompt('{{ user.id }}')">
-                                <i class="fas fa-plus"></i> Credits
-                            </button>
-                            {% if not user.is_banned %}
-                            <button class="btn-small btn-danger" onclick="banUser('{{ user.id }}')">
-                                <i class="fas fa-ban"></i> Ban
-                            </button>
-                            {% else %}
-                            <button class="btn-small btn-success" onclick="unbanUser('{{ user.id }}')">
-                                <i class="fas fa-check"></i> Unban
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="section">
-            <h2 class="section-title">Payment Requests</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>User Email</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for payment in payments %}
-                    <tr>
-                        <td>{{ payment.user_email }}</td>
-                        <td>{{ payment.amount }} credits</td>
-                        <td>{{ payment.created_at[:10] }}</td>
-                        <td>
-                            <span class="badge badge-{{ 'success' if payment.status == 'approved' else 'warning' if payment.status == 'pending' else 'danger' }}">
-                                {{ payment.status }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if payment.status == 'pending' %}
-                            <button class="btn-small btn-success" onclick="approvePayment('{{ payment.id }}', '{{ payment.user_id }}', {{ payment.amount }})">
-                                <i class="fas fa-check"></i> Approve
-                            </button>
-                            <button class="btn-small btn-danger" onclick="rejectPayment('{{ payment.id }}')">
-                                <i class="fas fa-times"></i> Reject
-                            </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <script>
-        function addCreditsPrompt(userId) {
-            const amount = prompt('Enter amount of credits to add:');
-            if (!amount || isNaN(amount)) return;
-            
-            fetch('/api/admin/add-credits', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: userId, amount: parseFloat(amount)})
-            })
-            .then(r => r.json())
-            .then(data => {
-                alert(data.success ? '✅ Credits added!' : '❌ ' + data.error);
-                location.reload();
-            });
-        }
-        
-        function banUser(userId) {
-            if (!confirm('Ban this user? They will not be able to login.')) return;
-            
-            fetch('/api/admin/ban-user', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: userId, ban: true})
-            })
-            .then(r => r.json())
-            .then(data => {
-                alert(data.success ? '✅ User banned' : '❌ ' + data.error);
-                location.reload();
-            });
-        }
-        
-        function unbanUser(userId) {
-            if (!confirm('Unban this user?')) return;
-            
-            fetch('/api/admin/ban-user', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: userId, ban: false})
-            })
-            .then(r => r.json())
-            .then(data => {
-                alert(data.success ? '✅ User unbanned' : '❌ ' + data.error);
-                location.reload();
-            });
-        }
-        
-        function approvePayment(paymentId, userId, amount) {
-            if (!confirm(`Approve payment for ${amount} credits?`)) return;
-            
-            fetch('/api/admin/approve-payment', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({payment_id: paymentId, user_id: userId, amount: amount})
-            })
-            .then(r => r.json())
-            .then(data => {
-                alert(data.success ? '✅ Payment approved!' : '❌ ' + data.error);
-                location.reload();
-            });
-        }
-        
-        function rejectPayment(paymentId) {
-            if (!confirm('Reject this payment?')) return;
-            
-            fetch('/api/admin/reject-payment', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({payment_id: paymentId})
-            })
-            .then(r => r.json())
-            .then(data => {
-                alert(data.success ? '✅ Payment rejected' : '❌ ' + data.error);
-                location.reload();
-            });
-        }
-    </script>
-</body>
-</html>
-"""
-
-# ==================== FLASK ROUTES ====================
-
-@app.route('/')
-def index():
-    return redirect('/login')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'GET':
-        return render_template_string(LOGIN_PAGE,
-            action='/register',
-            button_text='Create Account',
-            icon='user-plus',
-            toggle_text='Already have an account?',
-            toggle_link='/login',
-            toggle_action='Login here',
-            error=request.args.get('error'),
-            success=request.args.get('success')
-        )
-    
-    email = request.form.get('email')
-    password = request.form.get('password')
-    fingerprint = get_device_fingerprint(request)
-    ip = request.remote_addr
-    
-    # Check if device is banned
-    if is_device_banned(fingerprint):
-        return render_template_string(LOGIN_PAGE,
-            action='/register',
-            button_text='Create Account',
-            icon='user-plus',
-            toggle_text='Already have an account?',
-            toggle_link='/login',
-            toggle_action='Login here',
-            error='This device is banned from EliteHost'
-        )
-    
-    # Check if device already has an account
-    existing_user = check_existing_account(fingerprint)
-    if existing_user:
-        return render_template_string(LOGIN_PAGE,
-            action='/register',
-            button_text='Create Account',
-            icon='user-plus',
-            toggle_text='Already have an account?',
-            toggle_link='/login',
-            toggle_action='Login here',
-            error='This device already has an account. One account per device only.'
-        )
-    
-    # Check if email exists
-    for user_data in db['users'].values():
-        if user_data['email'] == email:
-            return render_template_string(LOGIN_PAGE,
-                action='/register',
-                button_text='Create Account',
-                icon='user-plus',
-                toggle_text='Already have an account?',
-                toggle_link='/login',
-                toggle_action='Login here',
-                error='Email already registered'
-            )
-    
-    # Create user
-    user_id = create_user(email, password, fingerprint, ip)
-    
-    return redirect('/login?success=Account created! Please login.')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'GET':
-        return render_template_string(LOGIN_PAGE,
-            action='/login',
-            button_text='Login',
-            icon='sign-in-alt',
-            toggle_text="Don't have an account?",
-            toggle_link='/register',
-            toggle_action='Register here',
-            error=request.args.get('error'),
-            success=request.args.get('success')
-        )
-    
-    email = request.form.get('email')
-    password = request.form.get('password')
-    fingerprint = get_device_fingerprint(request)
-    
-    # Check if device is banned
-    if is_device_banned(fingerprint):
-        return render_template_string(LOGIN_PAGE,
-            action='/login',
-            button_text='Login',
-            icon='sign-in-alt',
-            toggle_text="Don't have an account?",
-            toggle_link='/register',
-            toggle_action='Register here',
-            error='This device is banned from EliteHost'
-        )
-    
-    # Authenticate
-    user_id = authenticate_user(email, password)
-    
-    if not user_id:
-        return render_template_string(LOGIN_PAGE,
-            action='/login',
-            button_text='Login',
-            icon='sign-in-alt',
-            toggle_text="Don't have an account?",
-            toggle_link='/register',
-            toggle_action='Register here',
-            error='Invalid email or password'
-        )
-    
-    user = get_user(user_id)
-    
-    # Check if user is banned
-    if user.get('is_banned'):
-        return render_template_string(LOGIN_PAGE,
-            action='/login',
-            button_text='Login',
-            icon='sign-in-alt',
-            toggle_text="Don't have an account?",
-            toggle_link='/register',
-            toggle_action='Register here',
-            error='Your account has been banned'
-        )
-    
-    # Check device fingerprint match
-    if user['device_fingerprint'] != fingerprint:
-        return render_template_string(LOGIN_PAGE,
-            action='/login',
-            button_text='Login',
-            icon='sign-in-alt',
-            toggle_text="Don't have an account?",
-            toggle_link='/register',
-            toggle_action='Register here',
-            error='This account is registered on a different device'
-        )
-    
-    # Create session
-    session_token = create_session(user_id, fingerprint)
-    
-    # Update last login
-    update_user(user_id, last_login=datetime.now().isoformat())
-    log_activity(user_id, 'USER_LOGIN', f'Login from {request.remote_addr}', request.remote_addr)
-    
-    # Set cookie
-    response = make_response(redirect('/dashboard'))
-    response.set_cookie('session_token', session_token, max_age=7*24*60*60)
-    return response
-
-@app.route('/logout')
-def logout():
-    session_token = request.cookies.get('session_token')
-    if session_token and session_token in db['sessions']:
-        del db['sessions'][session_token]
-        save_db(db)
-    
-    response = make_response(redirect('/login?success=Logged out successfully'))
-    response.set_cookie('session_token', '', max_age=0)
-    return response
-
-@app.route('/dashboard')
-def dashboard():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    
-    user_id = verify_session(session_token, fingerprint)
-    if not user_id:
-        return redirect('/login?error=Please login first')
-    
-    user = get_user(user_id)
-    if not user or user.get('is_banned'):
-        return redirect('/login?error=Access denied')
-    
-    # Get user deployments
-    user_deployments = [db['deployments'][d_id] for d_id in user.get('deployments', []) if d_id in db['deployments']]
-    active_deploys = len([d for d in user_deployments if d['status'] == 'running'])
-    
-    is_admin = str(user_id) == str(OWNER_ID) or str(user_id) == str(ADMIN_ID)
-    
-    return render_template_string(DASHBOARD_HTML,
-        credits=user['credits'] if user['credits'] != float('inf') else '∞',
-        total_deploys=len(user_deployments),
-        active_deploys=active_deploys,
-        is_admin=is_admin
-    )
-
-@app.route('/admin')
-def admin_panel():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    
-    user_id = verify_session(session_token, fingerprint)
-    if not user_id:
-        return redirect('/login?error=Please login first')
-    
-    # Check admin access
-    if str(user_id) != str(OWNER_ID) and str(user_id) != str(ADMIN_ID):
-        return redirect('/dashboard?error=Admin access denied')
-    
-    # Get stats
-    stats = {
-        'total_users': len(db['users']),
-        'total_deployments': len(db['deployments']),
-        'active_processes': len(active_processes),
-        'pending_payments': len([p for p in db.get('payments', {}).values() if p.get('status') == 'pending'])
-    }
-    
-    # Get all users
-    users = []
-    for uid, user_data in db['users'].items():
-        users.append({
-            'id': uid,
-            'email': user_data['email'],
-            'credits': user_data['credits'],
-            'deployments': user_data.get('deployments', []),
-            'created_at': user_data['created_at'],
-            'is_banned': user_data.get('is_banned', False)
-        })
-    
-    # Get payments
-    payments = []
-    for pid, payment_data in db.get('payments', {}).items():
-        user = get_user(payment_data['user_id'])
-        payments.append({
-            'id': pid,
-            'user_id': payment_data['user_id'],
-            'user_email': user['email'] if user else 'Unknown',
-            'amount': payment_data['amount'],
-            'status': payment_data['status'],
-            'created_at': payment_data['created_at']
-        })
-    
-    return render_template_string(ADMIN_PANEL_HTML,
-        stats=stats,
-        users=users,
-        payments=payments
-    )
-
-# ==================== API ROUTES ====================
-
-@app.route('/api/credits')
-def api_credits():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if not user_id:
-        return jsonify({'success': False, 'error': 'Not authenticated'})
-    
-    return jsonify({'success': True, 'credits': get_credits(user_id)})
-
-@app.route('/api/deployments')
-def api_deployments():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if not user_id:
-        return jsonify({'success': False, 'error': 'Not authenticated'})
-    
-    user = get_user(user_id)
-    deployments = [db['deployments'][d_id] for d_id in user.get('deployments', []) if d_id in db['deployments']]
-    
-    return jsonify({'success': True, 'deployments': deployments})
-
-@app.route('/api/deploy/upload', methods=['POST'])
-def api_deploy_upload():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if not user_id:
-        return jsonify({'success': False, 'error': 'Not authenticated'})
-    
-    if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded'})
-    
-    file = request.files['file']
-    if not file.filename:
-        return jsonify({'success': False, 'error': 'Empty filename'})
-    
-    try:
-        user_dir = os.path.join(UPLOADS_DIR, user_id)
-        os.makedirs(user_dir, exist_ok=True)
-        
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(user_dir, filename)
-        file.save(filepath)
-        
-        deploy_id, msg = deploy_from_file(user_id, filepath, filename)
-        
-        if deploy_id:
-            return jsonify({'success': True, 'deployment_id': deploy_id, 'message': msg})
-        else:
-            return jsonify({'success': False, 'error': msg})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deploy/github', methods=['POST'])
-def api_deploy_github():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if not user_id:
-        return jsonify({'success': False, 'error': 'Not authenticated'})
-    
-    data = request.get_json()
-    repo_url = data.get('url')
-    branch = data.get('branch', 'main')
-    
-    if not repo_url:
-        return jsonify({'success': False, 'error': 'Repository URL required'})
-    
-    deploy_id, msg = deploy_from_github(user_id, repo_url, branch)
-    
-    if deploy_id:
-        return jsonify({'success': True, 'deployment_id': deploy_id, 'message': msg})
-    else:
-        return jsonify({'success': False, 'error': msg})
-
-@app.route('/api/deployment/<deploy_id>/logs')
-def api_deployment_logs(deploy_id):
-    if deploy_id not in db['deployments']:
-        return jsonify({'success': False, 'error': 'Not found'})
-    
-    logs = db['deployments'][deploy_id].get('logs', 'No logs available')
-    return jsonify({'success': True, 'logs': logs})
-
-@app.route('/api/deployment/<deploy_id>/stop', methods=['POST'])
-def api_stop_deployment(deploy_id):
-    success, msg = stop_deployment(deploy_id)
-    return jsonify({'success': success, 'message': msg})
-
-@app.route('/api/deployment/<deploy_id>', methods=['DELETE'])
-def api_delete_deployment(deploy_id):
-    try:
-        stop_deployment(deploy_id)
-        if deploy_id in db['deployments']:
-            del db['deployments'][deploy_id]
-            save_db(db)
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/admin/add-credits', methods=['POST'])
-def api_admin_add_credits():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    admin_id = verify_session(session_token, fingerprint)
-    
-    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
-        return jsonify({'success': False, 'error': 'Admin access required'})
-    
-    data = request.get_json()
-    target_user = data.get('user_id')
-    amount = data.get('amount')
-    
-    if add_credits(target_user, amount, "Admin bonus"):
-        return jsonify({'success': True})
-    else:
-        return jsonify({'success': False, 'error': 'Failed'})
-
-@app.route('/api/admin/ban-user', methods=['POST'])
-def api_admin_ban_user():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    admin_id = verify_session(session_token, fingerprint)
-    
-    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
-        return jsonify({'success': False, 'error': 'Admin access required'})
-    
-    data = request.get_json()
-    target_user = data.get('user_id')
-    ban = data.get('ban', True)
-    
-    user = get_user(target_user)
-    if not user:
-        return jsonify({'success': False, 'error': 'User not found'})
-    
-    if ban:
-        # Ban user and device
-        db['banned_devices'].add(user['device_fingerprint'])
-    
-    update_user(target_user, is_banned=ban)
-    
-    return jsonify({'success': True})
-
-@app.route('/api/admin/approve-payment', methods=['POST'])
-def api_admin_approve_payment():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    admin_id = verify_session(session_token, fingerprint)
-    
-    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
-        return jsonify({'success': False, 'error': 'Admin access required'})
-    
-    data = request.get_json()
-    payment_id = data.get('payment_id')
-    user_id = data.get('user_id')
-    amount = data.get('amount')
-    
-    if payment_id in db.get('payments', {}):
-        db['payments'][payment_id]['status'] = 'approved'
-        add_credits(user_id, amount, f"Payment approved: {payment_id}")
-        save_db(db)
-        return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'error': 'Payment not found'})
-
-@app.route('/api/admin/reject-payment', methods=['POST'])
-def api_admin_reject_payment():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    admin_id = verify_session(session_token, fingerprint)
-    
-    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
-        return jsonify({'success': False, 'error': 'Admin access required'})
-    
-    data = request.get_json()
-    payment_id = data.get('payment_id')
-    
-    if payment_id in db.get('payments', {}):
-        db['payments'][payment_id]['status'] = 'rejected'
-        save_db(db)
-        return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'error': 'Payment not found'})
-
-def run_flask():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
-
-def keep_alive():
-    t = Thread(target=run_flask, daemon=True)
-    t.start()
-    logger.info(f"{Fore.GREEN}✅ Web App: http://localhost:{os.environ.get('PORT', 8080)}")
-
-# ==================== CLEANUP ====================
-
-def cleanup_on_exit():
-    logger.warning(f"{Fore.YELLOW}🛑 Shutting down...")
-    for deploy_id, process in list(active_processes.items()):
-        try:
-            process.terminate()
-            process.wait(timeout=3)
-        except:
-            try:
-                process.kill()
-            except:
-                pass
-    logger.warning(f"{Fore.GREEN}✅ Cleanup complete")
-
-atexit.register(cleanup_on_exit)
-
-def signal_handler(sig, frame):
-    cleanup_on_exit()
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
-
-# ==================== MAIN ====================
-
-if __name__ == '__main__':
-    print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'🚀 ELITEHOST v10.0 - ENTERPRISE EDITION':^90}")
-    print("=" * 90)
-    print(f"{Fore.GREEN}✨ NEW FEATURES v10.0:")
-    print(f"{Fore.CYAN}   🔐 Email-based authentication")
-    print(f"{Fore.CYAN}   📱 Device fingerprinting (1 account per device)")
-    print(f"{Fore.CYAN}   💎 2 free credits for new users")
-    print(f"{Fore.CYAN}   👑 Admin panel with full control")
-    print(f"{Fore.CYAN}   🚫 User ban/unban functionality")
-    print(f"{Fore.CYAN}   💰 Payment approval system")
-    print(f"{Fore.CYAN}   📊 Advanced analytics")
-    print(f"{Fore.CYAN}   🤖 AI auto-install dependencies")
-    print(f"{Fore.CYAN}   📱 Fixed bottom deploy buttons")
-    print(f"{Fore.CYAN}   🎨 Professional UI/UX")
-    print("=" * 90)
-    
-    keep_alive()
-    
-    port = os.environ.get('PORT', 8080)
-    print(f"\n{Fore.GREEN}🌐 Web App: http://localhost:{port}")
-    print(f"{Fore.YELLOW}📱 Register: http://localhost:{port}/register")
-    print(f"{Fore.YELLOW}🔑 Login: http://localhost:{port}/login")
-    print(f"{Fore.MAGENTA}👑 Admin Panel: http://localhost:{port}/admin")
-    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v10.0 READY':^90}")
-    print("=" * 90 + "\n")
-    
-    # Keep running
-    while True:
-        try:
-            time.sleep(1)
-        except KeyboardInterrupt:
-            break
