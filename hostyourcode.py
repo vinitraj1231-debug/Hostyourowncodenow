@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-🚀 ELITEHOST v11.0 - ADVANCED SPA EDITION
-Revolutionary AI-Powered Deployment Platform
-Single Page Application | Environment Variables | Backups | File Manager | Live Console
+🚀 ELITEHOST v11.0 - ULTIMATE ENTERPRISE EDITION
+Modern SPA Interface | Environment Variables | File Manager | Live Logs
+Advanced Admin Dashboard | Backup System | Dark Mode UI
 """
 
 import sys
@@ -63,6 +63,8 @@ print("✅ ALL DEPENDENCIES READY!")
 print("=" * 90 + "\n")
 
 # ==================== IMPORTS ====================
+import telebot
+from telebot import types
 import zipfile
 import shutil
 import time
@@ -100,12 +102,12 @@ ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
 # Credit system
-FREE_CREDITS = 5.0
+FREE_CREDITS = 2.0
 CREDIT_COSTS = {
     'file_upload': 0.5,
     'github_deploy': 1.0,
     'vps_command': 0.3,
-    'backup': 0.2,
+    'backup': 0.5,
 }
 
 # Directories
@@ -125,6 +127,7 @@ for d in [DATA_DIR, UPLOADS_DIR, DEPLOYS_DIR, BACKUPS_DIR, LOGS_DIR, PAYMENTS_DI
 app = Flask(__name__)
 app.secret_key = WEB_SECRET_KEY
 CORS(app)
+bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 
 # Global state
 active_processes = {}
@@ -158,17 +161,23 @@ def load_db():
         'deployments': {},
         'payments': {},
         'activity': [],
-        'banned_devices': []
+        'banned_devices': set()
     }
 
 def save_db(db):
     """Save database to JSON file"""
     with DB_LOCK:
+        db_copy = db.copy()
+        if 'banned_devices' in db_copy and isinstance(db_copy['banned_devices'], set):
+            db_copy['banned_devices'] = list(db_copy['banned_devices'])
+        
         with open(DB_FILE, 'w') as f:
-            json.dump(db, f, indent=2, default=str)
+            json.dump(db_copy, f, indent=2, default=str)
 
 # Load database
 db = load_db()
+if 'banned_devices' in db and isinstance(db['banned_devices'], list):
+    db['banned_devices'] = set(db['banned_devices'])
 
 # ==================== DEVICE FINGERPRINTING ====================
 
@@ -183,7 +192,7 @@ def get_device_fingerprint(request):
 
 def is_device_banned(fingerprint):
     """Check if device is banned"""
-    return fingerprint in db.get('banned_devices', [])
+    return fingerprint in db.get('banned_devices', set())
 
 def check_existing_account(fingerprint):
     """Check if device already has an account"""
@@ -241,7 +250,7 @@ def create_session(user_id, fingerprint):
         'user_id': user_id,
         'fingerprint': fingerprint,
         'created_at': datetime.now().isoformat(),
-        'expires_at': (datetime.now() + timedelta(days=30)).isoformat()
+        'expires_at': (datetime.now() + timedelta(days=7)).isoformat()
     }
     
     save_db(db)
@@ -254,13 +263,11 @@ def verify_session(session_token, fingerprint):
     
     session_data = db['sessions'][session_token]
     
-    # Check expiration
     if datetime.fromisoformat(session_data['expires_at']) < datetime.now():
         del db['sessions'][session_token]
         save_db(db)
         return None
     
-    # Check fingerprint match
     if session_data['fingerprint'] != fingerprint:
         return None
     
@@ -285,8 +292,6 @@ def log_activity(user_id, action, details, ip=''):
         'ip': ip,
         'timestamp': datetime.now().isoformat()
     })
-    # Keep only last 1000 activities
-    db['activity'] = db['activity'][-1000:]
     save_db(db)
 
 # ==================== CREDIT SYSTEM ====================
@@ -366,7 +371,6 @@ def detect_and_install_deps(project_path):
     install_log.append("🤖 AI DEPENDENCY ANALYZER v11.0")
     install_log.append("=" * 60)
     
-    # Check requirements.txt
     req_file = os.path.join(project_path, 'requirements.txt')
     if os.path.exists(req_file):
         install_log.append("\n📦 PYTHON REQUIREMENTS.TXT DETECTED")
@@ -389,7 +393,6 @@ def detect_and_install_deps(project_path):
         except Exception as e:
             install_log.append(f"❌ Error: {str(e)[:100]}")
     
-    # Smart code analysis
     python_files = []
     for root, dirs, files in os.walk(project_path):
         for file in files:
@@ -484,15 +487,8 @@ def update_deployment(deploy_id, **kwargs):
         db['deployments'][deploy_id]['updated_at'] = datetime.now().isoformat()
         save_db(db)
 
-def append_deployment_log(deploy_id, log_line):
-    """Append log to deployment"""
-    if deploy_id in db['deployments']:
-        current_logs = db['deployments'][deploy_id].get('logs', '')
-        db['deployments'][deploy_id]['logs'] = current_logs + log_line + '\n'
-        save_db(db)
-
 def get_deployment_files(deploy_id):
-    """Get list of files in deployment"""
+    """Get list of files in deployment directory"""
     if deploy_id not in db['deployments']:
         return []
     
@@ -503,25 +499,41 @@ def get_deployment_files(deploy_id):
     files = []
     for root, dirs, filenames in os.walk(deploy_dir):
         for filename in filenames:
-            full_path = os.path.join(root, filename)
-            rel_path = os.path.relpath(full_path, deploy_dir)
-            size = os.path.getsize(full_path)
+            filepath = os.path.join(root, filename)
+            rel_path = os.path.relpath(filepath, deploy_dir)
+            size = os.path.getsize(filepath)
             files.append({
                 'name': filename,
                 'path': rel_path,
                 'size': size,
-                'size_human': format_bytes(size)
+                'modified': datetime.fromtimestamp(os.path.getmtime(filepath)).isoformat()
             })
     
     return files
 
-def format_bytes(bytes):
-    """Format bytes to human readable"""
-    for unit in ['B', 'KB', 'MB', 'GB']:
-        if bytes < 1024:
-            return f"{bytes:.1f} {unit}"
-        bytes /= 1024
-    return f"{bytes:.1f} TB"
+def create_backup(deploy_id):
+    """Create backup ZIP of deployment"""
+    if deploy_id not in db['deployments']:
+        return None, "Deployment not found"
+    
+    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+    if not os.path.exists(deploy_dir):
+        return None, "Deployment directory not found"
+    
+    backup_name = f"backup_{deploy_id}_{int(time.time())}.zip"
+    backup_path = os.path.join(BACKUPS_DIR, backup_name)
+    
+    try:
+        with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(deploy_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, deploy_dir)
+                    zipf.write(file_path, arcname)
+        
+        return backup_path, backup_name
+    except Exception as e:
+        return None, str(e)
 
 def deploy_from_file(user_id, file_path, filename):
     try:
@@ -542,7 +554,7 @@ def deploy_from_file(user_id, file_path, filename):
             main_file = None
             for root, dirs, files in os.walk(deploy_dir):
                 for file in files:
-                    if file in ['main.py', 'app.py', 'bot.py', 'index.py']:
+                    if file in ['main.py', 'app.py', 'bot.py']:
                         main_file = os.path.join(root, file)
                         break
                 if main_file:
@@ -561,16 +573,12 @@ def deploy_from_file(user_id, file_path, filename):
         update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
-        update_deployment(deploy_id, dependencies=installed_deps, logs=install_log)
-        
-        # Get file list
         files = get_deployment_files(deploy_id)
-        update_deployment(deploy_id, files=files)
+        update_deployment(deploy_id, dependencies=installed_deps, files=files)
         
         env = os.environ.copy()
         env['PORT'] = str(port)
         
-        # Add user's environment variables
         deployment = db['deployments'][deploy_id]
         for key, value in deployment.get('env_vars', {}).items():
             env[key] = value
@@ -582,21 +590,11 @@ def deploy_from_file(user_id, file_path, filename):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=os.path.dirname(file_path),
-            env=env,
-            bufsize=1,
-            universal_newlines=True
+            env=env
         )
         
         active_processes[deploy_id] = process
-        
-        # Start log streaming thread
-        def stream_logs():
-            for line in process.stdout:
-                append_deployment_log(deploy_id, line.strip())
-        
-        Thread(target=stream_logs, daemon=True).start()
-        
-        update_deployment(deploy_id, status='running', pid=process.pid)
+        update_deployment(deploy_id, status='running', pid=process.pid, logs=f'✅ Live on port {port}!')
         
         return deploy_id, f"🎉 Deployed! Port {port}"
     
@@ -628,25 +626,20 @@ def deploy_from_github(user_id, repo_url, branch='main'):
         )
         
         if result.returncode != 0:
-            update_deployment(deploy_id, status='failed', logs='❌ Clone failed\n' + result.stderr)
+            update_deployment(deploy_id, status='failed', logs='❌ Clone failed')
             add_credits(user_id, cost, "Refund")
             return None, "❌ Clone failed"
         
         update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
-        update_deployment(deploy_id, dependencies=installed_deps, logs=install_log)
-        
-        # Get file list
         files = get_deployment_files(deploy_id)
-        update_deployment(deploy_id, files=files)
+        update_deployment(deploy_id, dependencies=installed_deps, files=files)
         
-        # Find start command
         main_files = {
             'main.py': f'{sys.executable} main.py',
             'app.py': f'{sys.executable} app.py',
             'bot.py': f'{sys.executable} bot.py',
-            'index.py': f'{sys.executable} index.py',
         }
         
         start_command = None
@@ -665,7 +658,6 @@ def deploy_from_github(user_id, repo_url, branch='main'):
         env = os.environ.copy()
         env['PORT'] = str(port)
         
-        # Add user's environment variables
         deployment = db['deployments'][deploy_id]
         for key, value in deployment.get('env_vars', {}).items():
             env[key] = value
@@ -675,21 +667,11 @@ def deploy_from_github(user_id, repo_url, branch='main'):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=deploy_dir,
-            env=env,
-            bufsize=1,
-            universal_newlines=True
+            env=env
         )
         
         active_processes[deploy_id] = process
-        
-        # Start log streaming thread
-        def stream_logs():
-            for line in process.stdout:
-                append_deployment_log(deploy_id, line.strip())
-        
-        Thread(target=stream_logs, daemon=True).start()
-        
-        update_deployment(deploy_id, status='running', pid=process.pid)
+        update_deployment(deploy_id, status='running', pid=process.pid, logs=f'✅ Running on port {port}!')
         
         return deploy_id, f"🎉 Deployed! Port {port}"
     
@@ -709,98 +691,47 @@ def stop_deployment(deploy_id):
             except:
                 process.kill()
             del active_processes[deploy_id]
-            update_deployment(deploy_id, status='stopped', logs='🛑 Stopped by user')
+            update_deployment(deploy_id, status='stopped', logs='🛑 Stopped')
             return True, "Stopped"
         return False, "Not running"
     except Exception as e:
         return False, str(e)
 
-def restart_deployment(deploy_id):
-    """Restart a deployment"""
-    if deploy_id not in db['deployments']:
-        return False, "Not found"
+def get_system_stats():
+    """Get system CPU and RAM usage"""
+    cpu_percent = psutil.cpu_percent(interval=1)
+    memory = psutil.virtual_memory()
     
-    deployment = db['deployments'][deploy_id]
+    process_stats = []
+    for deploy_id, process in active_processes.items():
+        try:
+            p = psutil.Process(process.pid)
+            process_stats.append({
+                'deploy_id': deploy_id,
+                'cpu': p.cpu_percent(),
+                'memory': p.memory_info().rss / 1024 / 1024,  # MB
+                'status': p.status()
+            })
+        except:
+            pass
     
-    # Stop if running
-    stop_deployment(deploy_id)
-    
-    # Start again
-    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
-    
-    # Find main file
-    main_file = None
-    for root, dirs, files in os.walk(deploy_dir):
-        for file in files:
-            if file in ['main.py', 'app.py', 'bot.py', 'index.py']:
-                main_file = os.path.join(root, file)
-                break
-        if main_file:
-            break
-    
-    if not main_file:
-        return False, "No main file"
-    
-    env = os.environ.copy()
-    env['PORT'] = str(deployment['port'])
-    
-    # Add environment variables
-    for key, value in deployment.get('env_vars', {}).items():
-        env[key] = value
-    
-    process = subprocess.Popen(
-        [sys.executable, main_file],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        cwd=os.path.dirname(main_file),
-        env=env,
-        bufsize=1,
-        universal_newlines=True
-    )
-    
-    active_processes[deploy_id] = process
-    
-    # Start log streaming
-    def stream_logs():
-        for line in process.stdout:
-            append_deployment_log(deploy_id, line.strip())
-    
-    Thread(target=stream_logs, daemon=True).start()
-    
-    update_deployment(deploy_id, status='running', pid=process.pid)
-    
-    return True, "Restarted"
+    return {
+        'system_cpu': cpu_percent,
+        'system_memory': memory.percent,
+        'total_memory': memory.total / 1024 / 1024 / 1024,  # GB
+        'used_memory': memory.used / 1024 / 1024 / 1024,  # GB
+        'processes': process_stats
+    }
 
-def create_backup(deploy_id):
-    """Create backup of deployment"""
-    if deploy_id not in db['deployments']:
-        return None, "Not found"
-    
-    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
-    if not os.path.exists(deploy_dir):
-        return None, "Directory not found"
-    
-    backup_name = f"{deploy_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
-    backup_path = os.path.join(BACKUPS_DIR, backup_name)
-    
-    with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(deploy_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, deploy_dir)
-                zipf.write(file_path, arcname)
-    
-    return backup_path, backup_name
+# ==================== MODERN SPA HTML ====================
 
-# ==================== SPA HTML TEMPLATE ====================
-
-SPA_TEMPLATE = """
+SPA_HTML = """
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EliteHost v11.0 - Advanced Platform</title>
+    <title>EliteHost v11.0 - Ultimate Deployment Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -811,17 +742,18 @@ SPA_TEMPLATE = """
                 extend: {
                     colors: {
                         dark: {
-                            50: '#f9fafb',
-                            100: '#f3f4f6',
-                            200: '#e5e7eb',
-                            300: '#d1d5db',
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                        900: '#111827',
-                        950: '#030712'
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
                     }
                 }
             }
@@ -830,711 +762,621 @@ SPA_TEMPLATE = """
     <style>
         [x-cloak] { display: none !important; }
         
-        .glass {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(75, 85, 99, 0.3);
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
         
-        .gradient-border {
-            border: 2px solid transparent;
-            background: linear-gradient(#111827, #111827) padding-box,
-                        linear-gradient(135deg, #667eea, #764ba2) border-box;
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #1e293b;
         }
         
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
         }
         
-        ::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
         }
         
         .terminal {
             font-family: 'Courier New', monospace;
-            background: #0d1117;
-            color: #58a6ff;
+            background: #0f172a;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            max-height: 400px;
+            overflow-y: auto;
         }
     </style>
 </head>
-<body class="bg-dark-950 text-gray-100 font-sans" x-data="appData()" x-cloak>
+<body class="bg-dark-950 text-gray-100" x-data="app()" x-init="init()">
     
-    <!-- Sidebar -->
-    <div class="fixed left-0 top-0 h-full w-64 glass border-r border-dark-700 z-50">
-        <div class="p-6">
-            <div class="flex items-center gap-3 mb-8">
-                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-rocket text-white text-xl"></i>
+    <!-- Main Container -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <div class="w-64 bg-dark-900 border-r border-dark-800 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-dark-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-rocket text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="text-lg font-bold">EliteHost</div>
+                        <div class="text-xs text-gray-400">v11.0 Ultimate</div>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-xl font-black">EliteHost</h1>
-                    <p class="text-xs text-gray-400">v11.0 Advanced</p>
+            </div>
+            
+            <!-- Credits Badge -->
+            <div class="px-6 py-4 border-b border-dark-800">
+                <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-gem text-white"></i>
+                            <span class="text-white font-semibold">Credits</span>
+                        </div>
+                        <span class="text-white font-bold text-xl" x-text="credits"></span>
+                    </div>
                 </div>
             </div>
             
             <!-- Navigation -->
-            <nav class="space-y-2">
-                <button @click="currentView = 'dashboard'" 
-                        :class="currentView === 'dashboard' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-dark-800'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium">
-                    <i class="fas fa-home w-5"></i>
-                    <span>Dashboard</span>
-                </button>
-                
-                <button @click="currentView = 'deployments'" 
-                        :class="currentView === 'deployments' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-dark-800'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium">
-                    <i class="fas fa-rocket w-5"></i>
-                    <span>Deployments</span>
-                    <span x-text="deployments.length" class="ml-auto bg-dark-700 px-2 py-1 rounded-full text-xs"></span>
-                </button>
-                
-                <button @click="currentView = 'settings'" 
-                        :class="currentView === 'settings' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-dark-800'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium">
-                    <i class="fas fa-cog w-5"></i>
-                    <span>Settings</span>
-                </button>
-                
-                <button @click="currentView = 'activity'" 
-                        :class="currentView === 'activity' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:bg-dark-800'"
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium">
-                    <i class="fas fa-history w-5"></i>
-                    <span>Activity</span>
-                </button>
-                
-                <template x-if="isAdmin">
-                    <button @click="currentView = 'admin'" 
-                            :class="currentView === 'admin' ? 'bg-orange-600 text-white' : 'text-gray-400 hover:bg-dark-800'"
-                            class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition font-medium">
-                        <i class="fas fa-crown w-5"></i>
-                        <span>Admin Panel</span>
+            <nav class="flex-1 overflow-y-auto scrollbar-thin py-4">
+                <template x-for="item in navItems" :key="item.id">
+                    <button 
+                        @click="currentView = item.id"
+                        :class="currentView === item.id ? 'bg-dark-800 text-blue-400 border-l-4 border-blue-500' : 'text-gray-400 hover:bg-dark-800 hover:text-gray-200'"
+                        class="w-full px-6 py-3 flex items-center gap-3 transition-all">
+                        <i :class="item.icon" class="w-5"></i>
+                        <span class="font-medium" x-text="item.label"></span>
                     </button>
                 </template>
             </nav>
             
             <!-- User Info -->
-            <div class="absolute bottom-6 left-6 right-6">
-                <div class="glass rounded-xl p-4">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                            <span x-text="userEmail ? userEmail[0].toUpperCase() : 'U'"></span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium truncate" x-text="userEmail"></p>
-                            <p class="text-xs text-gray-400">User Account</p>
-                        </div>
+            <div class="p-4 border-t border-dark-800">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white"></i>
                     </div>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs text-gray-400">Credits</span>
-                        <span class="text-lg font-bold text-purple-400" x-text="credits === Infinity ? '∞' : credits.toFixed(1)"></span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium truncate" x-text="userEmail"></div>
+                        <div class="text-xs text-gray-400">Active User</div>
                     </div>
-                    <button @click="logout()" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-medium transition">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                    </button>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Content -->
-    <div class="ml-64 p-8">
-        
-        <!-- Dashboard View -->
-        <div x-show="currentView === 'dashboard'" x-transition>
-            <div class="mb-8">
-                <h2 class="text-3xl font-black mb-2">Dashboard</h2>
-                <p class="text-gray-400">Welcome back! Here's your deployment overview.</p>
-            </div>
-            
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="glass rounded-2xl p-6 gradient-border">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-rocket text-blue-400 text-xl"></i>
-                        </div>
-                        <span class="text-3xl font-black" x-text="deployments.length"></span>
-                    </div>
-                    <p class="text-gray-400 text-sm font-medium">Total Deployments</p>
-                </div>
-                
-                <div class="glass rounded-2xl p-6 gradient-border">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-check-circle text-green-400 text-xl"></i>
-                        </div>
-                        <span class="text-3xl font-black text-green-400" x-text="deployments.filter(d => d.status === 'running').length"></span>
-                    </div>
-                    <p class="text-gray-400 text-sm font-medium">Active Now</p>
-                </div>
-                
-                <div class="glass rounded-2xl p-6 gradient-border">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-gem text-purple-400 text-xl"></i>
-                        </div>
-                        <span class="text-3xl font-black text-purple-400" x-text="credits === Infinity ? '∞' : credits.toFixed(1)"></span>
-                    </div>
-                    <p class="text-gray-400 text-sm font-medium">Available Credits</p>
-                </div>
-                
-                <div class="glass rounded-2xl p-6 gradient-border">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-robot text-pink-400 text-xl"></i>
-                        </div>
-                        <span class="text-3xl font-black text-pink-400">AI</span>
-                    </div>
-                    <p class="text-gray-400 text-sm font-medium">Auto Dependencies</p>
-                </div>
-            </div>
-            
-            <!-- Quick Actions -->
-            <div class="glass rounded-2xl p-6 mb-8">
-                <h3 class="text-xl font-bold mb-4">Quick Deploy</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <button @click="showModal = 'upload'" 
-                            class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 px-6 rounded-xl font-bold transition flex items-center justify-center gap-3">
-                        <i class="fas fa-cloud-upload-alt text-2xl"></i>
-                        <div class="text-left">
-                            <div>Upload Files</div>
-                            <div class="text-xs opacity-80">Deploy from ZIP or Python files</div>
-                        </div>
-                    </button>
-                    
-                    <button @click="showModal = 'github'" 
-                            class="bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white py-4 px-6 rounded-xl font-bold transition flex items-center justify-center gap-3">
-                        <i class="fab fa-github text-2xl"></i>
-                        <div class="text-left">
-                            <div>GitHub Deploy</div>
-                            <div class="text-xs opacity-80">Clone and deploy from repository</div>
-                        </div>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Recent Deployments -->
-            <div class="glass rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xl font-bold">Recent Deployments</h3>
-                    <button @click="loadDeployments()" class="text-purple-400 hover:text-purple-300">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                
-                <template x-if="deployments.length === 0">
-                    <div class="text-center py-12">
-                        <i class="fas fa-rocket text-6xl text-gray-700 mb-4"></i>
-                        <p class="text-gray-400">No deployments yet. Start by deploying your first app!</p>
-                    </div>
-                </template>
-                
-                <div class="space-y-3">
-                    <template x-for="deploy in deployments.slice(0, 5)" :key="deploy.id">
-                        <div class="bg-dark-800 rounded-xl p-4 hover:bg-dark-700 transition cursor-pointer"
-                             @click="viewDeployment(deploy.id)">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3 flex-1">
-                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                                        <i class="fas fa-rocket text-white"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <h4 class="font-bold truncate" x-text="deploy.name"></h4>
-                                        <p class="text-xs text-gray-400">
-                                            Port <span x-text="deploy.port"></span> • 
-                                            <span x-text="new Date(deploy.created_at).toLocaleDateString()"></span>
-                                        </p>
-                                    </div>
-                                </div>
-                                <span :class="{
-                                    'bg-green-500/20 text-green-400': deploy.status === 'running',
-                                    'bg-yellow-500/20 text-yellow-400': deploy.status === 'pending',
-                                    'bg-red-500/20 text-red-400': deploy.status === 'stopped' || deploy.status === 'failed'
-                                }" class="px-3 py-1 rounded-full text-xs font-bold uppercase" x-text="deploy.status"></span>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Deployments View -->
-        <div x-show="currentView === 'deployments'" x-transition>
-            <div class="mb-8 flex items-center justify-between">
-                <div>
-                    <h2 class="text-3xl font-black mb-2">All Deployments</h2>
-                    <p class="text-gray-400">Manage your deployed applications</p>
-                </div>
-                <button @click="loadDeployments()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium transition">
-                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                <button @click="logout()" class="w-full px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white text-sm font-medium transition-colors">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
                 </button>
             </div>
-            
-            <template x-if="deployments.length === 0">
-                <div class="glass rounded-2xl p-12 text-center">
-                    <i class="fas fa-rocket text-6xl text-gray-700 mb-4"></i>
-                    <h3 class="text-2xl font-bold mb-2">No Deployments Yet</h3>
-                    <p class="text-gray-400 mb-6">Get started by deploying your first application</p>
-                    <div class="flex gap-4 justify-center">
-                        <button @click="showModal = 'upload'" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-bold transition">
-                            <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Files
-                        </button>
-                        <button @click="showModal = 'github'" class="bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-lg font-bold transition">
-                            <i class="fab fa-github mr-2"></i>GitHub Deploy
-                        </button>
-                    </div>
-                </div>
-            </template>
-            
-            <div class="grid grid-cols-1 gap-6">
-                <template x-for="deploy in deployments" :key="deploy.id">
-                    <div class="glass rounded-2xl p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex items-center gap-4 flex-1">
-                                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                                    <i class="fas fa-rocket text-white text-2xl"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="text-xl font-bold mb-1" x-text="deploy.name"></h3>
-                                    <div class="flex flex-wrap gap-3 text-sm text-gray-400">
-                                        <span><i class="fas fa-fingerprint mr-1"></i><span x-text="deploy.id"></span></span>
-                                        <span><i class="fas fa-network-wired mr-1"></i>Port <span x-text="deploy.port"></span></span>
-                                        <span><i class="fas fa-calendar mr-1"></i><span x-text="new Date(deploy.created_at).toLocaleDateString()"></span></span>
-                                        <template x-if="deploy.dependencies && deploy.dependencies.length > 0">
-                                            <span><i class="fas fa-robot mr-1"></i><span x-text="deploy.dependencies.length"></span> packages</span>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                            <span :class="{
-                                'bg-green-500/20 text-green-400 border-green-500/30': deploy.status === 'running',
-                                'bg-yellow-500/20 text-yellow-400 border-yellow-500/30': deploy.status === 'pending',
-                                'bg-red-500/20 text-red-400 border-red-500/30': deploy.status === 'stopped' || deploy.status === 'failed'
-                            }" class="px-4 py-2 rounded-lg text-sm font-bold uppercase border" x-text="deploy.status"></span>
-                        </div>
-                        
-                        <div class="flex flex-wrap gap-2">
-                            <button @click="viewDeployment(deploy.id)" 
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                                <i class="fas fa-eye mr-2"></i>View Details
-                            </button>
-                            <button @click="viewLogs(deploy.id)" 
-                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                                <i class="fas fa-terminal mr-2"></i>Console
-                            </button>
-                            <button @click="restartDeploy(deploy.id)" 
-                                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                                <i class="fas fa-redo mr-2"></i>Restart
-                            </button>
-                            <button @click="stopDeploy(deploy.id)" 
-                                    class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                                <i class="fas fa-stop mr-2"></i>Stop
-                            </button>
-                            <button @click="createBackup(deploy.id)" 
-                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                                <i class="fas fa-download mr-2"></i>Backup
-                            </button>
-                            <button @click="deleteDeploy(deploy.id)" 
-                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                                <i class="fas fa-trash mr-2"></i>Delete
-                            </button>
-                        </div>
-                    </div>
-                </template>
-            </div>
         </div>
         
-        <!-- Settings View -->
-        <div x-show="currentView === 'settings'" x-transition>
-            <div class="mb-8">
-                <h2 class="text-3xl font-black mb-2">Settings</h2>
-                <p class="text-gray-400">Manage your account and preferences</p>
-            </div>
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
             
-            <div class="glass rounded-2xl p-6 mb-6">
-                <h3 class="text-xl font-bold mb-4">Account Information</h3>
-                <div class="space-y-4">
+            <!-- Header -->
+            <header class="bg-dark-900 border-b border-dark-800 px-6 py-4">
+                <div class="flex items-center justify-between">
                     <div>
-                        <label class="text-sm text-gray-400 block mb-2">Email Address</label>
-                        <input type="email" x-model="userEmail" disabled 
-                               class="w-full bg-dark-800 border border-dark-700 rounded-lg px-4 py-3 text-gray-300">
+                        <h1 class="text-2xl font-bold" x-text="currentViewTitle"></h1>
+                        <p class="text-sm text-gray-400 mt-1" x-text="currentViewSubtitle"></p>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">Total Credits Earned</label>
-                            <input type="text" :value="totalEarned" disabled 
-                                   class="w-full bg-dark-800 border border-dark-700 rounded-lg px-4 py-3 text-gray-300">
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">Total Credits Spent</label>
-                            <input type="text" :value="totalSpent" disabled 
-                                   class="w-full bg-dark-800 border border-dark-700 rounded-lg px-4 py-3 text-gray-300">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="glass rounded-2xl p-6">
-                <h3 class="text-xl font-bold mb-4 text-yellow-400">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>Danger Zone
-                </h3>
-                <p class="text-gray-400 mb-4">These actions are irreversible. Please be careful.</p>
-                <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold transition">
-                    <i class="fas fa-trash mr-2"></i>Delete All Deployments
-                </button>
-            </div>
-        </div>
-        
-        <!-- Activity View -->
-        <div x-show="currentView === 'activity'" x-transition>
-            <div class="mb-8">
-                <h2 class="text-3xl font-black mb-2">Activity Log</h2>
-                <p class="text-gray-400">Recent account activity and actions</p>
-            </div>
-            
-            <div class="glass rounded-2xl p-6">
-                <div class="space-y-3">
-                    <template x-for="activity in activityLog" :key="activity.timestamp">
-                        <div class="bg-dark-800 rounded-lg p-4 flex items-center gap-4">
-                            <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-history text-purple-400"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="font-medium" x-text="activity.details"></p>
-                                <p class="text-xs text-gray-400" x-text="new Date(activity.timestamp).toLocaleString()"></p>
-                            </div>
-                            <span class="text-xs text-gray-500" x-text="activity.action"></span>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Admin Panel -->
-        <template x-if="isAdmin">
-            <div x-show="currentView === 'admin'" x-transition>
-                <div class="mb-8">
-                    <h2 class="text-3xl font-black mb-2">
-                        <i class="fas fa-crown text-yellow-400 mr-2"></i>Admin Control Panel
-                    </h2>
-                    <p class="text-gray-400">System monitoring and user management</p>
-                </div>
-                
-                <!-- System Stats -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="glass rounded-2xl p-6">
-                        <div class="text-3xl font-black mb-2" x-text="adminStats.total_users"></div>
-                        <p class="text-gray-400 text-sm">Total Users</p>
-                    </div>
-                    <div class="glass rounded-2xl p-6">
-                        <div class="text-3xl font-black text-green-400 mb-2" x-text="adminStats.total_deployments"></div>
-                        <p class="text-gray-400 text-sm">Deployments</p>
-                    </div>
-                    <div class="glass rounded-2xl p-6">
-                        <div class="text-3xl font-black text-blue-400 mb-2" x-text="adminStats.active_processes"></div>
-                        <p class="text-gray-400 text-sm">Active Processes</p>
-                    </div>
-                    <div class="glass rounded-2xl p-6">
-                        <div class="text-3xl font-black text-purple-400 mb-2" x-text="systemStats.cpu + '%'"></div>
-                        <p class="text-gray-400 text-sm">CPU Usage</p>
-                    </div>
-                </div>
-                
-                <!-- Users Table -->
-                <div class="glass rounded-2xl p-6 mb-6">
-                    <h3 class="text-xl font-bold mb-4">All Users</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-dark-700">
-                                    <th class="text-left py-3 px-4 text-sm font-bold text-gray-400">Email</th>
-                                    <th class="text-left py-3 px-4 text-sm font-bold text-gray-400">Credits</th>
-                                    <th class="text-left py-3 px-4 text-sm font-bold text-gray-400">Deployments</th>
-                                    <th class="text-left py-3 px-4 text-sm font-bold text-gray-400">Status</th>
-                                    <th class="text-left py-3 px-4 text-sm font-bold text-gray-400">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="user in allUsers" :key="user.id">
-                                    <tr class="border-b border-dark-800 hover:bg-dark-800">
-                                        <td class="py-3 px-4" x-text="user.email"></td>
-                                        <td class="py-3 px-4 font-bold text-purple-400" x-text="user.credits.toFixed(1)"></td>
-                                        <td class="py-3 px-4" x-text="user.deployments.length"></td>
-                                        <td class="py-3 px-4">
-                                            <span :class="user.is_banned ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'" 
-                                                  class="px-3 py-1 rounded-full text-xs font-bold"
-                                                  x-text="user.is_banned ? 'BANNED' : 'ACTIVE'"></span>
-                                        </td>
-                                        <td class="py-3 px-4">
-                                            <button @click="adminAddCredits(user.id)" 
-                                                    class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-medium mr-2">
-                                                <i class="fas fa-plus"></i> Credits
-                                            </button>
-                                            <button @click="adminBanUser(user.id, !user.is_banned)" 
-                                                    :class="user.is_banned ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'"
-                                                    class="text-white px-3 py-1 rounded text-xs font-medium">
-                                                <i :class="user.is_banned ? 'fas fa-check' : 'fas fa-ban'"></i>
-                                                <span x-text="user.is_banned ? 'Unban' : 'Ban'"></span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </template>
-    </div>
-    
-    <!-- Deployment Detail Modal -->
-    <div x-show="showModal === 'detail'" 
-         x-transition
-         class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
-         @click.self="showModal = null">
-        <div class="glass rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div class="p-6 border-b border-dark-700 flex items-center justify-between">
-                <div>
-                    <h3 class="text-2xl font-bold" x-text="selectedDeploy?.name"></h3>
-                    <p class="text-sm text-gray-400">Deployment ID: <span x-text="selectedDeploy?.id"></span></p>
-                </div>
-                <button @click="showModal = null" class="w-10 h-10 bg-dark-800 hover:bg-dark-700 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto p-6">
-                <!-- Tabs -->
-                <div class="flex gap-2 mb-6 border-b border-dark-700">
-                    <button @click="detailTab = 'overview'" 
-                            :class="detailTab === 'overview' ? 'border-purple-500 text-white' : 'border-transparent text-gray-400'"
-                            class="px-4 py-2 border-b-2 font-medium transition">
-                        <i class="fas fa-info-circle mr-2"></i>Overview
-                    </button>
-                    <button @click="detailTab = 'console'" 
-                            :class="detailTab === 'console' ? 'border-purple-500 text-white' : 'border-transparent text-gray-400'"
-                            class="px-4 py-2 border-b-2 font-medium transition">
-                        <i class="fas fa-terminal mr-2"></i>Live Console
-                    </button>
-                    <button @click="detailTab = 'env'" 
-                            :class="detailTab === 'env' ? 'border-purple-500 text-white' : 'border-transparent text-gray-400'"
-                            class="px-4 py-2 border-b-2 font-medium transition">
-                        <i class="fas fa-key mr-2"></i>Environment
-                    </button>
-                    <button @click="detailTab = 'files'" 
-                            :class="detailTab === 'files' ? 'border-purple-500 text-white' : 'border-transparent text-gray-400'"
-                            class="px-4 py-2 border-b-2 font-medium transition">
-                        <i class="fas fa-folder mr-2"></i>Files
-                    </button>
-                    <button @click="detailTab = 'backup'" 
-                            :class="detailTab === 'backup' ? 'border-purple-500 text-white' : 'border-transparent text-gray-400'"
-                            class="px-4 py-2 border-b-2 font-medium transition">
-                        <i class="fas fa-archive mr-2"></i>Backup
-                    </button>
-                </div>
-                
-                <!-- Overview Tab -->
-                <div x-show="detailTab === 'overview'" x-transition>
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">Status</label>
-                            <span :class="{
-                                'bg-green-500/20 text-green-400': selectedDeploy?.status === 'running',
-                                'bg-yellow-500/20 text-yellow-400': selectedDeploy?.status === 'pending',
-                                'bg-red-500/20 text-red-400': selectedDeploy?.status === 'stopped'
-                            }" class="inline-block px-4 py-2 rounded-lg font-bold uppercase" x-text="selectedDeploy?.status"></span>
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">Port</label>
-                            <div class="bg-dark-800 rounded-lg px-4 py-2 font-mono" x-text="selectedDeploy?.port"></div>
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">Type</label>
-                            <div class="bg-dark-800 rounded-lg px-4 py-2" x-text="selectedDeploy?.type"></div>
-                        </div>
-                        <div>
-                            <label class="text-sm text-gray-400 block mb-2">Process ID</label>
-                            <div class="bg-dark-800 rounded-lg px-4 py-2 font-mono" x-text="selectedDeploy?.pid || 'N/A'"></div>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="text-sm text-gray-400 block mb-2">Created At</label>
-                            <div class="bg-dark-800 rounded-lg px-4 py-2" x-text="selectedDeploy?.created_at ? new Date(selectedDeploy.created_at).toLocaleString() : 'N/A'"></div>
-                        </div>
-                        <template x-if="selectedDeploy?.repo_url">
-                            <div class="col-span-2">
-                                <label class="text-sm text-gray-400 block mb-2">Repository URL</label>
-                                <div class="bg-dark-800 rounded-lg px-4 py-2 font-mono text-sm break-all" x-text="selectedDeploy.repo_url"></div>
-                            </div>
-                        </template>
-                        <template x-if="selectedDeploy?.dependencies?.length > 0">
-                            <div class="col-span-2">
-                                <label class="text-sm text-gray-400 block mb-2">AI Installed Dependencies</label>
-                                <div class="bg-dark-800 rounded-lg p-4 max-h-40 overflow-y-auto">
-                                    <div class="flex flex-wrap gap-2">
-                                        <template x-for="dep in selectedDeploy.dependencies" :key="dep">
-                                            <span class="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-xs font-medium" x-text="dep"></span>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-                
-                <!-- Console Tab -->
-                <div x-show="detailTab === 'console'" x-transition>
-                    <div class="mb-4 flex gap-2">
-                        <button @click="refreshLogs(selectedDeploy?.id)" 
-                                class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-medium transition">
-                            <i class="fas fa-sync-alt mr-2"></i>Refresh Logs
+                    <div class="flex items-center gap-3">
+                        <button @click="refreshData()" class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-sync mr-2"></i>Refresh
                         </button>
-                        <button @click="clearLogs()" 
-                                class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition">
-                            <i class="fas fa-trash mr-2"></i>Clear Display
-                        </button>
-                    </div>
-                    <div class="terminal rounded-xl p-4 h-96 overflow-y-auto font-mono text-sm" x-ref="consoleOutput">
-                        <pre x-text="consoleLog || 'No logs available'"></pre>
-                    </div>
-                </div>
-                
-                <!-- Environment Tab -->
-                <div x-show="detailTab === 'env'" x-transition>
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-400 mb-4">Add environment variables (secrets) for this deployment. Changes require restart.</p>
-                        <div class="flex gap-2 mb-4">
-                            <input x-model="newEnvKey" 
-                                   type="text" 
-                                   placeholder="KEY" 
-                                   class="flex-1 bg-dark-800 border border-dark-700 rounded-lg px-4 py-2">
-                            <input x-model="newEnvValue" 
-                                   type="text" 
-                                   placeholder="VALUE" 
-                                   class="flex-1 bg-dark-800 border border-dark-700 rounded-lg px-4 py-2">
-                            <button @click="addEnvVar()" 
-                                    class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-medium transition">
-                                <i class="fas fa-plus mr-2"></i>Add
+                        <template x-if="isAdmin">
+                            <button @click="currentView = 'admin'" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-crown mr-2"></i>Admin
                             </button>
+                        </template>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto scrollbar-thin p-6">
+                
+                <!-- Dashboard View -->
+                <div x-show="currentView === 'dashboard'" x-cloak>
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-rocket text-blue-400 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold" x-text="deployments.length"></span>
+                            </div>
+                            <div class="text-gray-400 text-sm font-medium">Total Deployments</div>
+                        </div>
+                        
+                        <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold" x-text="deployments.filter(d => d.status === 'running').length"></span>
+                            </div>
+                            <div class="text-gray-400 text-sm font-medium">Active Now</div>
+                        </div>
+                        
+                        <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-gem text-purple-400 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold" x-text="credits"></span>
+                            </div>
+                            <div class="text-gray-400 text-sm font-medium">Available Credits</div>
+                        </div>
+                        
+                        <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-robot text-orange-400 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold">AI</span>
+                            </div>
+                            <div class="text-gray-400 text-sm font-medium">Auto Install</div>
                         </div>
                     </div>
                     
-                    <div class="space-y-2">
-                        <template x-if="!selectedDeploy?.env_vars || Object.keys(selectedDeploy.env_vars).length === 0">
-                            <div class="text-center py-8 text-gray-400">
-                                <i class="fas fa-key text-4xl mb-2 opacity-30"></i>
-                                <p>No environment variables set</p>
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <button @click="showUploadModal = true" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-xl p-6 text-left transition-all transform hover:scale-105">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-white/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-cloud-upload-alt text-3xl"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xl font-bold mb-1">Upload & Deploy</div>
+                                    <div class="text-sm opacity-90">Deploy Python, JS, or ZIP files</div>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button @click="showGithubModal = true" class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-xl p-6 text-left transition-all transform hover:scale-105">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-white/20 rounded-lg flex items-center justify-center">
+                                    <i class="fab fa-github text-3xl"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xl font-bold mb-1">GitHub Deploy</div>
+                                    <div class="text-sm opacity-90">Clone and deploy from repository</div>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <!-- Recent Deployments -->
+                    <div class="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-dark-800">
+                            <h2 class="text-lg font-bold">Recent Deployments</h2>
+                        </div>
+                        <div class="divide-y divide-dark-800">
+                            <template x-if="deployments.length === 0">
+                                <div class="px-6 py-12 text-center">
+                                    <div class="w-20 h-20 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-rocket text-4xl text-gray-600"></i>
+                                    </div>
+                                    <div class="text-lg font-semibold mb-2">No Deployments Yet</div>
+                                    <div class="text-sm text-gray-400">Click the buttons above to deploy your first app!</div>
+                                </div>
+                            </template>
+                            
+                            <template x-for="deploy in deployments.slice(0, 5)" :key="deploy.id">
+                                <div class="px-6 py-4 hover:bg-dark-800 transition-colors cursor-pointer" @click="selectDeployment(deploy)">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <div class="text-base font-semibold" x-text="deploy.name"></div>
+                                                <span :class="getStatusClass(deploy.status)" class="px-2 py-1 text-xs font-bold rounded uppercase" x-text="deploy.status"></span>
+                                            </div>
+                                            <div class="flex items-center gap-4 text-xs text-gray-400">
+                                                <span><i class="fas fa-fingerprint mr-1"></i><span x-text="deploy.id"></span></span>
+                                                <span><i class="fas fa-network-wired mr-1"></i>Port <span x-text="deploy.port"></span></span>
+                                                <span x-show="deploy.dependencies && deploy.dependencies.length > 0">
+                                                    <i class="fas fa-robot mr-1"></i><span x-text="deploy.dependencies.length"></span> packages
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <button class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Deployments View -->
+                <div x-show="currentView === 'deployments'" x-cloak>
+                    <div class="space-y-4">
+                        <template x-if="deployments.length === 0">
+                            <div class="bg-dark-900 rounded-xl border border-dark-800 px-6 py-12 text-center">
+                                <div class="w-20 h-20 bg-dark-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-rocket text-4xl text-gray-600"></i>
+                                </div>
+                                <div class="text-lg font-semibold mb-2">No Deployments</div>
+                                <div class="text-sm text-gray-400 mb-6">Start by deploying your first application</div>
+                                <div class="flex gap-3 justify-center">
+                                    <button @click="showUploadModal = true" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors">
+                                        <i class="fas fa-upload mr-2"></i>Upload File
+                                    </button>
+                                    <button @click="showGithubModal = true" class="px-6 py-3 bg-purple-500 hover:bg-purple-600 rounded-lg font-medium transition-colors">
+                                        <i class="fab fa-github mr-2"></i>GitHub Deploy
+                                    </button>
+                                </div>
                             </div>
                         </template>
                         
-                        <template x-for="[key, value] in Object.entries(selectedDeploy?.env_vars || {})" :key="key">
-                            <div class="bg-dark-800 rounded-lg p-3 flex items-center justify-between">
-                                <div class="flex-1 grid grid-cols-2 gap-4">
-                                    <div>
-                                        <span class="text-xs text-gray-400">Key</span>
-                                        <div class="font-mono font-bold" x-text="key"></div>
+                        <template x-for="deploy in deployments" :key="deploy.id">
+                            <div class="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden hover:border-blue-500 transition-colors">
+                                <div class="p-6">
+                                    <div class="flex items-start justify-between mb-4">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <h3 class="text-xl font-bold" x-text="deploy.name"></h3>
+                                                <span :class="getStatusClass(deploy.status)" class="px-3 py-1 text-xs font-bold rounded-full uppercase" x-text="deploy.status"></span>
+                                            </div>
+                                            <div class="flex items-center gap-4 text-sm text-gray-400">
+                                                <span><i class="fas fa-fingerprint mr-1"></i><span x-text="deploy.id"></span></span>
+                                                <span><i class="fas fa-network-wired mr-1"></i>Port <span x-text="deploy.port"></span></span>
+                                                <span><i class="fas fa-clock mr-1"></i><span x-text="new Date(deploy.created_at).toLocaleDateString()"></span></span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span class="text-xs text-gray-400">Value</span>
-                                        <div class="font-mono" x-text="value"></div>
+                                    
+                                    <div class="flex flex-wrap gap-2">
+                                        <button @click="selectDeployment(deploy); currentView = 'deployment-detail'" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-eye mr-2"></i>View Details
+                                        </button>
+                                        <button @click="viewLogs(deploy.id)" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-terminal mr-2"></i>Logs
+                                        </button>
+                                        <button @click="stopDeployment(deploy.id)" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-stop mr-2"></i>Stop
+                                        </button>
+                                        <button @click="deleteDeployment(deploy.id)" class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-trash mr-2"></i>Delete
+                                        </button>
                                     </div>
                                 </div>
-                                <button @click="deleteEnvVar(key)" 
-                                        class="bg-red-600 hover:bg-red-700 w-8 h-8 rounded-lg flex items-center justify-center ml-4">
-                                    <i class="fas fa-trash text-xs"></i>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <!-- Deployment Detail View -->
+                <div x-show="currentView === 'deployment-detail' && selectedDeployment" x-cloak>
+                    <div class="space-y-6">
+                        <!-- Back Button -->
+                        <button @click="currentView = 'deployments'" class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Deployments
+                        </button>
+                        
+                        <!-- Tabs -->
+                        <div class="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden">
+                            <div class="flex border-b border-dark-800">
+                                <button @click="detailTab = 'overview'" :class="detailTab === 'overview' ? 'bg-dark-800 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-200'" class="px-6 py-3 font-medium transition-colors">
+                                    <i class="fas fa-info-circle mr-2"></i>Overview
+                                </button>
+                                <button @click="detailTab = 'settings'" :class="detailTab === 'settings' ? 'bg-dark-800 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-200'" class="px-6 py-3 font-medium transition-colors">
+                                    <i class="fas fa-cog mr-2"></i>Settings
+                                </button>
+                                <button @click="detailTab = 'files'" :class="detailTab === 'files' ? 'bg-dark-800 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-200'" class="px-6 py-3 font-medium transition-colors">
+                                    <i class="fas fa-folder mr-2"></i>Files
+                                </button>
+                                <button @click="detailTab = 'console'" :class="detailTab === 'console' ? 'bg-dark-800 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-200'" class="px-6 py-3 font-medium transition-colors">
+                                    <i class="fas fa-terminal mr-2"></i>Console
+                                </button>
+                                <button @click="detailTab = 'backup'" :class="detailTab === 'backup' ? 'bg-dark-800 text-blue-400 border-b-2 border-blue-500' : 'text-gray-400 hover:text-gray-200'" class="px-6 py-3 font-medium transition-colors">
+                                    <i class="fas fa-download mr-2"></i>Backup
                                 </button>
                             </div>
-                        </template>
-                    </div>
-                </div>
-                
-                <!-- Files Tab -->
-                <div x-show="detailTab === 'files'" x-transition>
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-400">Browse deployment files (read-only)</p>
-                    </div>
-                    
-                    <template x-if="!deploymentFiles || deploymentFiles.length === 0">
-                        <div class="text-center py-8 text-gray-400">
-                            <i class="fas fa-folder-open text-4xl mb-2 opacity-30"></i>
-                            <p>No files found</p>
-                        </div>
-                    </template>
-                    
-                    <div class="space-y-2 max-h-96 overflow-y-auto">
-                        <template x-for="file in deploymentFiles" :key="file.path">
-                            <div class="bg-dark-800 rounded-lg p-3 flex items-center justify-between hover:bg-dark-700 transition">
-                                <div class="flex items-center gap-3 flex-1">
-                                    <i class="fas fa-file-code text-purple-400"></i>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="font-mono text-sm truncate" x-text="file.path"></div>
-                                        <div class="text-xs text-gray-400" x-text="file.size_human"></div>
+                            
+                            <div class="p-6">
+                                <!-- Overview Tab -->
+                                <div x-show="detailTab === 'overview'" x-cloak>
+                                    <div class="space-y-4">
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div class="text-sm text-gray-400 mb-1">Deployment ID</div>
+                                                <div class="font-mono" x-text="selectedDeployment.id"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm text-gray-400 mb-1">Status</div>
+                                                <span :class="getStatusClass(selectedDeployment.status)" class="px-3 py-1 text-xs font-bold rounded uppercase" x-text="selectedDeployment.status"></span>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm text-gray-400 mb-1">Port</div>
+                                                <div class="font-semibold" x-text="selectedDeployment.port"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm text-gray-400 mb-1">Type</div>
+                                                <div class="capitalize" x-text="selectedDeployment.type"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm text-gray-400 mb-1">Created</div>
+                                                <div x-text="new Date(selectedDeployment.created_at).toLocaleString()"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm text-gray-400 mb-1">Last Updated</div>
+                                                <div x-text="new Date(selectedDeployment.updated_at).toLocaleString()"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <template x-if="selectedDeployment.dependencies && selectedDeployment.dependencies.length > 0">
+                                            <div>
+                                                <div class="text-sm text-gray-400 mb-2">AI Installed Dependencies</div>
+                                                <div class="flex flex-wrap gap-2">
+                                                    <template x-for="dep in selectedDeployment.dependencies" :key="dep">
+                                                        <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
+                                                            <i class="fas fa-check-circle mr-1"></i><span x-text="dep"></span>
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                
+                                <!-- Settings Tab (Environment Variables) -->
+                                <div x-show="detailTab === 'settings'" x-cloak>
+                                    <div class="mb-4">
+                                        <h3 class="text-lg font-bold mb-2">Environment Variables</h3>
+                                        <p class="text-sm text-gray-400">Add key-value pairs that will be injected into your deployment</p>
+                                    </div>
+                                    
+                                    <div class="space-y-3 mb-4">
+                                        <template x-if="Object.keys(selectedDeployment.env_vars || {}).length === 0">
+                                            <div class="text-center py-8 text-gray-400">
+                                                <i class="fas fa-key text-4xl mb-3 opacity-50"></i>
+                                                <div>No environment variables set</div>
+                                            </div>
+                                        </template>
+                                        
+                                        <template x-for="[key, value] in Object.entries(selectedDeployment.env_vars || {})" :key="key">
+                                            <div class="flex items-center gap-3 p-3 bg-dark-800 rounded-lg">
+                                                <div class="flex-1 grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <div class="text-xs text-gray-400 mb-1">Key</div>
+                                                        <div class="font-mono text-sm" x-text="key"></div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-xs text-gray-400 mb-1">Value</div>
+                                                        <div class="font-mono text-sm" x-text="value"></div>
+                                                    </div>
+                                                </div>
+                                                <button @click="deleteEnvVar(key)" class="px-3 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-sm transition-colors">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    
+                                    <div class="p-4 bg-dark-800 rounded-lg">
+                                        <div class="grid grid-cols-2 gap-3 mb-3">
+                                            <input x-model="newEnvKey" type="text" placeholder="KEY" class="px-4 py-2 bg-dark-900 border border-dark-700 rounded-lg focus:border-blue-500 focus:outline-none">
+                                            <input x-model="newEnvValue" type="text" placeholder="value" class="px-4 py-2 bg-dark-900 border border-dark-700 rounded-lg focus:border-blue-500 focus:outline-none">
+                                        </div>
+                                        <button @click="addEnvVar()" class="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors">
+                                            <i class="fas fa-plus mr-2"></i>Add Variable
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Files Tab -->
+                                <div x-show="detailTab === 'files'" x-cloak>
+                                    <div class="mb-4">
+                                        <h3 class="text-lg font-bold mb-2">File Manager</h3>
+                                        <p class="text-sm text-gray-400">Browse files in your deployment</p>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        <template x-if="!selectedDeployment.files || selectedDeployment.files.length === 0">
+                                            <div class="text-center py-8 text-gray-400">
+                                                <i class="fas fa-folder-open text-4xl mb-3 opacity-50"></i>
+                                                <div>No files found</div>
+                                            </div>
+                                        </template>
+                                        
+                                        <template x-for="file in selectedDeployment.files || []" :key="file.path">
+                                            <div class="flex items-center gap-3 p-3 bg-dark-800 rounded-lg hover:bg-dark-700 transition-colors">
+                                                <i class="fas fa-file text-blue-400"></i>
+                                                <div class="flex-1">
+                                                    <div class="font-mono text-sm" x-text="file.path"></div>
+                                                    <div class="text-xs text-gray-400">
+                                                        <span x-text="(file.size / 1024).toFixed(2)"></span> KB
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                
+                                <!-- Console Tab (Live Logs) -->
+                                <div x-show="detailTab === 'console'" x-cloak>
+                                    <div class="mb-4 flex items-center justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-bold mb-1">Live Console</h3>
+                                            <p class="text-sm text-gray-400">Real-time logs from your deployment</p>
+                                        </div>
+                                        <button @click="refreshLogs()" class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-sm font-medium transition-colors">
+                                            <i class="fas fa-sync mr-2"></i>Refresh
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="terminal" x-text="consoleLogs || 'No logs available'"></div>
+                                </div>
+                                
+                                <!-- Backup Tab -->
+                                <div x-show="detailTab === 'backup'" x-cloak>
+                                    <div class="mb-4">
+                                        <h3 class="text-lg font-bold mb-2">Backup & Export</h3>
+                                        <p class="text-sm text-gray-400">Create a ZIP snapshot of your deployment</p>
+                                    </div>
+                                    
+                                    <div class="bg-dark-800 rounded-lg p-6 text-center">
+                                        <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <i class="fas fa-download text-blue-400 text-2xl"></i>
+                                        </div>
+                                        <div class="text-lg font-semibold mb-2">Create Backup</div>
+                                        <div class="text-sm text-gray-400 mb-6">Download a complete snapshot of your deployment files</div>
+                                        <button @click="createBackup()" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 rounded-lg font-medium transition-colors">
+                                            <i class="fas fa-download mr-2"></i>Create & Download Backup (0.5 credits)
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        </template>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Backup Tab -->
-                <div x-show="detailTab === 'backup'" x-transition>
-                    <div class="text-center py-8">
-                        <div class="w-20 h-20 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-archive text-purple-400 text-3xl"></i>
+                <!-- Admin View -->
+                <div x-show="currentView === 'admin' && isAdmin" x-cloak>
+                    <div class="space-y-6">
+                        <!-- System Stats -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                                <div class="text-sm text-gray-400 mb-2">System CPU</div>
+                                <div class="text-3xl font-bold" x-text="(systemStats.system_cpu || 0).toFixed(1) + '%'"></div>
+                            </div>
+                            <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                                <div class="text-sm text-gray-400 mb-2">System RAM</div>
+                                <div class="text-3xl font-bold" x-text="(systemStats.system_memory || 0).toFixed(1) + '%'"></div>
+                            </div>
+                            <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                                <div class="text-sm text-gray-400 mb-2">Active Processes</div>
+                                <div class="text-3xl font-bold" x-text="(systemStats.processes || []).length"></div>
+                            </div>
+                            <div class="bg-dark-900 rounded-xl p-6 border border-dark-800">
+                                <div class="text-sm text-gray-400 mb-2">Total Users</div>
+                                <div class="text-3xl font-bold" x-text="adminData.users ? adminData.users.length : 0"></div>
+                            </div>
                         </div>
-                        <h4 class="text-xl font-bold mb-2">Create Backup</h4>
-                        <p class="text-gray-400 mb-6">Download a complete snapshot of this deployment as a ZIP file</p>
-                        <button @click="createBackup(selectedDeploy?.id)" 
-                                class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg font-bold transition">
-                            <i class="fas fa-download mr-2"></i>Create & Download Backup (0.2 credits)
-                        </button>
+                        
+                        <!-- Process Monitor -->
+                        <div class="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-dark-800">
+                                <h2 class="text-lg font-bold">Live Process Monitor</h2>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-dark-800">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Deploy ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">CPU %</th>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Memory (MB)</th>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-dark-800">
+                                        <template x-if="!systemStats.processes || systemStats.processes.length === 0">
+                                            <tr>
+                                                <td colspan="4" class="px-6 py-8 text-center text-gray-400">
+                                                    No active processes
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        <template x-for="proc in systemStats.processes || []" :key="proc.deploy_id">
+                                            <tr class="hover:bg-dark-800">
+                                                <td class="px-6 py-4 font-mono text-sm" x-text="proc.deploy_id"></td>
+                                                <td class="px-6 py-4">
+                                                    <span class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold" x-text="proc.cpu.toFixed(1) + '%'"></span>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <span class="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-bold" x-text="proc.memory.toFixed(1) + ' MB'"></span>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-bold uppercase" x-text="proc.status"></span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- User Management -->
+                        <div class="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-dark-800">
+                                <h2 class="text-lg font-bold">User Management</h2>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-dark-800">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Credits</th>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Deployments</th>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-dark-800">
+                                        <template x-for="user in adminData.users || []" :key="user.id">
+                                            <tr class="hover:bg-dark-800">
+                                                <td class="px-6 py-4 text-sm" x-text="user.email"></td>
+                                                <td class="px-6 py-4 font-bold" x-text="user.credits"></td>
+                                                <td class="px-6 py-4" x-text="user.deployments.length"></td>
+                                                <td class="px-6 py-4">
+                                                    <span :class="user.is_banned ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'" class="px-3 py-1 rounded-full text-xs font-bold uppercase" x-text="user.is_banned ? 'Banned' : 'Active'"></span>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <div class="flex gap-2">
+                                                        <button @click="adminAddCredits(user.id)" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded text-xs font-medium transition-colors">
+                                                            <i class="fas fa-plus mr-1"></i>Credits
+                                                        </button>
+                                                        <button @click="adminBanUser(user.id, !user.is_banned)" :class="user.is_banned ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'" class="px-3 py-1 rounded text-xs font-medium transition-colors">
+                                                            <i :class="user.is_banned ? 'fas fa-check' : 'fas fa-ban'" class="mr-1"></i>
+                                                            <span x-text="user.is_banned ? 'Unban' : 'Ban'"></span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+                
+            </main>
         </div>
     </div>
     
     <!-- Upload Modal -->
-    <div x-show="showModal === 'upload'" 
-         x-transition
-         class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
-         @click.self="showModal = null">
-        <div class="glass rounded-2xl max-w-md w-full p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold">Upload & Deploy</h3>
-                <button @click="showModal = null" class="w-10 h-10 bg-dark-800 hover:bg-dark-700 rounded-lg flex items-center justify-center">
+    <div x-show="showUploadModal" x-cloak class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div @click.away="showUploadModal = false" class="bg-dark-900 rounded-xl max-w-lg w-full border border-dark-800">
+            <div class="px-6 py-4 border-b border-dark-800 flex items-center justify-between">
+                <h2 class="text-xl font-bold">Upload & Deploy</h2>
+                <button @click="showUploadModal = false" class="w-8 h-8 bg-dark-800 hover:bg-dark-700 rounded-lg flex items-center justify-center transition-colors">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
-            <div @click="$refs.fileUpload.click()" 
-                 class="border-2 border-dashed border-purple-500 rounded-xl p-12 text-center cursor-pointer hover:bg-purple-500/5 transition mb-4">
-                <i class="fas fa-cloud-upload-alt text-6xl text-purple-400 mb-4"></i>
-                <p class="font-bold mb-2">Click to Upload</p>
-                <p class="text-sm text-gray-400">Python files (.py) or ZIP archives</p>
-                <input type="file" x-ref="fileUpload" @change="uploadFile($event)" accept=".py,.zip" class="hidden">
-            </div>
-            
-            <div class="bg-dark-800 rounded-xl p-4 text-sm">
-                <div class="flex items-start gap-3">
-                    <i class="fas fa-info-circle text-blue-400 mt-1"></i>
-                    <div>
-                        <p class="font-bold mb-1">Features:</p>
-                        <ul class="text-gray-400 space-y-1">
-                            <li>• AI auto-detects and installs dependencies</li>
-                            <li>• Supports requirements.txt</li>
-                            <li>• Cost: 0.5 credits per deployment</li>
-                        </ul>
+            <div class="p-6">
+                <div class="border-2 border-dashed border-dark-700 rounded-xl p-8 text-center mb-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-cloud-upload-alt text-blue-400 text-3xl"></i>
+                    </div>
+                    <div class="text-lg font-semibold mb-2">Click to Upload</div>
+                    <div class="text-sm text-gray-400">Python, JavaScript, or ZIP files</div>
+                    <input type="file" id="fileInput" hidden accept=".py,.js,.zip" @change="uploadFile($event)">
+                </div>
+                <div class="bg-dark-800 rounded-lg p-4 text-sm">
+                    <div class="flex items-start gap-3 mb-2">
+                        <i class="fas fa-info-circle text-blue-400 mt-0.5"></i>
+                        <div>
+                            <div class="font-semibold mb-1">Cost: 0.5 credits</div>
+                            <div class="text-gray-400">AI will automatically detect and install all dependencies</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1542,240 +1384,146 @@ SPA_TEMPLATE = """
     </div>
     
     <!-- GitHub Modal -->
-    <div x-show="showModal === 'github'" 
-         x-transition
-         class="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
-         @click.self="showModal = null">
-        <div class="glass rounded-2xl max-w-md w-full p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-2xl font-bold">
-                    <i class="fab fa-github mr-2"></i>GitHub Deploy
-                </h3>
-                <button @click="showModal = null" class="w-10 h-10 bg-dark-800 hover:bg-dark-700 rounded-lg flex items-center justify-center">
+    <div x-show="showGithubModal" x-cloak class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div @click.away="showGithubModal = false" class="bg-dark-900 rounded-xl max-w-lg w-full border border-dark-800">
+            <div class="px-6 py-4 border-b border-dark-800 flex items-center justify-between">
+                <h2 class="text-xl font-bold">Deploy from GitHub</h2>
+                <button @click="showGithubModal = false" class="w-8 h-8 bg-dark-800 hover:bg-dark-700 rounded-lg flex items-center justify-center transition-colors">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
-            <form @submit.prevent="deployGithub()">
-                <div class="space-y-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Repository URL</label>
-                        <input x-model="githubRepo" 
-                               type="url" 
-                               required
-                               placeholder="https://github.com/username/repo"
-                               class="w-full bg-dark-800 border border-dark-700 rounded-lg px-4 py-3">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2">Branch</label>
-                        <input x-model="githubBranch" 
-                               type="text" 
-                               required
-                               placeholder="main"
-                               class="w-full bg-dark-800 border border-dark-700 rounded-lg px-4 py-3">
-                    </div>
+            <form @submit.prevent="deployGithub()" class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Repository URL</label>
+                    <input x-model="githubUrl" type="url" placeholder="https://github.com/user/repo" required class="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-lg focus:border-blue-500 focus:outline-none">
                 </div>
-                
-                <button type="submit" 
-                        class="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white py-3 rounded-lg font-bold transition mb-4">
-                    <i class="fab fa-github mr-2"></i>Deploy from GitHub (1.0 credit)
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Branch</label>
+                    <input x-model="githubBranch" type="text" placeholder="main" value="main" required class="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-lg focus:border-blue-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-lg font-medium transition-all">
+                    <i class="fab fa-github mr-2"></i>Deploy (1.0 credit)
                 </button>
-                
-                <div class="bg-dark-800 rounded-xl p-4 text-sm">
+                <div class="bg-dark-800 rounded-lg p-4 text-sm mt-4">
                     <div class="flex items-start gap-3">
-                        <i class="fas fa-robot text-purple-400 mt-1"></i>
-                        <div>
-                            <p class="font-bold mb-1">AI Features:</p>
-                            <ul class="text-gray-400 space-y-1">
-                                <li>• Auto-clone repository</li>
-                                <li>• Smart dependency detection</li>
-                                <li>• Auto-install packages</li>
-                            </ul>
-                        </div>
+                        <i class="fas fa-robot text-purple-400 mt-0.5"></i>
+                        <div class="text-gray-400">AI will clone the repo, detect the language, install dependencies, and deploy automatically</div>
                     </div>
                 </div>
             </form>
         </div>
     </div>
     
+    <!-- Logs Modal -->
+    <div x-show="showLogsModal" x-cloak class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div @click.away="showLogsModal = false" class="bg-dark-900 rounded-xl max-w-3xl w-full border border-dark-800 max-h-[80vh] flex flex-col">
+            <div class="px-6 py-4 border-b border-dark-800 flex items-center justify-between">
+                <h2 class="text-xl font-bold">Deployment Logs</h2>
+                <button @click="showLogsModal = false" class="w-8 h-8 bg-dark-800 hover:bg-dark-700 rounded-lg flex items-center justify-center transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <div class="terminal" style="max-height: 60vh;" x-text="currentLogs || 'No logs available'"></div>
+            </div>
+        </div>
+    </div>
+    
     <script>
-        function appData() {
+        function app() {
             return {
                 currentView: 'dashboard',
-                showModal: null,
                 detailTab: 'overview',
-                
-                // User data
-                userEmail: '',
                 credits: 0,
-                totalEarned: 0,
-                totalSpent: 0,
+                userEmail: '',
                 isAdmin: false,
-                
-                // Deployments
                 deployments: [],
-                selectedDeploy: null,
-                deploymentFiles: [],
-                
-                // Console
-                consoleLog: '',
-                
-                // Environment
+                selectedDeployment: null,
+                showUploadModal: false,
+                showGithubModal: false,
+                showLogsModal: false,
+                currentLogs: '',
+                consoleLogs: '',
+                githubUrl: '',
+                githubBranch: 'main',
                 newEnvKey: '',
                 newEnvValue: '',
+                systemStats: {},
+                adminData: { users: [] },
                 
-                // GitHub
-                githubRepo: '',
-                githubBranch: 'main',
+                navItems: [
+                    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-home' },
+                    { id: 'deployments', label: 'Deployments', icon: 'fas fa-rocket' },
+                ],
                 
-                // Activity
-                activityLog: [],
-                
-                // Admin
-                adminStats: {
-                    total_users: 0,
-                    total_deployments: 0,
-                    active_processes: 0
-                },
-                systemStats: {
-                    cpu: 0,
-                    memory: 0
-                },
-                allUsers: [],
-                
-                async init() {
-                    await this.loadUserData();
-                    await this.loadDeployments();
-                    await this.loadActivity();
-                    
-                    if (this.isAdmin) {
-                        await this.loadAdminData();
-                    }
-                    
-                    // Auto refresh every 10 seconds
+                init() {
+                    this.loadUserData();
+                    this.loadDeployments();
+                    this.loadSystemStats();
+                    setInterval(() => this.loadDeployments(), 10000);
+                    setInterval(() => this.loadSystemStats(), 5000);
                     setInterval(() => {
-                        this.loadDeployments();
-                        if (this.detailTab === 'console' && this.selectedDeploy) {
-                            this.refreshLogs(this.selectedDeploy.id);
+                        if (this.detailTab === 'console' && this.selectedDeployment) {
+                            this.refreshLogs();
                         }
-                    }, 10000);
+                    }, 3000);
                 },
                 
                 async loadUserData() {
-                    const res = await fetch('/api/user');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.userEmail = data.user.email;
-                        this.credits = data.user.credits;
-                        this.totalEarned = data.user.total_earned;
-                        this.totalSpent = data.user.total_spent;
-                        this.isAdmin = data.user.is_admin;
+                    try {
+                        const res = await fetch('/api/user-info');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.credits = data.credits === Infinity ? '∞' : data.credits.toFixed(1);
+                            this.userEmail = data.email;
+                            this.isAdmin = data.is_admin;
+                            if (this.isAdmin) {
+                                this.loadAdminData();
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to load user data', e);
                     }
                 },
                 
                 async loadDeployments() {
-                    const res = await fetch('/api/deployments');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.deployments = data.deployments;
+                    try {
+                        const res = await fetch('/api/deployments');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.deployments = data.deployments;
+                            if (this.selectedDeployment) {
+                                const updated = this.deployments.find(d => d.id === this.selectedDeployment.id);
+                                if (updated) this.selectedDeployment = updated;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Failed to load deployments', e);
                     }
                 },
                 
-                async loadActivity() {
-                    const res = await fetch('/api/activity');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.activityLog = data.activity;
+                async loadSystemStats() {
+                    if (!this.isAdmin) return;
+                    try {
+                        const res = await fetch('/api/admin/system-stats');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.systemStats = data.stats;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load system stats', e);
                     }
                 },
                 
                 async loadAdminData() {
-                    const res = await fetch('/api/admin/stats');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.adminStats = data.stats;
-                        this.systemStats = data.system;
-                        this.allUsers = data.users;
-                    }
-                },
-                
-                async viewDeployment(deployId) {
-                    const deploy = this.deployments.find(d => d.id === deployId);
-                    if (!deploy) return;
-                    
-                    this.selectedDeploy = deploy;
-                    this.detailTab = 'overview';
-                    this.showModal = 'detail';
-                    
-                    // Load files
-                    const res = await fetch(`/api/deployment/${deployId}/files`);
-                    const data = await res.json();
-                    if (data.success) {
-                        this.deploymentFiles = data.files;
-                    }
-                    
-                    // Load logs
-                    await this.refreshLogs(deployId);
-                },
-                
-                async viewLogs(deployId) {
-                    await this.viewDeployment(deployId);
-                    this.detailTab = 'console';
-                },
-                
-                async refreshLogs(deployId) {
-                    const res = await fetch(`/api/deployment/${deployId}/logs`);
-                    const data = await res.json();
-                    if (data.success) {
-                        this.consoleLog = data.logs;
-                        this.$nextTick(() => {
-                            if (this.$refs.consoleOutput) {
-                                this.$refs.consoleOutput.scrollTop = this.$refs.consoleOutput.scrollHeight;
-                            }
-                        });
-                    }
-                },
-                
-                clearLogs() {
-                    this.consoleLog = '';
-                },
-                
-                async addEnvVar() {
-                    if (!this.newEnvKey || !this.newEnvValue || !this.selectedDeploy) return;
-                    
-                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            key: this.newEnvKey,
-                            value: this.newEnvValue
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.selectedDeploy.env_vars[this.newEnvKey] = this.newEnvValue;
-                        this.newEnvKey = '';
-                        this.newEnvValue = '';
-                        alert('✅ Environment variable added! Restart deployment for changes to take effect.');
-                    } else {
-                        alert('❌ ' + data.error);
-                    }
-                },
-                
-                async deleteEnvVar(key) {
-                    if (!confirm(`Delete environment variable "${key}"?`)) return;
-                    
-                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env/${key}`, {
-                        method: 'DELETE'
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        delete this.selectedDeploy.env_vars[key];
-                        alert('✅ Environment variable deleted!');
-                    } else {
-                        alert('❌ ' + data.error);
+                    try {
+                        const res = await fetch('/api/admin/users');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.adminData = data;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load admin data', e);
                     }
                 },
                 
@@ -1786,102 +1534,196 @@ SPA_TEMPLATE = """
                     const formData = new FormData();
                     formData.append('file', file);
                     
-                    this.showModal = null;
-                    alert('🤖 Uploading and deploying... Please wait!');
+                    this.showUploadModal = false;
                     
-                    const res = await fetch('/api/deploy/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        alert('✅ ' + data.message);
-                        await this.loadDeployments();
-                        await this.loadUserData();
-                    } else {
-                        alert('❌ ' + data.error);
+                    try {
+                        const res = await fetch('/api/deploy/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            alert('✅ Deployment successful!\n\n' + data.message);
+                            this.loadDeployments();
+                            this.loadUserData();
+                        } else {
+                            alert('❌ Error: ' + data.error);
+                        }
+                    } catch (e) {
+                        alert('❌ Upload failed: ' + e.message);
                     }
+                    
+                    event.target.value = '';
                 },
                 
                 async deployGithub() {
-                    if (!this.githubRepo) return;
+                    if (!this.githubUrl) return;
                     
-                    this.showModal = null;
-                    alert('🤖 Cloning and deploying... This may take a minute!');
+                    this.showGithubModal = false;
                     
-                    const res = await fetch('/api/deploy/github', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            url: this.githubRepo,
-                            branch: this.githubBranch
-                        })
-                    });
+                    try {
+                        const res = await fetch('/api/deploy/github', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                url: this.githubUrl,
+                                branch: this.githubBranch
+                            })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            alert('✅ GitHub deployment successful!\n\n' + data.message);
+                            this.loadDeployments();
+                            this.loadUserData();
+                        } else {
+                            alert('❌ Error: ' + data.error);
+                        }
+                    } catch (e) {
+                        alert('❌ Deployment failed: ' + e.message);
+                    }
                     
-                    const data = await res.json();
-                    if (data.success) {
-                        alert('✅ ' + data.message);
-                        await this.loadDeployments();
-                        await this.loadUserData();
-                        this.githubRepo = '';
-                        this.githubBranch = 'main';
-                    } else {
-                        alert('❌ ' + data.error);
+                    this.githubUrl = '';
+                    this.githubBranch = 'main';
+                },
+                
+                selectDeployment(deploy) {
+                    this.selectedDeployment = deploy;
+                    this.detailTab = 'overview';
+                    if (this.currentView !== 'deployment-detail') {
+                        this.currentView = 'deployment-detail';
                     }
                 },
                 
-                async restartDeploy(deployId) {
-                    if (!confirm('Restart this deployment?')) return;
-                    
-                    const res = await fetch(`/api/deployment/${deployId}/restart`, {
-                        method: 'POST'
-                    });
-                    
-                    const data = await res.json();
-                    alert(data.success ? '✅ Restarted!' : '❌ ' + data.message);
-                    await this.loadDeployments();
+                async viewLogs(deployId) {
+                    try {
+                        const res = await fetch(`/api/deployment/${deployId}/logs`);
+                        const data = await res.json();
+                        this.currentLogs = data.logs || 'No logs available';
+                        this.showLogsModal = true;
+                    } catch (e) {
+                        alert('Failed to load logs');
+                    }
                 },
                 
-                async stopDeploy(deployId) {
+                async refreshLogs() {
+                    if (!this.selectedDeployment) return;
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeployment.id}/logs`);
+                        const data = await res.json();
+                        this.consoleLogs = data.logs || 'No logs available';
+                    } catch (e) {
+                        console.error('Failed to refresh logs', e);
+                    }
+                },
+                
+                async stopDeployment(deployId) {
                     if (!confirm('Stop this deployment?')) return;
                     
-                    const res = await fetch(`/api/deployment/${deployId}/stop`, {
-                        method: 'POST'
-                    });
-                    
-                    const data = await res.json();
-                    alert(data.success ? '✅ Stopped' : '❌ ' + data.message);
-                    await this.loadDeployments();
+                    try {
+                        const res = await fetch(`/api/deployment/${deployId}/stop`, {
+                            method: 'POST'
+                        });
+                        const data = await res.json();
+                        alert(data.success ? '✅ Stopped' : '❌ ' + data.message);
+                        this.loadDeployments();
+                    } catch (e) {
+                        alert('Failed to stop deployment');
+                    }
                 },
                 
-                async deleteDeploy(deployId) {
+                async deleteDeployment(deployId) {
                     if (!confirm('Delete this deployment permanently?')) return;
                     
-                    const res = await fetch(`/api/deployment/${deployId}`, {
-                        method: 'DELETE'
-                    });
-                    
-                    const data = await res.json();
-                    alert(data.success ? '✅ Deleted' : '❌ Failed');
-                    await this.loadDeployments();
+                    try {
+                        const res = await fetch(`/api/deployment/${deployId}`, {
+                            method: 'DELETE'
+                        });
+                        const data = await res.json();
+                        alert(data.success ? '✅ Deleted' : '❌ Failed');
+                        this.loadDeployments();
+                        if (this.selectedDeployment && this.selectedDeployment.id === deployId) {
+                            this.selectedDeployment = null;
+                            this.currentView = 'deployments';
+                        }
+                    } catch (e) {
+                        alert('Failed to delete deployment');
+                    }
                 },
                 
-                async createBackup(deployId) {
-                    if (!confirm('Create backup? This will cost 0.2 credits.')) return;
+                async addEnvVar() {
+                    if (!this.newEnvKey || !this.newEnvValue || !this.selectedDeployment) return;
                     
-                    const res = await fetch(`/api/deployment/${deployId}/backup`, {
-                        method: 'POST'
-                    });
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeployment.id}/env`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                key: this.newEnvKey,
+                                value: this.newEnvValue
+                            })
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            this.newEnvKey = '';
+                            this.newEnvValue = '';
+                            this.loadDeployments();
+                            alert('✅ Environment variable added!');
+                        } else {
+                            alert('❌ Failed to add variable');
+                        }
+                    } catch (e) {
+                        alert('Failed to add environment variable');
+                    }
+                },
+                
+                async deleteEnvVar(key) {
+                    if (!confirm(`Delete environment variable "${key}"?`)) return;
                     
-                    const data = await res.json();
-                    if (data.success) {
-                        // Download backup
-                        window.location.href = `/api/download/${data.filename}`;
-                        alert('✅ Backup created and downloading!');
-                        await this.loadUserData();
-                    } else {
-                        alert('❌ ' + data.error);
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeployment.id}/env/${key}`, {
+                            method: 'DELETE'
+                        });
+                        const data = await res.json();
+                        
+                        if (data.success) {
+                            this.loadDeployments();
+                            alert('✅ Variable deleted');
+                        } else {
+                            alert('❌ Failed to delete');
+                        }
+                    } catch (e) {
+                        alert('Failed to delete variable');
+                    }
+                },
+                
+                async createBackup() {
+                    if (!this.selectedDeployment) return;
+                    
+                    if (!confirm('Create backup? This will cost 0.5 credits')) return;
+                    
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeployment.id}/backup`, {
+                            method: 'POST'
+                        });
+                        
+                        if (res.ok) {
+                            const blob = await res.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `backup_${this.selectedDeployment.id}.zip`;
+                            a.click();
+                            this.loadUserData();
+                            alert('✅ Backup downloaded successfully!');
+                        } else {
+                            const data = await res.json();
+                            alert('❌ ' + (data.error || 'Backup failed'));
+                        }
+                    } catch (e) {
+                        alert('Failed to create backup');
                     }
                 },
                 
@@ -1889,35 +1731,93 @@ SPA_TEMPLATE = """
                     const amount = prompt('Enter amount of credits to add:');
                     if (!amount || isNaN(amount)) return;
                     
-                    const res = await fetch('/api/admin/add-credits', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userId, amount: parseFloat(amount) })
-                    });
-                    
-                    const data = await res.json();
-                    alert(data.success ? '✅ Credits added!' : '❌ ' + data.error);
-                    await this.loadAdminData();
+                    try {
+                        const res = await fetch('/api/admin/add-credits', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: userId,
+                                amount: parseFloat(amount)
+                            })
+                        });
+                        const data = await res.json();
+                        alert(data.success ? '✅ Credits added!' : '❌ ' + data.error);
+                        this.loadAdminData();
+                    } catch (e) {
+                        alert('Failed to add credits');
+                    }
                 },
                 
                 async adminBanUser(userId, ban) {
-                    if (!confirm(ban ? 'Ban this user?' : 'Unban this user?')) return;
+                    const action = ban ? 'ban' : 'unban';
+                    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this user?`)) return;
                     
-                    const res = await fetch('/api/admin/ban-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ user_id: userId, ban })
-                    });
-                    
-                    const data = await res.json();
-                    alert(data.success ? '✅ Done!' : '❌ ' + data.error);
-                    await this.loadAdminData();
+                    try {
+                        const res = await fetch('/api/admin/ban-user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: userId,
+                                ban: ban
+                            })
+                        });
+                        const data = await res.json();
+                        alert(data.success ? `✅ User ${action}ned` : '❌ ' + data.error);
+                        this.loadAdminData();
+                    } catch (e) {
+                        alert(`Failed to ${action} user`);
+                    }
                 },
                 
-                async logout() {
+                refreshData() {
+                    this.loadUserData();
+                    this.loadDeployments();
+                    if (this.isAdmin) {
+                        this.loadSystemStats();
+                        this.loadAdminData();
+                    }
+                },
+                
+                logout() {
                     if (confirm('Logout from EliteHost?')) {
                         window.location.href = '/logout';
                     }
+                },
+                
+                getStatusClass(status) {
+                    const classes = {
+                        'running': 'bg-green-500/20 text-green-400',
+                        'pending': 'bg-yellow-500/20 text-yellow-400',
+                        'stopped': 'bg-red-500/20 text-red-400',
+                        'failed': 'bg-red-500/20 text-red-400',
+                        'installing': 'bg-blue-500/20 text-blue-400',
+                        'starting': 'bg-blue-500/20 text-blue-400',
+                    };
+                    return classes[status] || 'bg-gray-500/20 text-gray-400';
+                },
+                
+                get currentViewTitle() {
+                    if (this.currentView === 'deployment-detail' && this.selectedDeployment) {
+                        return this.selectedDeployment.name;
+                    }
+                    const titles = {
+                        'dashboard': 'Dashboard',
+                        'deployments': 'All Deployments',
+                        'admin': 'Admin Control Panel'
+                    };
+                    return titles[this.currentView] || 'Dashboard';
+                },
+                
+                get currentViewSubtitle() {
+                    if (this.currentView === 'deployment-detail' && this.selectedDeployment) {
+                        return `Manage your deployment - ID: ${this.selectedDeployment.id}`;
+                    }
+                    const subtitles = {
+                        'dashboard': 'Overview of your deployments and resources',
+                        'deployments': 'Manage all your deployed applications',
+                        'admin': 'System monitoring and user management'
+                    };
+                    return subtitles[this.currentView] || '';
                 }
             }
         }
@@ -1926,187 +1826,25 @@ SPA_TEMPLATE = """
 </html>
 """
 
-# ==================== FLASK ROUTES ====================
+# ==================== FLASK ROUTES (CONTINUED) ====================
 
-@app.route('/')
-def index():
+@app.route('/app')
+def spa_app():
     session_token = request.cookies.get('session_token')
     fingerprint = get_device_fingerprint(request)
+    
     user_id = verify_session(session_token, fingerprint)
-    
-    if user_id:
-        return render_template_string(SPA_TEMPLATE)
-    return redirect('/login')
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'GET':
-        return render_template_string("""
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - EliteHost</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script>tailwind.config = { darkMode: 'class' }</script>
-</head>
-<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-gray-700">
-        <div class="text-center mb-8">
-            <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-rocket text-white text-3xl"></i>
-            </div>
-            <h1 class="text-3xl font-black text-white mb-2">EliteHost</h1>
-            <p class="text-gray-400">v11.0 Advanced Edition</p>
-        </div>
-        {% if error %}
-        <div class="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-4">
-            <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
-        </div>
-        {% endif %}
-        {% if success %}
-        <div class="bg-green-500/20 border border-green-500 text-green-400 px-4 py-3 rounded-lg mb-4">
-            <i class="fas fa-check-circle mr-2"></i>{{ success }}
-        </div>
-        {% endif %}
-        <form method="POST">
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                    <input type="email" name="email" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                    <input type="password" name="password" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none">
-                </div>
-            </div>
-            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-bold transition mb-4">
-                <i class="fas fa-sign-in-alt mr-2"></i>Login
-            </button>
-        </form>
-        <p class="text-center text-gray-400 text-sm">
-            Don't have an account? <a href="/register" class="text-purple-400 hover:text-purple-300 font-medium">Register</a>
-        </p>
-    </div>
-</body>
-</html>
-        """, error=request.args.get('error'), success=request.args.get('success'))
-    
-    email = request.form.get('email')
-    password = request.form.get('password')
-    fingerprint = get_device_fingerprint(request)
-    
-    if is_device_banned(fingerprint):
-        return redirect('/login?error=Device banned')
-    
-    user_id = authenticate_user(email, password)
     if not user_id:
-        return redirect('/login?error=Invalid credentials')
+        return redirect('/login?error=Please login first')
     
     user = get_user(user_id)
-    if user.get('is_banned'):
-        return redirect('/login?error=Account banned')
+    if not user or user.get('is_banned'):
+        return redirect('/login?error=Access denied')
     
-    if user['device_fingerprint'] != fingerprint:
-        return redirect('/login?error=Wrong device')
-    
-    session_token = create_session(user_id, fingerprint)
-    update_user(user_id, last_login=datetime.now().isoformat())
-    log_activity(user_id, 'USER_LOGIN', f'Login', request.remote_addr)
-    
-    response = make_response(redirect('/'))
-    response.set_cookie('session_token', session_token, max_age=30*24*60*60)
-    return response
+    return render_template_string(SPA_HTML)
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'GET':
-        return render_template_string("""
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - EliteHost</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script>tailwind.config = { darkMode: 'class' }</script>
-</head>
-<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-gray-700">
-        <div class="text-center mb-8">
-            <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-rocket text-white text-3xl"></i>
-            </div>
-            <h1 class="text-3xl font-black text-white mb-2">Create Account</h1>
-            <p class="text-gray-400">Join EliteHost v11.0</p>
-        </div>
-        {% if error %}
-        <div class="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-4">
-            <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
-        </div>
-        {% endif %}
-        <div class="bg-blue-500/20 border border-blue-500 text-blue-400 px-4 py-3 rounded-lg mb-4 text-sm">
-            <i class="fas fa-shield-alt mr-2"></i>One account per device for security
-        </div>
-        <form method="POST">
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                    <input type="email" name="email" required class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                    <input type="password" name="password" required minlength="6" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-4 py-3 focus:border-purple-500 focus:outline-none">
-                </div>
-            </div>
-            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-3 rounded-lg font-bold transition mb-4">
-                <i class="fas fa-user-plus mr-2"></i>Create Account (Get 5 Free Credits!)
-            </button>
-        </form>
-        <p class="text-center text-gray-400 text-sm">
-            Already have an account? <a href="/login" class="text-purple-400 hover:text-purple-300 font-medium">Login</a>
-        </p>
-    </div>
-</body>
-</html>
-        """, error=request.args.get('error'))
-    
-    email = request.form.get('email')
-    password = request.form.get('password')
-    fingerprint = get_device_fingerprint(request)
-    ip = request.remote_addr
-    
-    if is_device_banned(fingerprint):
-        return redirect('/register?error=Device banned')
-    
-    if check_existing_account(fingerprint):
-        return redirect('/register?error=Device already has account')
-    
-    for user_data in db['users'].values():
-        if user_data['email'] == email:
-            return redirect('/register?error=Email already exists')
-    
-    create_user(email, password, fingerprint, ip)
-    return redirect('/login?success=Account created! Login now.')
-
-@app.route('/logout')
-def logout():
-    session_token = request.cookies.get('session_token')
-    if session_token and session_token in db['sessions']:
-        del db['sessions'][session_token]
-        save_db(db)
-    
-    response = make_response(redirect('/login?success=Logged out'))
-    response.set_cookie('session_token', '', max_age=0)
-    return response
-
-# ==================== API ROUTES ====================
-
-@app.route('/api/user')
-def api_user():
+@app.route('/api/user-info')
+def api_user_info():
     session_token = request.cookies.get('session_token')
     fingerprint = get_device_fingerprint(request)
     user_id = verify_session(session_token, fingerprint)
@@ -2115,18 +1853,404 @@ def api_user():
         return jsonify({'success': False, 'error': 'Not authenticated'})
     
     user = get_user(user_id)
-    is_admin = str(user_id) in [str(OWNER_ID), str(ADMIN_ID)]
+    is_admin = str(user_id) == str(OWNER_ID) or str(user_id) == str(ADMIN_ID)
     
     return jsonify({
         'success': True,
-        'user': {
-            'email': user['email'],
-            'credits': user['credits'],
-            'total_earned': user['total_earned'],
-            'total_spent': user['total_spent'],
-            'is_admin': is_admin
-        }
+        'credits': get_credits(user_id),
+        'email': user['email'],
+        'is_admin': is_admin
     })
+
+@app.route('/api/deployment/<deploy_id>/env', methods=['POST'])
+def api_add_env_var(deploy_id):
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    if deploy_id not in db['deployments']:
+        return jsonify({'success': False, 'error': 'Deployment not found'})
+    
+    deployment = db['deployments'][deploy_id]
+    if deployment['user_id'] != user_id:
+        return jsonify({'success': False, 'error': 'Unauthorized'})
+    
+    data = request.get_json()
+    key = data.get('key')
+    value = data.get('value')
+    
+    if not key or not value:
+        return jsonify({'success': False, 'error': 'Key and value required'})
+    
+    if 'env_vars' not in deployment:
+        deployment['env_vars'] = {}
+    
+    deployment['env_vars'][key] = value
+    update_deployment(deploy_id, env_vars=deployment['env_vars'])
+    
+    return jsonify({'success': True})
+
+@app.route('/api/deployment/<deploy_id>/env/<key>', methods=['DELETE'])
+def api_delete_env_var(deploy_id, key):
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    if deploy_id not in db['deployments']:
+        return jsonify({'success': False, 'error': 'Deployment not found'})
+    
+    deployment = db['deployments'][deploy_id]
+    if deployment['user_id'] != user_id:
+        return jsonify({'success': False, 'error': 'Unauthorized'})
+    
+    if 'env_vars' in deployment and key in deployment['env_vars']:
+        del deployment['env_vars'][key]
+        update_deployment(deploy_id, env_vars=deployment['env_vars'])
+    
+    return jsonify({'success': True})
+
+@app.route('/api/deployment/<deploy_id>/backup', methods=['POST'])
+def api_create_backup(deploy_id):
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    if deploy_id not in db['deployments']:
+        return jsonify({'success': False, 'error': 'Deployment not found'})
+    
+    deployment = db['deployments'][deploy_id]
+    if deployment['user_id'] != user_id:
+        return jsonify({'success': False, 'error': 'Unauthorized'})
+    
+    cost = CREDIT_COSTS['backup']
+    if not deduct_credits(user_id, cost, f"Backup: {deploy_id}"):
+        return jsonify({'success': False, 'error': f'Need {cost} credits'}), 400
+    
+    backup_path, backup_name = create_backup(deploy_id)
+    
+    if not backup_path:
+        add_credits(user_id, cost, "Refund")
+        return jsonify({'success': False, 'error': backup_name}), 400
+    
+    return send_file(backup_path, as_attachment=True, download_name=backup_name)
+
+@app.route('/api/admin/system-stats')
+def api_admin_system_stats():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    admin_id = verify_session(session_token, fingerprint)
+    
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
+    
+    stats = get_system_stats()
+    return jsonify({'success': True, 'stats': stats})
+
+@app.route('/api/admin/users')
+def api_admin_users():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    admin_id = verify_session(session_token, fingerprint)
+    
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
+    
+    users = []
+    for uid, user_data in db['users'].items():
+        users.append({
+            'id': uid,
+            'email': user_data['email'],
+            'credits': user_data['credits'],
+            'deployments': user_data.get('deployments', []),
+            'created_at': user_data['created_at'],
+            'is_banned': user_data.get('is_banned', False)
+        })
+    
+    return jsonify({'success': True, 'users': users})
+
+# Redirect root to app
+@app.route('/')
+def index():
+    session_token = request.cookies.get('session_token')
+    if session_token:
+        return redirect('/app')
+    return redirect('/login')
+
+@app.route('/dashboard')
+def dashboard_redirect():
+    return redirect('/app')
+
+# ==================== LOGIN/REGISTER HTML ====================
+
+LOGIN_PAGE = """
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost - {{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-dark-900 rounded-2xl shadow-2xl max-w-md w-full p-8 border border-dark-800">
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-rocket text-white text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">EliteHost</h1>
+            <p class="text-gray-400">Ultimate Deployment Platform</p>
+        </div>
+        
+        <!-- Alerts -->
+        {% if error %}
+        <div class="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
+            <i class="fas fa-exclamation-circle mt-0.5"></i>
+            <div>{{ error }}</div>
+        </div>
+        {% endif %}
+        
+        {% if success %}
+        <div class="bg-green-500/20 border border-green-500 text-green-400 px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
+            <i class="fas fa-check-circle mt-0.5"></i>
+            <div>{{ success }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Device Info -->
+        <div class="bg-blue-500/20 border border-blue-500 text-blue-400 px-4 py-3 rounded-lg mb-6 text-sm flex items-start gap-3">
+            <i class="fas fa-shield-alt mt-0.5"></i>
+            <div>
+                <strong>Secure Login:</strong> One account per device for maximum security
+            </div>
+        </div>
+        
+        <!-- Form -->
+        <form method="POST" action="{{ action }}" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    <i class="fas fa-envelope mr-2"></i>Email Address
+                </label>
+                <input type="email" name="email" placeholder="you@example.com" required 
+                    class="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                    <i class="fas fa-lock mr-2"></i>Password
+                </label>
+                <input type="password" name="password" placeholder="Enter your password" required 
+                    class="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors">
+            </div>
+            
+            <button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold rounded-lg transition-all transform hover:scale-105">
+                <i class="fas fa-{{ icon }} mr-2"></i>{{ button_text }}
+            </button>
+        </form>
+        
+        <!-- Toggle -->
+        <div class="text-center mt-6 text-sm text-gray-400">
+            {{ toggle_text }} <a href="{{ toggle_link }}" class="text-blue-400 hover:text-blue-300 font-semibold">{{ toggle_action }}</a>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'GET':
+        return render_template_string(LOGIN_PAGE,
+            title='Register',
+            action='/register',
+            button_text='Create Account',
+            icon='user-plus',
+            toggle_text='Already have an account?',
+            toggle_link='/login',
+            toggle_action='Login here',
+            error=request.args.get('error'),
+            success=request.args.get('success')
+        )
+    
+    email = request.form.get('email')
+    password = request.form.get('password')
+    fingerprint = get_device_fingerprint(request)
+    ip = request.remote_addr
+    
+    if is_device_banned(fingerprint):
+        return render_template_string(LOGIN_PAGE,
+            title='Register',
+            action='/register',
+            button_text='Create Account',
+            icon='user-plus',
+            toggle_text='Already have an account?',
+            toggle_link='/login',
+            toggle_action='Login here',
+            error='This device is banned from EliteHost'
+        )
+    
+    existing_user = check_existing_account(fingerprint)
+    if existing_user:
+        return render_template_string(LOGIN_PAGE,
+            title='Register',
+            action='/register',
+            button_text='Create Account',
+            icon='user-plus',
+            toggle_text='Already have an account?',
+            toggle_link='/login',
+            toggle_action='Login here',
+            error='This device already has an account. One account per device only.'
+        )
+    
+    for user_data in db['users'].values():
+        if user_data['email'] == email:
+            return render_template_string(LOGIN_PAGE,
+                title='Register',
+                action='/register',
+                button_text='Create Account',
+                icon='user-plus',
+                toggle_text='Already have an account?',
+                toggle_link='/login',
+                toggle_action='Login here',
+                error='Email already registered'
+            )
+    
+    user_id = create_user(email, password, fingerprint, ip)
+    
+    return redirect('/login?success=Account created! Please login.')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template_string(LOGIN_PAGE,
+            title='Login',
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error=request.args.get('error'),
+            success=request.args.get('success')
+        )
+    
+    email = request.form.get('email')
+    password = request.form.get('password')
+    fingerprint = get_device_fingerprint(request)
+    
+    if is_device_banned(fingerprint):
+        return render_template_string(LOGIN_PAGE,
+            title='Login',
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='This device is banned from EliteHost'
+        )
+    
+    user_id = authenticate_user(email, password)
+    
+    if not user_id:
+        return render_template_string(LOGIN_PAGE,
+            title='Login',
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='Invalid email or password'
+        )
+    
+    user = get_user(user_id)
+    
+    if user.get('is_banned'):
+        return render_template_string(LOGIN_PAGE,
+            title='Login',
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='Your account has been banned'
+        )
+    
+    if user['device_fingerprint'] != fingerprint:
+        return render_template_string(LOGIN_PAGE,
+            title='Login',
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='This account is registered on a different device'
+        )
+    
+    session_token = create_session(user_id, fingerprint)
+    
+    update_user(user_id, last_login=datetime.now().isoformat())
+    log_activity(user_id, 'USER_LOGIN', f'Login from {request.remote_addr}', request.remote_addr)
+    
+    response = make_response(redirect('/app'))
+    response.set_cookie('session_token', session_token, max_age=7*24*60*60)
+    return response
+
+@app.route('/logout')
+def logout():
+    session_token = request.cookies.get('session_token')
+    if session_token and session_token in db['sessions']:
+        del db['sessions'][session_token]
+        save_db(db)
+    
+    response = make_response(redirect('/login?success=Logged out successfully'))
+    response.set_cookie('session_token', '', max_age=0)
+    return response
+
+@app.route('/admin')
+def admin_redirect():
+    return redirect('/app')
+
+# Keep existing API routes
+@app.route('/api/credits')
+def api_credits():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    return jsonify({'success': True, 'credits': get_credits(user_id)})
 
 @app.route('/api/deployments')
 def api_deployments():
@@ -2142,19 +2266,6 @@ def api_deployments():
     
     return jsonify({'success': True, 'deployments': deployments})
 
-@app.route('/api/activity')
-def api_activity():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if not user_id:
-        return jsonify({'success': False, 'error': 'Not authenticated'})
-    
-    user_activity = [a for a in db['activity'] if a['user_id'] == user_id][-50:]
-    
-    return jsonify({'success': True, 'activity': user_activity})
-
 @app.route('/api/deploy/upload', methods=['POST'])
 def api_deploy_upload():
     session_token = request.cookies.get('session_token')
@@ -2165,7 +2276,7 @@ def api_deploy_upload():
         return jsonify({'success': False, 'error': 'Not authenticated'})
     
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file'})
+        return jsonify({'success': False, 'error': 'No file uploaded'})
     
     file = request.files['file']
     if not file.filename:
@@ -2219,51 +2330,6 @@ def api_deployment_logs(deploy_id):
     logs = db['deployments'][deploy_id].get('logs', 'No logs available')
     return jsonify({'success': True, 'logs': logs})
 
-@app.route('/api/deployment/<deploy_id>/files')
-def api_deployment_files(deploy_id):
-    if deploy_id not in db['deployments']:
-        return jsonify({'success': False, 'error': 'Not found'})
-    
-    files = get_deployment_files(deploy_id)
-    return jsonify({'success': True, 'files': files})
-
-@app.route('/api/deployment/<deploy_id>/env', methods=['POST'])
-def api_add_env_var(deploy_id):
-    if deploy_id not in db['deployments']:
-        return jsonify({'success': False, 'error': 'Not found'})
-    
-    data = request.get_json()
-    key = data.get('key')
-    value = data.get('value')
-    
-    if not key or not value:
-        return jsonify({'success': False, 'error': 'Key and value required'})
-    
-    if 'env_vars' not in db['deployments'][deploy_id]:
-        db['deployments'][deploy_id]['env_vars'] = {}
-    
-    db['deployments'][deploy_id]['env_vars'][key] = value
-    save_db(db)
-    
-    return jsonify({'success': True})
-
-@app.route('/api/deployment/<deploy_id>/env/<key>', methods=['DELETE'])
-def api_delete_env_var(deploy_id, key):
-    if deploy_id not in db['deployments']:
-        return jsonify({'success': False, 'error': 'Not found'})
-    
-    if 'env_vars' in db['deployments'][deploy_id] and key in db['deployments'][deploy_id]['env_vars']:
-        del db['deployments'][deploy_id]['env_vars'][key]
-        save_db(db)
-        return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'error': 'Key not found'})
-
-@app.route('/api/deployment/<deploy_id>/restart', methods=['POST'])
-def api_restart_deployment(deploy_id):
-    success, msg = restart_deployment(deploy_id)
-    return jsonify({'success': success, 'message': msg})
-
 @app.route('/api/deployment/<deploy_id>/stop', methods=['POST'])
 def api_stop_deployment(deploy_id):
     success, msg = stop_deployment(deploy_id)
@@ -2280,74 +2346,14 @@ def api_delete_deployment(deploy_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@app.route('/api/deployment/<deploy_id>/backup', methods=['POST'])
-def api_create_backup(deploy_id):
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if not user_id:
-        return jsonify({'success': False, 'error': 'Not authenticated'})
-    
-    cost = CREDIT_COSTS['backup']
-    if not deduct_credits(user_id, cost, f"Backup: {deploy_id}"):
-        return jsonify({'success': False, 'error': f'Need {cost} credits'})
-    
-    backup_path, backup_name = create_backup(deploy_id)
-    
-    if backup_path:
-        return jsonify({'success': True, 'filename': backup_name})
-    else:
-        add_credits(user_id, cost, "Refund")
-        return jsonify({'success': False, 'error': backup_name})
-
-@app.route('/api/download/<filename>')
-def api_download(filename):
-    backup_path = os.path.join(BACKUPS_DIR, secure_filename(filename))
-    if os.path.exists(backup_path):
-        return send_file(backup_path, as_attachment=True)
-    return jsonify({'success': False, 'error': 'Not found'})
-
-@app.route('/api/admin/stats')
-def api_admin_stats():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if str(user_id) not in [str(OWNER_ID), str(ADMIN_ID)]:
-        return jsonify({'success': False, 'error': 'Admin only'})
-    
-    stats = {
-        'total_users': len(db['users']),
-        'total_deployments': len(db['deployments']),
-        'active_processes': len(active_processes)
-    }
-    
-    system = {
-        'cpu': psutil.cpu_percent(interval=1),
-        'memory': psutil.virtual_memory().percent
-    }
-    
-    users = []
-    for uid, user_data in db['users'].items():
-        users.append({
-            'id': uid,
-            'email': user_data['email'],
-            'credits': user_data['credits'],
-            'deployments': user_data.get('deployments', []),
-            'is_banned': user_data.get('is_banned', False)
-        })
-    
-    return jsonify({'success': True, 'stats': stats, 'system': system, 'users': users})
-
 @app.route('/api/admin/add-credits', methods=['POST'])
 def api_admin_add_credits():
     session_token = request.cookies.get('session_token')
     fingerprint = get_device_fingerprint(request)
     admin_id = verify_session(session_token, fingerprint)
     
-    if str(admin_id) not in [str(OWNER_ID), str(ADMIN_ID)]:
-        return jsonify({'success': False, 'error': 'Admin only'})
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
     
     data = request.get_json()
     target_user = data.get('user_id')
@@ -2364,8 +2370,8 @@ def api_admin_ban_user():
     fingerprint = get_device_fingerprint(request)
     admin_id = verify_session(session_token, fingerprint)
     
-    if str(admin_id) not in [str(OWNER_ID), str(ADMIN_ID)]:
-        return jsonify({'success': False, 'error': 'Admin only'})
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
     
     data = request.get_json()
     target_user = data.get('user_id')
@@ -2376,8 +2382,7 @@ def api_admin_ban_user():
         return jsonify({'success': False, 'error': 'User not found'})
     
     if ban:
-        if user['device_fingerprint'] not in db['banned_devices']:
-            db['banned_devices'].append(user['device_fingerprint'])
+        db['banned_devices'].add(user['device_fingerprint'])
     
     update_user(target_user, is_banned=ban)
     
@@ -2420,31 +2425,31 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'🚀 ELITEHOST v11.0 - ADVANCED SPA EDITION':^90}")
+    print(f"{Fore.CYAN}{'🚀 ELITEHOST v11.0 - ULTIMATE ENTERPRISE EDITION':^90}")
     print("=" * 90)
     print(f"{Fore.GREEN}✨ NEW FEATURES v11.0:")
-    print(f"{Fore.CYAN}   🎨 Modern SPA with TailwindCSS + Alpine.js")
-    print(f"{Fore.CYAN}   🌙 Dark mode by default (Vercel/Railway style)")
-    print(f"{Fore.CYAN}   📂 Detailed sidebar navigation")
-    print(f"{Fore.CYAN}   🔑 Environment variables (secrets) per deployment")
-    print(f"{Fore.CYAN}   💾 Backup system with download")
-    print(f"{Fore.CYAN}   📁 File manager (read-only browser)")
-    print(f"{Fore.CYAN}   📟 Live console with auto-refresh")
-    print(f"{Fore.CYAN}   👑 Advanced admin dashboard with CPU/RAM")
-    print(f"{Fore.CYAN}   🤖 AI auto-install dependencies")
-    print(f"{Fore.CYAN}   💎 5 free credits for new users")
+    print(f"{Fore.CYAN}   🎨 Modern SPA UI with TailwindCSS & Alpine.js")
+    print(f"{Fore.CYAN}   🌙 Dark Mode by Default (Vercel/Railway style)")
+    print(f"{Fore.CYAN}   📁 Sidebar Navigation")
+    print(f"{Fore.CYAN}   🔑 Environment Variables Management")
+    print(f"{Fore.CYAN}   💾 Backup System (Create & Download ZIP)")
+    print(f"{Fore.CYAN}   📂 File Manager (Browse deployment files)")
+    print(f"{Fore.CYAN}   💻 Live Console (Auto-refresh logs)")
+    print(f"{Fore.CYAN}   👑 Advanced Admin Dashboard")
+    print(f"{Fore.CYAN}   📊 CPU/RAM Monitoring per Process")
+    print(f"{Fore.CYAN}   🤖 AI Auto-Install Dependencies")
+    print(f"{Fore.CYAN}   🔐 Advanced Authentication & Security")
     print("=" * 90)
     
     keep_alive()
     
     port = os.environ.get('PORT', 8080)
-    print(f"\n{Fore.GREEN}🌐 Web App: http://localhost:{port}")
+    print(f"\n{Fore.GREEN}🌐 Web App: http://localhost:{port}/app")
     print(f"{Fore.YELLOW}📱 Register: http://localhost:{port}/register")
     print(f"{Fore.YELLOW}🔑 Login: http://localhost:{port}/login")
-    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v11.0 READY':^90}")
+    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v11.0 ULTIMATE READY':^90}")
     print("=" * 90 + "\n")
     
-    # Keep running
     while True:
         try:
             time.sleep(1)
