@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-🚀 ULTRA ADVANCED DEVOPS BOT v10.0 - ENTERPRISE EDITION
-Revolutionary AI-Powered Deployment Platform with Advanced Authentication
-Device Lock | Email Auth | User Ban System | Admin Controls
+🚀 ELITEHOST v10.0 - ENTERPRISE EDITION
+Revolutionary AI-Powered Deployment Platform
+Advanced Authentication | Device Fingerprinting | Admin Control
 """
 
 import sys
@@ -69,7 +69,6 @@ import zipfile
 import shutil
 import time
 from datetime import datetime, timedelta
-import sqlite3
 import json
 import logging
 import threading
@@ -87,14 +86,12 @@ from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet
 import psutil
 from colorama import Fore, Style, init
-from io import BytesIO
-import base64
-import re
 import bcrypt
+import re
 
 init(autoreset=True)
 
-# ==================== ADVANCED CONFIGURATION ====================
+# ==================== CONFIGURATION ====================
 TOKEN = '8133133627:AAHXG1M3I_5yV6mIo2IRl61h8zRUvg6Nn2Y'
 OWNER_ID = 7524032836
 ADMIN_ID = 8285724366
@@ -104,33 +101,26 @@ WEB_SECRET_KEY = secrets.token_hex(32)
 ENCRYPTION_KEY = Fernet.generate_key()
 fernet = Fernet(ENCRYPTION_KEY)
 
-# Default credits for new users
+# Credit system
 FREE_CREDITS = 2.0
-
-# Credit costs
 CREDIT_COSTS = {
     'file_upload': 0.5,
     'github_deploy': 1.0,
     'vps_command': 0.3,
     'backup': 0.5,
-    'docker_build': 1.5,
-    'custom_domain': 2.0,
 }
 
 # Directories
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DATA_DIR = os.path.join(BASE_DIR, 'devops_data')
+DATA_DIR = os.path.join(BASE_DIR, 'elitehost_data')
 UPLOADS_DIR = os.path.join(DATA_DIR, 'uploads')
 DEPLOYS_DIR = os.path.join(DATA_DIR, 'deployments')
 BACKUPS_DIR = os.path.join(DATA_DIR, 'backups')
 LOGS_DIR = os.path.join(DATA_DIR, 'logs')
-DB_PATH = os.path.join(DATA_DIR, 'devops.db')
-ANALYTICS_DIR = os.path.join(DATA_DIR, 'analytics')
-DOCKER_DIR = os.path.join(DATA_DIR, 'docker')
 PAYMENTS_DIR = os.path.join(DATA_DIR, 'payments')
-USERS_JSON = os.path.join(DATA_DIR, 'users.json')
+DB_FILE = os.path.join(DATA_DIR, 'database.json')
 
-for d in [DATA_DIR, UPLOADS_DIR, DEPLOYS_DIR, BACKUPS_DIR, LOGS_DIR, ANALYTICS_DIR, DOCKER_DIR, PAYMENTS_DIR]:
+for d in [DATA_DIR, UPLOADS_DIR, DEPLOYS_DIR, BACKUPS_DIR, LOGS_DIR, PAYMENTS_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # Flask & Bot
@@ -140,22 +130,11 @@ CORS(app)
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 
 # Global state
-user_credits = {}
-active_users = set()
-admin_ids = {ADMIN_ID, OWNER_ID}
-active_deployments = {}
 active_processes = {}
 deployment_logs = {}
-user_vps = {}
-user_env_vars = {}
-deployment_analytics = {}
-user_sessions = {}
-custom_domains = {}
-ssl_certificates = {}
-auto_scaling_configs = {}
 DB_LOCK = Lock()
 
-# Advanced Logging
+# Logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -166,594 +145,195 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ==================== USER DATA MANAGEMENT ====================
+# ==================== JSON DATABASE ====================
 
-def load_users_json():
-    """Load users from JSON file"""
-    if os.path.exists(USERS_JSON):
+def load_db():
+    """Load database from JSON file"""
+    if os.path.exists(DB_FILE):
         try:
-            with open(USERS_JSON, 'r') as f:
+            with open(DB_FILE, 'r') as f:
                 return json.load(f)
         except:
-            return {}
-    return {}
+            pass
+    return {
+        'users': {},
+        'sessions': {},
+        'deployments': {},
+        'payments': {},
+        'activity': [],
+        'banned_devices': set()
+    }
 
-def save_users_json(users_data):
-    """Save users to JSON file"""
-    try:
-        with open(USERS_JSON, 'w') as f:
-            json.dump(users_data, f, indent=2)
-        return True
-    except Exception as e:
-        logger.error(f"Failed to save users.json: {e}")
-        return False
+def save_db(db):
+    """Save database to JSON file"""
+    with DB_LOCK:
+        # Convert sets to lists for JSON serialization
+        db_copy = db.copy()
+        if 'banned_devices' in db_copy and isinstance(db_copy['banned_devices'], set):
+            db_copy['banned_devices'] = list(db_copy['banned_devices'])
+        
+        with open(DB_FILE, 'w') as f:
+            json.dump(db_copy, f, indent=2, default=str)
+
+# Load database
+db = load_db()
+if 'banned_devices' in db and isinstance(db['banned_devices'], list):
+    db['banned_devices'] = set(db['banned_devices'])
 
 # ==================== DEVICE FINGERPRINTING ====================
 
 def get_device_fingerprint(request):
     """Generate unique device fingerprint"""
     user_agent = request.headers.get('User-Agent', '')
-    accept_language = request.headers.get('Accept-Language', '')
-    accept_encoding = request.headers.get('Accept-Encoding', '')
+    ip = request.remote_addr or request.environ.get('HTTP_X_REAL_IP', 'unknown')
+    accept_lang = request.headers.get('Accept-Language', '')
     
-    # Create fingerprint from multiple factors
-    fingerprint_data = f"{user_agent}|{accept_language}|{accept_encoding}"
-    fingerprint = hashlib.sha256(fingerprint_data.encode()).hexdigest()
-    
-    return fingerprint
+    fingerprint_str = f"{user_agent}|{ip}|{accept_lang}"
+    return hashlib.sha256(fingerprint_str.encode()).hexdigest()
 
-def is_device_locked(email, device_fingerprint):
-    """Check if user is trying to access from a different device"""
-    users_data = load_users_json()
-    
-    if email in users_data:
-        user = users_data[email]
-        if 'device_fingerprint' in user and user['device_fingerprint']:
-            if user['device_fingerprint'] != device_fingerprint:
-                return True, user['device_fingerprint']
-    
-    return False, None
+def is_device_banned(fingerprint):
+    """Check if device is banned"""
+    return fingerprint in db.get('banned_devices', set())
 
-def lock_device(email, device_fingerprint):
-    """Lock user to current device"""
-    users_data = load_users_json()
-    
-    if email in users_data:
-        users_data[email]['device_fingerprint'] = device_fingerprint
-        users_data[email]['device_locked_at'] = datetime.now().isoformat()
-        save_users_json(users_data)
-        return True
-    
-    return False
+def check_existing_account(fingerprint):
+    """Check if device already has an account"""
+    for user_id, user_data in db['users'].items():
+        if user_data.get('device_fingerprint') == fingerprint:
+            return user_id
+    return None
 
-# ==================== DATABASE INITIALIZATION ====================
-
-def init_db():
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        
-        # Users table with email authentication
-        c.execute('''CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            email TEXT UNIQUE,
-            password_hash TEXT,
-            username TEXT,
-            first_name TEXT,
-            joined_date TEXT,
-            last_active TEXT,
-            total_deployments INTEGER DEFAULT 0,
-            successful_deployments INTEGER DEFAULT 0,
-            total_api_calls INTEGER DEFAULT 0,
-            pro_member INTEGER DEFAULT 0,
-            is_banned INTEGER DEFAULT 0,
-            ban_reason TEXT,
-            device_fingerprint TEXT,
-            ip_address TEXT,
-            telegram_id INTEGER
-        )''')
-        
-        # Credits table
-        c.execute('''CREATE TABLE IF NOT EXISTS credits (
-            user_id INTEGER PRIMARY KEY,
-            balance REAL DEFAULT 0,
-            total_spent REAL DEFAULT 0,
-            total_earned REAL DEFAULT 0,
-            last_purchase TEXT
-        )''')
-        
-        # Deployments table
-        c.execute('''CREATE TABLE IF NOT EXISTS deployments (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            name TEXT,
-            type TEXT,
-            status TEXT,
-            port INTEGER,
-            pid INTEGER,
-            created_at TEXT,
-            updated_at TEXT,
-            repo_url TEXT,
-            branch TEXT,
-            build_cmd TEXT,
-            start_cmd TEXT,
-            logs TEXT,
-            dependencies_installed TEXT,
-            install_log TEXT,
-            cpu_usage REAL DEFAULT 0,
-            memory_usage REAL DEFAULT 0,
-            uptime INTEGER DEFAULT 0,
-            custom_domain TEXT,
-            ssl_enabled INTEGER DEFAULT 0,
-            auto_scale INTEGER DEFAULT 0
-        )''')
-        
-        # Environment variables table
-        c.execute('''CREATE TABLE IF NOT EXISTS env_vars (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            deployment_id TEXT,
-            key TEXT,
-            value_encrypted TEXT,
-            created_at TEXT
-        )''')
-        
-        # Activity log table
-        c.execute('''CREATE TABLE IF NOT EXISTS activity_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            email TEXT,
-            action TEXT,
-            details TEXT,
-            ip_address TEXT,
-            device_fingerprint TEXT,
-            timestamp TEXT
-        )''')
-        
-        # Domains table
-        c.execute('''CREATE TABLE IF NOT EXISTS domains (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            deployment_id TEXT,
-            domain TEXT,
-            ssl_cert TEXT,
-            ssl_key TEXT,
-            created_at TEXT,
-            verified INTEGER DEFAULT 0
-        )''')
-        
-        # Backups table
-        c.execute('''CREATE TABLE IF NOT EXISTS backups (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            deployment_id TEXT,
-            backup_path TEXT,
-            size_mb REAL,
-            created_at TEXT
-        )''')
-        
-        # Payment requests table
-        c.execute('''CREATE TABLE IF NOT EXISTS payment_requests (
-            id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            email TEXT,
-            amount REAL,
-            screenshot_path TEXT,
-            status TEXT,
-            created_at TEXT,
-            processed_at TEXT,
-            processed_by INTEGER
-        )''')
-        
-        # Login attempts tracking
-        c.execute('''CREATE TABLE IF NOT EXISTS login_attempts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT,
-            ip_address TEXT,
-            device_fingerprint TEXT,
-            success INTEGER,
-            timestamp TEXT
-        )''')
-        
-        conn.commit()
-        conn.close()
-
-def load_data():
-    """Load existing data from database"""
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        
-        # Load users
-        c.execute('SELECT user_id, email FROM users WHERE is_banned = 0')
-        for user_id, email in c.fetchall():
-            active_users.add(user_id)
-        
-        # Load credits
-        c.execute('SELECT user_id, balance FROM credits')
-        for user_id, balance in c.fetchall():
-            user_credits[user_id] = balance
-        
-        # Load deployments
-        c.execute('''SELECT id, user_id, name, type, status, port, pid, repo_url, branch, 
-                    cpu_usage, memory_usage, custom_domain 
-                    FROM deployments WHERE status != "deleted"''')
-        for row in c.fetchall():
-            dep_id, user_id, name, dep_type, status, port, pid, repo_url, branch, cpu, mem, domain = row
-            if user_id not in active_deployments:
-                active_deployments[user_id] = []
-            active_deployments[user_id].append({
-                'id': dep_id,
-                'name': name,
-                'type': dep_type,
-                'status': status,
-                'port': port,
-                'pid': pid,
-                'repo_url': repo_url,
-                'branch': branch,
-                'cpu_usage': cpu or 0,
-                'memory_usage': mem or 0,
-                'custom_domain': domain
-            })
-        
-        # Load environment variables
-        c.execute('SELECT id, user_id, key, value_encrypted FROM env_vars')
-        for env_id, user_id, key, value_enc in c.fetchall():
-            if user_id not in user_env_vars:
-                user_env_vars[user_id] = {}
-            try:
-                value = fernet.decrypt(value_enc.encode()).decode()
-            except:
-                value = value_enc
-            user_env_vars[user_id][key] = value
-        
-        conn.close()
-
-init_db()
-load_data()
-
-# ==================== AUTHENTICATION FUNCTIONS ====================
+# ==================== USER AUTHENTICATION ====================
 
 def hash_password(password):
     """Hash password using bcrypt"""
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
-def verify_password(password, password_hash):
-    """Verify password against hash"""
-    try:
-        return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
-    except:
-        return False
+def verify_password(password, hashed):
+    """Verify password"""
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
-def create_user(email, password, first_name, device_fingerprint, ip_address):
+def create_user(email, password, fingerprint, ip):
     """Create new user account"""
-    try:
-        # Check if email already exists
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            
-            c.execute('SELECT user_id FROM users WHERE email = ?', (email,))
-            if c.fetchone():
-                conn.close()
-                return None, "Email already registered"
-            
-            # Generate user ID
-            user_id = int(time.time() * 1000) % 1000000000
-            
-            # Hash password
-            password_hash = hash_password(password)
-            
-            # Insert user
-            c.execute('''INSERT INTO users 
-                        (user_id, email, password_hash, first_name, joined_date, last_active, 
-                         device_fingerprint, ip_address, is_banned)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)''',
-                     (user_id, email, password_hash, first_name, 
-                      datetime.now().isoformat(), datetime.now().isoformat(),
-                      device_fingerprint, ip_address))
-            
-            # Give initial credits
-            c.execute('''INSERT INTO credits (user_id, balance, total_earned) 
-                        VALUES (?, ?, ?)''', (user_id, FREE_CREDITS, FREE_CREDITS))
-            
-            # Log activity
-            c.execute('''INSERT INTO activity_log 
-                        (user_id, email, action, details, ip_address, device_fingerprint, timestamp)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                     (user_id, email, 'REGISTER', f'New account created', 
-                      ip_address, device_fingerprint, datetime.now().isoformat()))
-            
-            conn.commit()
-            conn.close()
-            
-            # Update JSON
-            users_data = load_users_json()
-            users_data[email] = {
-                'user_id': user_id,
-                'email': email,
-                'first_name': first_name,
-                'joined_date': datetime.now().isoformat(),
-                'device_fingerprint': device_fingerprint,
-                'credits': FREE_CREDITS,
-                'is_banned': False
-            }
-            save_users_json(users_data)
-            
-            # Update global state
-            active_users.add(user_id)
-            user_credits[user_id] = FREE_CREDITS
-            
-            return user_id, "Account created successfully"
+    user_id = str(uuid.uuid4())
     
-    except Exception as e:
-        logger.error(f"Create user error: {e}")
-        return None, str(e)
-
-def authenticate_user(email, password, device_fingerprint, ip_address):
-    """Authenticate user login"""
-    try:
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            
-            # Get user
-            c.execute('''SELECT user_id, password_hash, is_banned, ban_reason, device_fingerprint 
-                        FROM users WHERE email = ?''', (email,))
-            result = c.fetchone()
-            
-            if not result:
-                # Log failed attempt
-                c.execute('''INSERT INTO login_attempts 
-                            (email, ip_address, device_fingerprint, success, timestamp)
-                            VALUES (?, ?, ?, 0, ?)''',
-                         (email, ip_address, device_fingerprint, datetime.now().isoformat()))
-                conn.commit()
-                conn.close()
-                return None, "Invalid email or password"
-            
-            user_id, password_hash, is_banned, ban_reason, stored_fingerprint = result
-            
-            # Check if banned
-            if is_banned:
-                conn.close()
-                return None, f"Account banned: {ban_reason or 'Contact admin'}"
-            
-            # Verify password
-            if not verify_password(password, password_hash):
-                # Log failed attempt
-                c.execute('''INSERT INTO login_attempts 
-                            (email, ip_address, device_fingerprint, success, timestamp)
-                            VALUES (?, ?, ?, 0, ?)''',
-                         (email, ip_address, device_fingerprint, datetime.now().isoformat()))
-                conn.commit()
-                conn.close()
-                return None, "Invalid email or password"
-            
-            # Check device lock
-            if stored_fingerprint and stored_fingerprint != device_fingerprint:
-                conn.close()
-                return None, "Account locked to another device. Contact admin to unlock."
-            
-            # Update device fingerprint if first login
-            if not stored_fingerprint:
-                c.execute('UPDATE users SET device_fingerprint = ? WHERE user_id = ?',
-                         (device_fingerprint, user_id))
-            
-            # Update last active
-            c.execute('UPDATE users SET last_active = ?, ip_address = ? WHERE user_id = ?',
-                     (datetime.now().isoformat(), ip_address, user_id))
-            
-            # Log successful login
-            c.execute('''INSERT INTO login_attempts 
-                        (email, ip_address, device_fingerprint, success, timestamp)
-                        VALUES (?, ?, ?, 1, ?)''',
-                     (email, ip_address, device_fingerprint, datetime.now().isoformat()))
-            
-            c.execute('''INSERT INTO activity_log 
-                        (user_id, email, action, details, ip_address, device_fingerprint, timestamp)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                     (user_id, email, 'LOGIN', 'User logged in', 
-                      ip_address, device_fingerprint, datetime.now().isoformat()))
-            
-            conn.commit()
-            conn.close()
-            
-            return user_id, "Login successful"
+    db['users'][user_id] = {
+        'email': email,
+        'password': hash_password(password),
+        'device_fingerprint': fingerprint,
+        'credits': FREE_CREDITS,
+        'total_spent': 0,
+        'total_earned': FREE_CREDITS,
+        'deployments': [],
+        'created_at': datetime.now().isoformat(),
+        'last_login': datetime.now().isoformat(),
+        'ip_address': ip,
+        'is_banned': False,
+        'telegram_id': None
+    }
     
-    except Exception as e:
-        logger.error(f"Authentication error: {e}")
-        return None, str(e)
+    log_activity(user_id, 'USER_REGISTER', f'New user: {email}', ip)
+    save_db(db)
+    return user_id
 
-def is_user_banned(user_id):
-    """Check if user is banned"""
-    try:
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            c.execute('SELECT is_banned, ban_reason FROM users WHERE user_id = ?', (user_id,))
-            result = c.fetchone()
-            conn.close()
-            
-            if result and result[0]:
-                return True, result[1]
-            return False, None
-    except:
-        return False, None
+def authenticate_user(email, password):
+    """Authenticate user by email and password"""
+    for user_id, user_data in db['users'].items():
+        if user_data['email'] == email:
+            if verify_password(password, user_data['password']):
+                return user_id
+    return None
 
-def ban_user(user_id, reason, banned_by):
-    """Ban a user"""
-    try:
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            
-            c.execute('UPDATE users SET is_banned = 1, ban_reason = ? WHERE user_id = ?',
-                     (reason, user_id))
-            
-            c.execute('''INSERT INTO activity_log 
-                        (user_id, action, details, timestamp)
-                        VALUES (?, ?, ?, ?)''',
-                     (banned_by, 'BAN_USER', f'Banned user {user_id}: {reason}', 
-                      datetime.now().isoformat()))
-            
-            conn.commit()
-            conn.close()
-            
-            # Update JSON
-            users_data = load_users_json()
-            for email, data in users_data.items():
-                if data.get('user_id') == user_id:
-                    data['is_banned'] = True
-                    data['ban_reason'] = reason
-                    break
-            save_users_json(users_data)
-            
-            # Remove from active users
-            if user_id in active_users:
-                active_users.remove(user_id)
-            
-            # Notify via bot
-            try:
-                bot.send_message(user_id, 
-                    f"🚫 *Account Banned*\n\n"
-                    f"Reason: {reason}\n\n"
-                    f"Contact {YOUR_USERNAME} to appeal.")
-            except:
-                pass
-            
-            return True, "User banned successfully"
-    except Exception as e:
-        logger.error(f"Ban user error: {e}")
-        return False, str(e)
+def create_session(user_id, fingerprint):
+    """Create user session"""
+    session_token = secrets.token_urlsafe(32)
+    
+    db['sessions'][session_token] = {
+        'user_id': user_id,
+        'fingerprint': fingerprint,
+        'created_at': datetime.now().isoformat(),
+        'expires_at': (datetime.now() + timedelta(days=7)).isoformat()
+    }
+    
+    save_db(db)
+    return session_token
 
-def unban_user(user_id, unbanned_by):
-    """Unban a user"""
-    try:
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            
-            c.execute('UPDATE users SET is_banned = 0, ban_reason = NULL WHERE user_id = ?',
-                     (user_id,))
-            
-            c.execute('''INSERT INTO activity_log 
-                        (user_id, action, details, timestamp)
-                        VALUES (?, ?, ?, ?)''',
-                     (unbanned_by, 'UNBAN_USER', f'Unbanned user {user_id}', 
-                      datetime.now().isoformat()))
-            
-            conn.commit()
-            conn.close()
-            
-            # Update JSON
-            users_data = load_users_json()
-            for email, data in users_data.items():
-                if data.get('user_id') == user_id:
-                    data['is_banned'] = False
-                    data['ban_reason'] = None
-                    break
-            save_users_json(users_data)
-            
-            # Add back to active users
-            active_users.add(user_id)
-            
-            # Notify via bot
-            try:
-                bot.send_message(user_id, 
-                    f"✅ *Account Unbanned*\n\n"
-                    f"Your account has been restored.\n"
-                    f"You can now access all features!")
-            except:
-                pass
-            
-            return True, "User unbanned successfully"
-    except Exception as e:
-        logger.error(f"Unban user error: {e}")
-        return False, str(e)
+def verify_session(session_token, fingerprint):
+    """Verify session token"""
+    if session_token not in db['sessions']:
+        return None
+    
+    session_data = db['sessions'][session_token]
+    
+    # Check expiration
+    if datetime.fromisoformat(session_data['expires_at']) < datetime.now():
+        del db['sessions'][session_token]
+        save_db(db)
+        return None
+    
+    # Check fingerprint match
+    if session_data['fingerprint'] != fingerprint:
+        return None
+    
+    return session_data['user_id']
+
+def get_user(user_id):
+    """Get user data"""
+    return db['users'].get(user_id)
+
+def update_user(user_id, **kwargs):
+    """Update user data"""
+    if user_id in db['users']:
+        db['users'][user_id].update(kwargs)
+        save_db(db)
+
+def log_activity(user_id, action, details, ip=''):
+    """Log user activity"""
+    db['activity'].append({
+        'user_id': user_id,
+        'action': action,
+        'details': details,
+        'ip': ip,
+        'timestamp': datetime.now().isoformat()
+    })
+    save_db(db)
 
 # ==================== CREDIT SYSTEM ====================
 
 def get_credits(user_id):
-    """Get user credits - admins have unlimited"""
-    if user_id in admin_ids:
+    """Get user credits"""
+    if user_id == str(OWNER_ID):
         return float('inf')
-    return user_credits.get(user_id, 0.0)
+    user = get_user(user_id)
+    return user['credits'] if user else 0
 
 def add_credits(user_id, amount, description="Credit added"):
     """Add credits to user"""
-    if user_id in admin_ids:
-        return True
+    user = get_user(user_id)
+    if not user:
+        return False
     
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        
-        current = get_credits(user_id)
-        new_balance = current + amount
-        
-        c.execute('''INSERT OR REPLACE INTO credits 
-                    (user_id, balance, total_earned, last_purchase) 
-                    VALUES (?, ?, COALESCE((SELECT total_earned FROM credits WHERE user_id = ?), 0) + ?, ?)''',
-                 (user_id, new_balance, user_id, amount, datetime.now().isoformat()))
-        
-        c.execute('''INSERT INTO activity_log (user_id, action, details, timestamp) 
-                    VALUES (?, ?, ?, ?)''',
-                 (user_id, 'CREDIT_ADD', f"{amount} - {description}", datetime.now().isoformat()))
-        
-        conn.commit()
-        conn.close()
-        
-        user_credits[user_id] = new_balance
-        
-        # Update JSON
-        users_data = load_users_json()
-        for email, data in users_data.items():
-            if data.get('user_id') == user_id:
-                data['credits'] = new_balance
-                break
-        save_users_json(users_data)
-        
-        return True
+    user['credits'] += amount
+    user['total_earned'] += amount
+    update_user(user_id, credits=user['credits'], total_earned=user['total_earned'])
+    log_activity(user_id, 'CREDIT_ADD', f"{amount} - {description}")
+    return True
 
 def deduct_credits(user_id, amount, description="Credit used"):
     """Deduct credits from user"""
-    if user_id in admin_ids:
+    if user_id == str(OWNER_ID):
         return True
     
-    current = get_credits(user_id)
-    if current < amount:
+    user = get_user(user_id)
+    if not user or user['credits'] < amount:
         return False
     
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        
-        new_balance = current - amount
-        
-        c.execute('UPDATE credits SET balance = ?, total_spent = total_spent + ? WHERE user_id = ?',
-                 (new_balance, amount, user_id))
-        
-        c.execute('''INSERT INTO activity_log (user_id, action, details, timestamp) 
-                    VALUES (?, ?, ?, ?)''',
-                 (user_id, 'CREDIT_USE', f"{amount} - {description}", datetime.now().isoformat()))
-        
-        conn.commit()
-        conn.close()
-        
-        user_credits[user_id] = new_balance
-        
-        # Update JSON
-        users_data = load_users_json()
-        for email, data in users_data.items():
-            if data.get('user_id') == user_id:
-                data['credits'] = new_balance
-                break
-        save_users_json(users_data)
-        
-        return True
+    user['credits'] -= amount
+    user['total_spent'] += amount
+    update_user(user_id, credits=user['credits'], total_spent=user['total_spent'])
+    log_activity(user_id, 'CREDIT_USE', f"{amount} - {description}")
+    return True
 
-# ==================== AI DEPENDENCY DETECTOR (Keep existing) ====================
+# ==================== AI DEPENDENCY DETECTOR ====================
 
 def extract_imports_from_code(code_content):
     """Extract all import statements from Python code"""
@@ -783,58 +363,41 @@ def get_package_name(import_name):
         'dotenv': 'python-dotenv',
         'telebot': 'pyTelegramBotAPI',
         'bs4': 'beautifulsoup4',
-        'jwt': 'pyjwt',
-        'magic': 'python-magic',
-        'dateutil': 'python-dateutil',
-        'openai': 'openai',
-        'anthropic': 'anthropic',
-        'discord': 'discord.py',
     }
     return mapping.get(import_name, import_name)
 
 def detect_and_install_deps(project_path):
-    """🤖 AI-Powered dependency detection and installation"""
+    """AI-Powered dependency detection and installation"""
     installed = []
     install_log = []
     
-    logger.info(f"{Fore.CYAN}🤖 AI DEPENDENCY ANALYZER v10.0 - STARTING...")
-    install_log.append("🤖 AI DEPENDENCY ANALYZER v10.0 - ENTERPRISE")
+    install_log.append("🤖 AI DEPENDENCY ANALYZER v10.0")
     install_log.append("=" * 60)
     
-    # Python requirements.txt
+    # Check requirements.txt
     req_file = os.path.join(project_path, 'requirements.txt')
     if os.path.exists(req_file):
-        logger.info(f"{Fore.CYAN}📦 Found requirements.txt")
         install_log.append("\n📦 PYTHON REQUIREMENTS.TXT DETECTED")
         try:
             with open(req_file, 'r') as f:
                 packages = [line.strip() for line in f if line.strip() and not line.startswith('#')]
             
-            if packages:
-                logger.info(f"{Fore.YELLOW}⚡ Installing {len(packages)} Python packages...")
-                install_log.append(f"⚡ Installing {len(packages)} packages...")
-                
-                for pkg in packages:
-                    try:
-                        subprocess.run(
-                            [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
-                            check=True,
-                            capture_output=True,
-                            timeout=300
-                        )
-                        install_log.append(f"  ✅ {pkg}")
-                        installed.append(pkg)
-                    except:
-                        install_log.append(f"  ⚠️  {pkg} (skipped)")
-                
-                logger.info(f"{Fore.GREEN}✅ Python packages installed")
-                install_log.append("✅ Python requirements.txt processed")
+            for pkg in packages:
+                try:
+                    subprocess.run(
+                        [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
+                        check=True,
+                        capture_output=True,
+                        timeout=300
+                    )
+                    install_log.append(f"  ✅ {pkg}")
+                    installed.append(pkg)
+                except:
+                    install_log.append(f"  ⚠️  {pkg} (skipped)")
         except Exception as e:
-            logger.error(f"{Fore.RED}❌ requirements.txt error: {e}")
             install_log.append(f"❌ Error: {str(e)[:100]}")
     
     # Smart code analysis
-    install_log.append("\n🧠 AI CODE ANALYSIS - Scanning project files...")
     python_files = []
     for root, dirs, files in os.walk(project_path):
         for file in files:
@@ -842,9 +405,7 @@ def detect_and_install_deps(project_path):
                 python_files.append(os.path.join(root, file))
     
     if python_files:
-        install_log.append(f"📝 Found {len(python_files)} Python files")
         all_imports = set()
-        
         for py_file in python_files[:20]:
             try:
                 with open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
@@ -855,22 +416,13 @@ def detect_and_install_deps(project_path):
                 continue
         
         if all_imports:
-            install_log.append(f"\n🔍 Detected {len(all_imports)} imports from code analysis")
-            install_log.append("🤖 AI auto-installing missing packages...")
-            
-            stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'random', 'datetime', 
-                     'collections', 'itertools', 'functools', 'pathlib', 'logging', 
-                     'threading', 'subprocess', 'socket', 'http', 'urllib', 'email',
-                     'unittest', 'io', 'csv', 'sqlite3', 'pickle', 'base64', 'hashlib',
-                     'uuid', 'typing', 'copy', 'tempfile', 'shutil', 'glob', 'zipfile'}
-            
+            stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'random', 'datetime'}
             third_party = all_imports - stdlib
             
             for imp in third_party:
                 pkg = get_package_name(imp)
                 try:
                     __import__(imp)
-                    install_log.append(f"  ✓ {pkg} (already installed)")
                 except ImportError:
                     try:
                         subprocess.run(
@@ -882,53 +434,15 @@ def detect_and_install_deps(project_path):
                         install_log.append(f"  ✅ {pkg} (auto-installed)")
                         installed.append(pkg)
                     except:
-                        install_log.append(f"  ⚠️  {pkg} (optional)")
+                        pass
     
-    # Node.js package.json
-    pkg_file = os.path.join(project_path, 'package.json')
-    if os.path.exists(pkg_file):
-        logger.info(f"{Fore.CYAN}📦 Found package.json")
-        install_log.append("\n📦 NODE.JS PACKAGE.JSON DETECTED")
-        try:
-            subprocess.run(['npm', '--version'], check=True, capture_output=True)
-            logger.info(f"{Fore.YELLOW}⚡ Installing Node.js packages...")
-            install_log.append("⚡ Running npm install...")
-            
-            result = subprocess.run(
-                ['npm', 'install', '--silent'],
-                cwd=project_path,
-                capture_output=True,
-                text=True,
-                timeout=600
-            )
-            
-            if result.returncode == 0:
-                installed.append('npm packages')
-                install_log.append("✅ Node.js packages installed successfully")
-                logger.info(f"{Fore.GREEN}✅ Node.js packages installed")
-            else:
-                install_log.append(f"⚠️  npm install completed with warnings")
-        except subprocess.TimeoutExpired:
-            install_log.append("⚠️  npm install timeout (may still be running)")
-        except FileNotFoundError:
-            logger.warning(f"{Fore.YELLOW}⚠️  npm not found")
-            install_log.append("⚠️  npm not available on system")
-        except Exception as e:
-            install_log.append(f"⚠️  npm error: {str(e)[:50]}")
-    
-    # Summary
     install_log.append("\n" + "=" * 60)
-    install_log.append(f"🎉 AI ANALYSIS COMPLETE")
     install_log.append(f"📦 Total Packages Installed: {len(installed)}")
-    if installed:
-        install_log.append(f"✅ Installed: {', '.join(installed[:10])}")
-        if len(installed) > 10:
-            install_log.append(f"   ... and {len(installed) - 10} more")
     install_log.append("=" * 60)
     
     return installed, "\n".join(install_log)
 
-# ==================== DEPLOYMENT FUNCTIONS (Keep existing but add user check) ====================
+# ==================== DEPLOYMENT FUNCTIONS ====================
 
 def find_free_port():
     import socket
@@ -939,340 +453,160 @@ def find_free_port():
     return port
 
 def create_deployment(user_id, name, deploy_type, **kwargs):
-    # Check if user is banned
-    is_banned, ban_reason = is_user_banned(user_id)
-    if is_banned:
-        return None, f"Account banned: {ban_reason}"
-    
     deploy_id = str(uuid.uuid4())[:8]
     port = find_free_port()
     
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        c.execute('''INSERT INTO deployments 
-                    (id, user_id, name, type, status, port, created_at, updated_at, 
-                     repo_url, branch, build_cmd, start_cmd, logs, dependencies_installed, install_log, custom_domain, ssl_enabled, auto_scale)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                 (deploy_id, user_id, name, deploy_type, 'pending', port,
-                  datetime.now().isoformat(), datetime.now().isoformat(),
-                  kwargs.get('repo_url', ''), kwargs.get('branch', 'main'),
-                  kwargs.get('build_cmd', ''), kwargs.get('start_cmd', ''), '', '', '', None, 0, 0))
-        
-        c.execute('UPDATE users SET total_deployments = total_deployments + 1 WHERE user_id = ?', (user_id,))
-        
-        c.execute('''INSERT INTO activity_log (user_id, action, details, timestamp) 
-                    VALUES (?, ?, ?, ?)''',
-                 (user_id, 'DEPLOYMENT_CREATE', f"{name} ({deploy_type})", datetime.now().isoformat()))
-        
-        conn.commit()
-        conn.close()
-    
-    if user_id not in active_deployments:
-        active_deployments[user_id] = []
-    
-    active_deployments[user_id].append({
+    deployment = {
         'id': deploy_id,
+        'user_id': user_id,
         'name': name,
         'type': deploy_type,
         'status': 'pending',
         'port': port,
         'pid': None,
+        'created_at': datetime.now().isoformat(),
+        'updated_at': datetime.now().isoformat(),
+        'logs': '',
+        'dependencies': [],
         'repo_url': kwargs.get('repo_url', ''),
-        'branch': kwargs.get('branch', 'main'),
-        'cpu_usage': 0,
-        'memory_usage': 0,
-        'custom_domain': None
-    })
+        'branch': kwargs.get('branch', 'main')
+    }
     
-    try:
-        bot.send_message(OWNER_ID, 
-            f"🚀 *New Deployment*\n\n"
-            f"User: `{user_id}`\n"
-            f"Name: *{name}*\n"
-            f"Type: {deploy_type}\n"
-            f"ID: `{deploy_id}`\n"
-            f"Port: {port}")
-    except:
-        pass
+    db['deployments'][deploy_id] = deployment
+    
+    user = get_user(user_id)
+    if user:
+        user['deployments'].append(deploy_id)
+        update_user(user_id, deployments=user['deployments'])
+    
+    log_activity(user_id, 'DEPLOYMENT_CREATE', f"{name} ({deploy_type})")
+    save_db(db)
     
     return deploy_id, port
 
-def update_deployment(deploy_id, status=None, logs=None, pid=None, deps=None, install_log=None, cpu=None, mem=None):
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        
-        updates = ['updated_at = ?']
-        values = [datetime.now().isoformat()]
-        
-        if status:
-            updates.append('status = ?')
-            values.append(status)
-            
-            if status == 'running':
-                c.execute('UPDATE users SET successful_deployments = successful_deployments + 1 WHERE user_id = (SELECT user_id FROM deployments WHERE id = ?)', (deploy_id,))
-        
-        if logs:
-            updates.append('logs = logs || ?')
-            values.append(f"\n{logs}")
-            if deploy_id not in deployment_logs:
-                deployment_logs[deploy_id] = []
-            deployment_logs[deploy_id].append(logs)
-        
-        if pid:
-            updates.append('pid = ?')
-            values.append(pid)
-        
-        if deps:
-            updates.append('dependencies_installed = ?')
-            values.append(deps)
-        
-        if install_log:
-            updates.append('install_log = ?')
-            values.append(install_log)
-        
-        if cpu is not None:
-            updates.append('cpu_usage = ?')
-            values.append(cpu)
-        
-        if mem is not None:
-            updates.append('memory_usage = ?')
-            values.append(mem)
-        
-        values.append(deploy_id)
-        
-        c.execute(f'UPDATE deployments SET {", ".join(updates)} WHERE id = ?', values)
-        conn.commit()
-        conn.close()
-    
-    for user_deploys in active_deployments.values():
-        for deploy in user_deploys:
-            if deploy['id'] == deploy_id:
-                if status:
-                    deploy['status'] = status
-                if pid:
-                    deploy['pid'] = pid
-                if cpu is not None:
-                    deploy['cpu_usage'] = cpu
-                if mem is not None:
-                    deploy['memory_usage'] = mem
-                break
-
-def monitor_deployment(deploy_id, process):
-    """Monitor deployment resources"""
-    try:
-        while process.poll() is None:
-            try:
-                proc = psutil.Process(process.pid)
-                cpu = proc.cpu_percent(interval=1)
-                mem = proc.memory_percent()
-                
-                update_deployment(deploy_id, cpu=cpu, mem=mem)
-                time.sleep(5)
-            except:
-                break
-    except:
-        pass
+def update_deployment(deploy_id, **kwargs):
+    if deploy_id in db['deployments']:
+        db['deployments'][deploy_id].update(kwargs)
+        db['deployments'][deploy_id]['updated_at'] = datetime.now().isoformat()
+        save_db(db)
 
 def deploy_from_file(user_id, file_path, filename):
-    # Check if user is banned
-    is_banned, ban_reason = is_user_banned(user_id)
-    if is_banned:
-        return None, f"Account banned: {ban_reason}"
-    
     try:
         cost = CREDIT_COSTS['file_upload']
         if not deduct_credits(user_id, cost, f"File deploy: {filename}"):
             return None, f"❌ Need {cost} credits"
         
         deploy_id, port = create_deployment(user_id, filename, 'file_upload')
-        if not deploy_id:
-            add_credits(user_id, cost, "Refund: Failed")
-            return None, port
         
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         os.makedirs(deploy_dir, exist_ok=True)
         
         if filename.endswith('.zip'):
-            update_deployment(deploy_id, 'extracting', '📦 Extracting ZIP archive...')
+            update_deployment(deploy_id, status='extracting', logs='📦 Extracting ZIP...')
             with zipfile.ZipFile(file_path, 'r') as zip_ref:
                 zip_ref.extractall(deploy_dir)
             
             main_file = None
             for root, dirs, files in os.walk(deploy_dir):
                 for file in files:
-                    if file in ['main.py', 'app.py', 'bot.py', 'index.js', 'server.js', 'app.js']:
+                    if file in ['main.py', 'app.py', 'bot.py']:
                         main_file = os.path.join(root, file)
                         break
                 if main_file:
                     break
             
             if not main_file:
-                update_deployment(deploy_id, 'failed', '❌ No entry point found')
-                add_credits(user_id, cost, "Refund: No entry point")
-                return None, "❌ No main file found in ZIP"
+                update_deployment(deploy_id, status='failed', logs='❌ No entry point')
+                add_credits(user_id, cost, "Refund")
+                return None, "❌ No main file found"
             
             file_path = main_file
         else:
             shutil.copy(file_path, os.path.join(deploy_dir, filename))
             file_path = os.path.join(deploy_dir, filename)
         
-        update_deployment(deploy_id, 'installing', '🤖 AI analyzing project dependencies...')
+        update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
-        if installed_deps:
-            update_deployment(deploy_id, deps=', '.join(installed_deps), install_log=install_log)
-            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps[:5])}")
+        update_deployment(deploy_id, dependencies=installed_deps)
         
         env = os.environ.copy()
         env['PORT'] = str(port)
         
-        if user_id in user_env_vars:
-            env.update(user_env_vars[user_id])
+        update_deployment(deploy_id, status='starting', logs=f'🚀 Launching on port {port}...')
         
-        update_deployment(deploy_id, 'starting', f'🚀 Launching on port {port}...')
-        
-        if file_path.endswith('.py'):
-            process = subprocess.Popen(
-                [sys.executable, file_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.dirname(file_path),
-                env=env
-            )
-        elif file_path.endswith('.js'):
-            process = subprocess.Popen(
-                ['node', file_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.dirname(file_path),
-                env=env
-            )
-        else:
-            update_deployment(deploy_id, 'failed', '❌ Unsupported file type')
-            add_credits(user_id, cost, "Refund: Unsupported type")
-            return None, "❌ Unsupported file type"
+        process = subprocess.Popen(
+            [sys.executable, file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=os.path.dirname(file_path),
+            env=env
+        )
         
         active_processes[deploy_id] = process
-        update_deployment(deploy_id, 'running', f'✅ Live on port {port}!', process.pid)
-        
-        Thread(target=monitor_deployment, args=(deploy_id, process), daemon=True).start()
-        
-        def log_monitor():
-            for line in iter(process.stdout.readline, b''):
-                if line:
-                    log_line = line.decode().strip()
-                    update_deployment(deploy_id, logs=log_line)
-            
-            process.wait()
-            if process.returncode == 0:
-                update_deployment(deploy_id, 'completed')
-            else:
-                update_deployment(deploy_id, 'failed', f'❌ Exit code: {process.returncode}')
-        
-        Thread(target=log_monitor, daemon=True).start()
-        
-        try:
-            bot.send_message(OWNER_ID, 
-                f"✅ *Deployment Success*\n\n"
-                f"User: `{user_id}`\n"
-                f"File: {filename}\n"
-                f"ID: `{deploy_id}`\n"
-                f"Port: {port}\n"
-                f"AI Installed: {len(installed_deps)} packages")
-        except:
-            pass
+        update_deployment(deploy_id, status='running', pid=process.pid, logs=f'✅ Live on port {port}!')
         
         return deploy_id, f"🎉 Deployed! Port {port}"
     
     except Exception as e:
-        logger.error(f"Deploy error: {e}")
         if 'deploy_id' in locals():
-            update_deployment(deploy_id, 'failed', str(e))
-            add_credits(user_id, cost, "Refund: Error")
+            update_deployment(deploy_id, status='failed', logs=str(e))
+            add_credits(user_id, cost, "Refund")
         return None, str(e)
 
-def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd=''):
-    # Check if user is banned
-    is_banned, ban_reason = is_user_banned(user_id)
-    if is_banned:
-        return None, f"Account banned: {ban_reason}"
-    
+def deploy_from_github(user_id, repo_url, branch='main'):
     try:
         cost = CREDIT_COSTS['github_deploy']
         if not deduct_credits(user_id, cost, f"GitHub: {repo_url}"):
             return None, f"❌ Need {cost} credits"
         
         repo_name = repo_url.split('/')[-1].replace('.git', '')
-        deploy_id, port = create_deployment(user_id, repo_name, 'github',
-                                           repo_url=repo_url, branch=branch,
-                                           build_cmd=build_cmd, start_cmd=start_cmd)
-        
-        if not deploy_id:
-            add_credits(user_id, cost, "Refund: Failed")
-            return None, port
+        deploy_id, port = create_deployment(user_id, repo_name, 'github', repo_url=repo_url, branch=branch)
         
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         os.makedirs(deploy_dir, exist_ok=True)
         
-        update_deployment(deploy_id, 'cloning', f'🔄 Cloning {repo_url}...')
+        update_deployment(deploy_id, status='cloning', logs=f'🔄 Cloning {repo_url}...')
         
-        clone_cmd = ['git', 'clone', '-b', branch, '--depth', '1', repo_url, deploy_dir]
-        result = subprocess.run(clone_cmd, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(
+            ['git', 'clone', '-b', branch, '--depth', '1', repo_url, deploy_dir],
+            capture_output=True,
+            text=True,
+            timeout=600
+        )
         
         if result.returncode != 0:
-            update_deployment(deploy_id, 'failed', f'❌ Clone failed: {result.stderr}')
-            add_credits(user_id, cost, "Refund: Clone failed")
+            update_deployment(deploy_id, status='failed', logs='❌ Clone failed')
+            add_credits(user_id, cost, "Refund")
             return None, "❌ Clone failed"
         
-        update_deployment(deploy_id, logs='✅ Repository cloned')
-        
-        update_deployment(deploy_id, 'installing', '🤖 AI analyzing dependencies...')
+        update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
-        if installed_deps:
-            update_deployment(deploy_id, deps=', '.join(installed_deps), install_log=install_log)
-            update_deployment(deploy_id, logs=f"✅ Auto-installed: {', '.join(installed_deps[:5])}")
+        update_deployment(deploy_id, dependencies=installed_deps)
         
-        if build_cmd:
-            update_deployment(deploy_id, 'building', f'🔨 Building: {build_cmd}')
-            build_result = subprocess.run(build_cmd, shell=True, cwd=deploy_dir,
-                                        capture_output=True, text=True, timeout=600)
-            update_deployment(deploy_id, logs=f"Build:\n{build_result.stdout}\n{build_result.stderr}")
+        # Find start command
+        main_files = {
+            'main.py': f'{sys.executable} main.py',
+            'app.py': f'{sys.executable} app.py',
+            'bot.py': f'{sys.executable} bot.py',
+        }
         
-        if start_cmd:
-            start_command = start_cmd
-        else:
-            main_files = {
-                'main.py': f'{sys.executable} main.py',
-                'app.py': f'{sys.executable} app.py',
-                'bot.py': f'{sys.executable} bot.py',
-                'server.py': f'{sys.executable} server.py',
-                'index.js': 'node index.js',
-                'server.js': 'node server.js',
-                'app.js': 'node app.js',
-                'package.json': 'npm start'
-            }
-            
-            start_command = None
-            for file, cmd in main_files.items():
-                if os.path.exists(os.path.join(deploy_dir, file)):
-                    start_command = cmd
-                    break
-            
-            if not start_command:
-                update_deployment(deploy_id, 'failed', '❌ No start command')
-                add_credits(user_id, cost, "Refund: No start cmd")
-                return None, "❌ No start command found"
+        start_command = None
+        for file, cmd in main_files.items():
+            if os.path.exists(os.path.join(deploy_dir, file)):
+                start_command = cmd
+                break
         
-        update_deployment(deploy_id, 'starting', f'🚀 Starting: {start_command}')
+        if not start_command:
+            update_deployment(deploy_id, status='failed', logs='❌ No start command')
+            add_credits(user_id, cost, "Refund")
+            return None, "❌ No start file found"
+        
+        update_deployment(deploy_id, status='starting', logs=f'🚀 Starting...')
         
         env = os.environ.copy()
         env['PORT'] = str(port)
-        
-        if user_id in user_env_vars:
-            env.update(user_env_vars[user_id])
         
         process = subprocess.Popen(
             start_command.split(),
@@ -1283,43 +617,14 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         )
         
         active_processes[deploy_id] = process
-        update_deployment(deploy_id, 'running', f'✅ Running on port {port}!', process.pid)
+        update_deployment(deploy_id, status='running', pid=process.pid, logs=f'✅ Running on port {port}!')
         
-        Thread(target=monitor_deployment, args=(deploy_id, process), daemon=True).start()
-        
-        def log_monitor():
-            for line in iter(process.stdout.readline, b''):
-                if line:
-                    log_line = line.decode().strip()
-                    update_deployment(deploy_id, logs=log_line)
-            
-            process.wait()
-            if process.returncode == 0:
-                update_deployment(deploy_id, 'completed')
-            else:
-                update_deployment(deploy_id, 'failed', f'❌ Exit: {process.returncode}')
-        
-        Thread(target=log_monitor, daemon=True).start()
-        
-        try:
-            bot.send_message(OWNER_ID, 
-                f"✅ *GitHub Deploy Success*\n\n"
-                f"User: `{user_id}`\n"
-                f"Repo: {repo_name}\n"
-                f"Branch: {branch}\n"
-                f"ID: `{deploy_id}`\n"
-                f"Port: {port}\n"
-                f"AI Installed: {len(installed_deps)} packages")
-        except:
-            pass
-        
-        return deploy_id, f"🎉 GitHub deployed! Port {port}"
+        return deploy_id, f"🎉 Deployed! Port {port}"
     
     except Exception as e:
-        logger.error(f"GitHub deploy error: {e}")
         if 'deploy_id' in locals():
-            update_deployment(deploy_id, 'failed', str(e))
-            add_credits(user_id, cost, "Refund: Error")
+            update_deployment(deploy_id, status='failed', logs=str(e))
+            add_credits(user_id, cost, "Refund")
         return None, str(e)
 
 def stop_deployment(deploy_id):
@@ -1332,425 +637,440 @@ def stop_deployment(deploy_id):
             except:
                 process.kill()
             del active_processes[deploy_id]
-            update_deployment(deploy_id, 'stopped', '🛑 Stopped')
+            update_deployment(deploy_id, status='stopped', logs='🛑 Stopped')
             return True, "Stopped"
-        
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            c.execute('SELECT pid FROM deployments WHERE id = ?', (deploy_id,))
-            result = c.fetchone()
-            conn.close()
-        
-        if result and result[0]:
-            try:
-                process = psutil.Process(result[0])
-                process.terminate()
-                process.wait(5)
-            except:
-                pass
-            update_deployment(deploy_id, 'stopped', '🛑 Stopped')
-            return True, "Stopped"
-        
         return False, "Not running"
     except Exception as e:
         return False, str(e)
 
-def get_deployment_logs(deploy_id):
-    if deploy_id in deployment_logs:
-        return "\n".join(deployment_logs[deploy_id][-300:])
-    
-    with DB_LOCK:
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        c = conn.cursor()
-        c.execute('SELECT logs, install_log FROM deployments WHERE id = ?', (deploy_id,))
-        result = c.fetchone()
-        conn.close()
-        
-        if result:
-            logs = result[0] or ""
-            install = result[1] or ""
-            return f"{install}\n\n=== Runtime Logs ===\n{logs}" if install else logs or "No logs"
-        return "Deployment not found"
+# ==================== HTML TEMPLATES ====================
 
-def create_backup(user_id, deploy_id):
-    """Create backup of deployment"""
-    try:
-        cost = CREDIT_COSTS['backup']
-        if not deduct_credits(user_id, cost, f"Backup: {deploy_id}"):
-            return None, f"❌ Need {cost} credits"
-        
-        deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
-        if not os.path.exists(deploy_dir):
-            return None, "❌ Deployment not found"
-        
-        backup_id = str(uuid.uuid4())[:8]
-        backup_name = f"{deploy_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
-        backup_path = os.path.join(BACKUPS_DIR, backup_name)
-        
-        shutil.make_archive(backup_path.replace('.zip', ''), 'zip', deploy_dir)
-        
-        size_mb = os.path.getsize(backup_path) / (1024 * 1024)
-        
-        with DB_LOCK:
-            conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-            c = conn.cursor()
-            c.execute('''INSERT INTO backups (id, user_id, deployment_id, backup_path, size_mb, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?)''',
-                     (backup_id, user_id, deploy_id, backup_path, size_mb, datetime.now().isoformat()))
-            conn.commit()
-            conn.close()
-        
-        return backup_id, f"✅ Backup created: {size_mb:.2f} MB"
-    except Exception as e:
-        return None, str(e)
-
-# ==================== MOBILE APP HTML WITH LOGIN ====================
-
-MOBILE_APP_HTML = """
+LOGIN_PAGE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1e293b">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>EliteHost v10.0 - Enterprise</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --primary-light: #60a5fa;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #06b6d4;
-            --dark: #0f172a;
-            --dark-lighter: #1e293b;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --border: #334155;
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--dark);
-            color: white;
-            overflow-x: hidden;
-        }
-        
-        /* Auth Screen */
-        .auth-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-lighter) 100%);
-            z-index: 10000;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
         
-        .auth-screen.hide {
-            display: none;
-        }
-        
-        .auth-box {
-            max-width: 400px;
+        .login-container {
+            max-width: 450px;
             width: 100%;
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 40px 32px;
-            animation: slideUp 0.5s ease;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
         }
         
-        .auth-logo {
+        .logo-icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, #667eea, #764ba2);
             border-radius: 20px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
-            margin: 0 auto 24px;
-            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+            font-size: 40px;
+            color: white;
+            margin-bottom: 15px;
         }
         
-        .auth-title {
-            text-align: center;
-            font-size: 28px;
+        h1 {
+            font-size: 32px;
             font-weight: 900;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #fff, var(--primary-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #1a202c;
+            margin-bottom: 10px;
         }
         
-        .auth-subtitle {
-            text-align: center;
-            color: var(--gray);
+        .subtitle {
+            color: #718096;
             font-size: 14px;
-            margin-bottom: 32px;
+            margin-bottom: 30px;
         }
         
         .form-group {
             margin-bottom: 20px;
         }
         
-        .form-label {
+        label {
             display: block;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--gray);
+            font-weight: 600;
+            color: #2d3748;
             margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            font-size: 15px;
-            font-family: inherit;
-            transition: all 0.3s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        
-        .btn-auth {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            margin-top: 24px;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .btn-auth:active {
-            transform: scale(0.98);
-        }
-        
-        .auth-switch {
-            text-align: center;
-            margin-top: 20px;
-            color: var(--gray);
             font-size: 14px;
         }
         
-        .auth-switch button {
-            background: none;
-            border: none;
-            color: var(--primary-light);
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: underline;
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
         }
         
-        /* App Container */
-        .app-container {
-            display: none;
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .toggle-auth {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .toggle-auth a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .alert-error {
+            background: #fee;
+            color: #c00;
+            border: 1px solid #fcc;
+        }
+        
+        .alert-success {
+            background: #efe;
+            color: #0a0;
+            border: 1px solid #cfc;
+        }
+        
+        .device-info {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #4a5568;
+        }
+        
+        .device-info i {
+            margin-right: 8px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h1>EliteHost</h1>
+            <p class="subtitle">Enterprise Deployment Platform</p>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+        
+        {% if success %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> {{ success }}
+        </div>
+        {% endif %}
+        
+        <div class="device-info">
+            <i class="fas fa-shield-alt"></i>
+            <strong>Secure Login:</strong> One account per device for maximum security
+        </div>
+        
+        <form method="POST" action="{{ action }}">
+            <div class="form-group">
+                <label for="email">
+                    <i class="fas fa-envelope"></i> Email Address
+                </label>
+                <input type="email" id="email" name="email" placeholder="you@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+            
+            <button type="submit" class="btn">
+                <i class="fas fa-{{ icon }}"></i> {{ button_text }}
+            </button>
+        </form>
+        
+        <div class="toggle-auth">
+            {{ toggle_text }} <a href="{{ toggle_link }}">{{ toggle_action }}</a>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+DASHBOARD_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #48bb78;
+            --danger: #f56565;
+            --warning: #ed8936;
+            --dark: #1a202c;
+            --gray: #718096;
+            --light: #f7fafc;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f7fafc;
+            color: #2d3748;
+            min-height: 100vh;
             padding-bottom: 80px;
         }
         
-        .app-container.show {
-            display: block;
-        }
-        
-        /* Top Bar with Navigation */
-        .top-bar {
-            background: rgba(30, 41, 59, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 16px 20px;
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
             z-index: 100;
         }
         
-        .top-bar-content {
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 70px;
         }
         
-        .app-logo {
+        .logo {
             display: flex;
             align-items: center;
             gap: 12px;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--dark);
         }
         
         .logo-icon {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-        }
-        
-        .logo-text {
+            color: white;
             font-size: 20px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #fff, var(--primary-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
         
-        .top-nav {
+        .header-nav {
             display: flex;
-            gap: 8px;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .credit-badge {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .nav-btn {
             padding: 8px 16px;
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 10px;
-            color: var(--primary-light);
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        
-        .nav-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .nav-btn.admin {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: rgba(139, 92, 246, 0.3);
-            color: var(--secondary);
-        }
-        
-        .credit-badge {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            padding: 8px 14px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 700;
+            border-radius: 8px;
+            font-weight: 600;
             font-size: 14px;
-            color: var(--primary-light);
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         
-        /* Pages */
-        .page {
-            display: none;
-            animation: fadeIn 0.3s ease;
+        .nav-btn-admin {
+            background: var(--warning);
+            color: white;
         }
         
-        .page.active {
-            display: block;
+        .nav-btn-logout {
+            background: var(--danger);
+            color: white;
         }
         
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateX(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .nav-btn:hover {
+            transform: translateY(-2px);
         }
         
-        .page-content {
-            padding: 20px;
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
         }
         
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
         
         .stat-card {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: white;
             border-radius: 16px;
-            padding: 20px;
-            text-align: center;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
         
         .stat-icon {
-            font-size: 28px;
-            margin-bottom: 8px;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
         }
         
         .stat-value {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 900;
-            color: var(--primary-light);
+            color: var(--dark);
             margin-bottom: 4px;
         }
         
         .stat-label {
-            font-size: 11px;
+            font-size: 14px;
             color: var(--gray);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
             font-weight: 600;
         }
         
-        /* Deploy Cards */
-        .deploy-card {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Section */
+        .section {
+            background: white;
             border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--dark);
+        }
+        
+        /* Deploy Card */
+        .deploy-card {
+            background: var(--light);
+            border-radius: 12px;
             padding: 16px;
             margin-bottom: 12px;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .deploy-card:hover {
+            border-color: var(--primary);
         }
         
         .deploy-header {
@@ -1762,248 +1082,108 @@ MOBILE_APP_HTML = """
         
         .deploy-name {
             font-size: 16px;
-            font-weight: 800;
+            font-weight: 700;
+            color: var(--dark);
             margin-bottom: 6px;
         }
         
         .deploy-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-size: 11px;
+            font-size: 12px;
             color: var(--gray);
-            margin-bottom: 12px;
-        }
-        
-        .meta-item {
             display: flex;
-            align-items: center;
-            gap: 4px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
         
         .status-badge {
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 12px;
-            font-size: 10px;
-            font-weight: 800;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
         }
         
-        .status-running {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
-        
-        .status-pending {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
-        }
-        
-        .status-stopped {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-        }
+        .status-running { background: #c6f6d5; color: #22543d; }
+        .status-pending { background: #feebc8; color: #7c2d12; }
+        .status-stopped { background: #fed7d7; color: #742a2a; }
+        .status-failed { background: #fed7d7; color: #742a2a; }
         
         .deploy-actions {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-        }
-        
-        .action-btn-small {
-            padding: 8px;
-            border: none;
-            border-radius: 8px;
-            font-size: 11px;
-            color: white;
-            cursor: pointer;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s;
-        }
-        
-        .action-btn-small:active {
-            transform: scale(0.95);
-        }
-        
-        /* Upload Zone */
-        .upload-zone {
-            border: 2px dashed rgba(59, 130, 246, 0.5);
-            border-radius: 16px;
-            padding: 40px 20px;
-            text-align: center;
-            background: rgba(59, 130, 246, 0.05);
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-        
-        .upload-icon {
-            font-size: 48px;
-            color: var(--primary-light);
-            margin-bottom: 12px;
-        }
-        
-        .upload-text {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-        
-        .upload-hint {
-            font-size: 12px;
-            color: var(--gray);
-        }
-        
-        /* Input Fields */
-        .input-group {
-            margin-bottom: 16px;
-        }
-        
-        .input-label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--gray);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .input-field {
-            width: 100%;
-            padding: 12px 14px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: white;
-            font-size: 14px;
-            font-family: inherit;
-        }
-        
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .btn-small {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
             transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: white;
         }
         
-        .btn:active {
-            transform: scale(0.98);
+        .btn-small:hover {
+            transform: translateY(-2px);
         }
         
-        /* Bottom Navigation */
-        .bottom-nav {
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+        
+        /* Fixed Bottom Buttons */
+        .fixed-buttons {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(30, 41, 59, 0.98);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 16px 20px;
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            padding: 8px 0;
-            z-index: 1000;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
-        }
-        
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            padding: 8px;
-            cursor: pointer;
-            color: var(--gray);
-            transition: all 0.2s;
-            border: none;
-            background: none;
-        }
-        
-        .nav-item.active {
-            color: var(--primary-light);
-        }
-        
-        .nav-item:active {
-            transform: scale(0.95);
-        }
-        
-        .nav-icon {
-            font-size: 20px;
-        }
-        
-        .nav-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        /* Admin Panel */
-        .admin-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            z-index: 50;
         }
         
-        .admin-stat-card {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 12px;
+        .btn-deploy {
             padding: 16px;
-            text-align: center;
-        }
-        
-        .admin-stat-value {
-            font-size: 24px;
-            font-weight: 900;
-            color: var(--secondary);
-            margin-bottom: 4px;
-        }
-        
-        .admin-stat-label {
-            font-size: 10px;
-            color: var(--gray);
-            text-transform: uppercase;
-        }
-        
-        .admin-actions {
-            display: grid;
-            gap: 10px;
-        }
-        
-        .admin-btn {
-            padding: 14px;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 13px;
+            border-radius: 12px;
+            font-size: 16px;
             font-weight: 700;
+            border: none;
             cursor: pointer;
+            transition: all 0.2s;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+        }
+        
+        .btn-file {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        
+        .btn-github {
+            background: linear-gradient(135deg, #24292e, #000);
+        }
+        
+        .btn-deploy:hover {
+            transform: translateY(-2px);
         }
         
         /* Modal */
@@ -2012,35 +1192,27 @@ MOBILE_APP_HTML = """
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 10000;
-            align-items: flex-end;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         
-        .modal.show {
+        .modal.active {
             display: flex;
         }
         
         .modal-content {
-            background: var(--dark-lighter);
-            border-radius: 24px 24px 0 0;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
             width: 100%;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
-            padding: 24px 20px 40px;
-            animation: slideUpModal 0.3s ease;
-        }
-        
-        @keyframes slideUpModal {
-            from {
-                transform: translateY(100%);
-            }
-            to {
-                transform: translateY(0);
-            }
         }
         
         .modal-header {
@@ -2048,966 +1220,1303 @@ MOBILE_APP_HTML = """
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .modal-title {
-            font-size: 20px;
-            font-weight: 900;
+            font-size: 24px;
+            font-weight: 800;
         }
         
         .close-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
             width: 32px;
             height: 32px;
             border-radius: 8px;
+            border: none;
+            background: var(--light);
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
         }
         
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(30, 41, 59, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10001;
-            transition: transform 0.3s ease;
-            max-width: 90%;
-        }
-        
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-        
-        /* Terminal */
-        .terminal {
-            background: #0a0f1e;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 16px;
-            font-family: 'Courier New', monospace;
-            font-size: 11px;
-            color: #10b981;
-            max-height: 300px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            line-height: 1.5;
-        }
-        
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-        }
-        
-        .empty-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            opacity: 0.3;
-        }
-        
-        .empty-title {
-            font-size: 16px;
-            font-weight: 800;
-            margin-bottom: 6px;
-        }
-        
-        .empty-desc {
-            font-size: 13px;
-            color: var(--gray);
-        }
-        
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .form-group {
             margin-bottom: 16px;
         }
         
-        .section-title {
-            font-size: 18px;
-            font-weight: 900;
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .upload-zone {
+            border: 2px dashed var(--primary);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f0f4ff;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                height: auto;
+                padding: 16px 20px;
+                gap: 12px;
+            }
+            
+            .header-nav {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Auth Screen -->
-    <div class="auth-screen" id="authScreen">
-        <div class="auth-box">
-            <div class="auth-logo">
-                <i class="fas fa-rocket"></i>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <span>EliteHost</span>
             </div>
-            <h1 class="auth-title">EliteHost v10.0</h1>
-            <p class="auth-subtitle">Enterprise DevOps Platform</p>
             
-            <!-- Login Form -->
-            <form id="loginForm" style="display: block;" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" class="form-input" id="loginEmail" placeholder="your@email.com" required>
+            <div class="header-nav">
+                <div class="credit-badge">
+                    <i class="fas fa-gem"></i>
+                    <span id="creditBalance">{{ credits }}</span>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required>
-                </div>
-                
-                <button type="submit" class="btn-auth">
-                    <i class="fas fa-sign-in-alt"></i> Login
+                {% if is_admin %}
+                <button class="nav-btn nav-btn-admin" onclick="window.location.href='/admin'">
+                    <i class="fas fa-crown"></i> Admin
                 </button>
+                {% endif %}
                 
-                <div class="auth-switch">
-                    Don't have an account? <button type="button" onclick="showRegister()">Register</button>
-                </div>
-            </form>
-            
-            <!-- Register Form -->
-            <form id="registerForm" style="display: none;" onsubmit="handleRegister(event)">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" class="form-input" id="registerName" placeholder="John Doe" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" class="form-input" id="registerEmail" placeholder="your@email.com" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" id="registerPassword" placeholder="Min 8 characters" required minlength="8">
-                </div>
-                
-                <button type="submit" class="btn-auth">
-                    <i class="fas fa-user-plus"></i> Create Account
+                <button class="nav-btn nav-btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
-                
-                <div class="auth-switch">
-                    Already have an account? <button type="button" onclick="showLogin()">Login</button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
-
-    <!-- App Container -->
-    <div class="app-container" id="appContainer">
-        <!-- Top Bar -->
-        <div class="top-bar">
-            <div class="top-bar-content">
-                <div class="app-logo">
-                    <div class="logo-icon">
+    
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="totalDeploys">{{ total_deploys }}</div>
+                        <div class="stat-label">Total Deployments</div>
+                    </div>
+                    <div class="stat-icon" style="background: #e6fffa; color: #319795;">
                         <i class="fas fa-rocket"></i>
                     </div>
-                    <div class="logo-text">EliteHost</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="credit-badge">
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="activeDeploys">{{ active_deploys }}</div>
+                        <div class="stat-label">Active Now</div>
+                    </div>
+                    <div class="stat-icon" style="background: #c6f6d5; color: #22543d;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">{{ credits }}</div>
+                        <div class="stat-label">Available Credits</div>
+                    </div>
+                    <div class="stat-icon" style="background: #feebc8; color: #7c2d12;">
                         <i class="fas fa-gem"></i>
-                        <span id="creditBalance">0</span>
                     </div>
-                    <button class="nav-btn admin" id="adminNavBtn" style="display: none;" onclick="switchPage('adminPage')">
-                        <i class="fas fa-crown"></i>
-                        Admin
-                    </button>
-                    <button class="nav-btn" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
                 </div>
             </div>
-        </div>
-
-        <!-- Home Page -->
-        <div class="page active" id="homePage">
-            <div class="page-content">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">🚀</div>
-                        <div class="stat-value" id="totalDeploys">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🟢</div>
-                        <div class="stat-value" id="activeDeploys">0</div>
-                        <div class="stat-label">Active</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">💎</div>
-                        <div class="stat-value" id="creditsDisplay">0</div>
-                        <div class="stat-label">Credits</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🤖</div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
                         <div class="stat-value">AI</div>
-                        <div class="stat-label">Powered</div>
+                        <div class="stat-label">Auto Install</div>
+                    </div>
+                    <div class="stat-icon" style="background: #e9d8fd; color: #553c9a;">
+                        <i class="fas fa-robot"></i>
                     </div>
                 </div>
-
-                <div class="section-header">
-                    <h2 class="section-title">Recent Deployments</h2>
-                </div>
-
-                <div id="recentDeployments"></div>
             </div>
         </div>
-
-        <!-- Deployments Page -->
-        <div class="page" id="deploymentsPage">
-            <div class="page-content">
-                <div class="section-header">
-                    <h2 class="section-title">All Deployments</h2>
-                </div>
-                <div id="deploymentsList"></div>
-            </div>
-        </div>
-
-        <!-- Upload Page -->
-        <div class="page" id="uploadPage">
-            <div class="page-content">
-                <h2 class="section-title" style="margin-bottom: 16px;">Deploy Your App</h2>
-                
-                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                    <div class="upload-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <div class="upload-text">Tap to Upload</div>
-                    <div class="upload-hint">Python • JavaScript • ZIP</div>
-                    <input type="file" id="fileInput" hidden accept=".py,.js,.zip" onchange="handleFileUpload(this)">
-                </div>
-
-                <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;">
-                    <i class="fab fa-github"></i> Deploy from GitHub
-                </h3>
-
-                <div class="input-group">
-                    <label class="input-label">Repository URL</label>
-                    <input type="url" class="input-field" id="repoUrl" placeholder="https://github.com/user/repo">
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">Branch</label>
-                    <input type="text" class="input-field" id="repoBranch" value="main">
-                </div>
-
-                <button class="btn" onclick="deployGithub()">
-                    <i class="fab fa-github"></i>
-                    Deploy from GitHub
+        
+        <!-- Deployments Section -->
+        <div class="section">
+            <div class="section-header">
+                <h2 class="section-title">Your Deployments</h2>
+                <button class="nav-btn" style="background: var(--primary); color: white;" onclick="loadDeployments()">
+                    <i class="fas fa-sync"></i> Refresh
                 </button>
             </div>
-        </div>
-
-        <!-- Admin Page -->
-        <div class="page" id="adminPage">
-            <div class="page-content">
-                <h2 class="section-title" style="margin-bottom: 16px;">
-                    <i class="fas fa-crown"></i> Admin Panel
-                </h2>
-
-                <div class="admin-stats">
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="adminUsers">0</div>
-                        <div class="admin-stat-label">Total Users</div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="adminDeploys">0</div>
-                        <div class="admin-stat-label">Deployments</div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="adminProcesses">0</div>
-                        <div class="admin-stat-label">Active</div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="adminBanned">0</div>
-                        <div class="admin-stat-label">Banned</div>
-                    </div>
-                </div>
-
-                <div class="admin-actions">
-                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--success), #059669);" onclick="showAddCreditsModal()">
-                        <i class="fas fa-coins"></i> Add Credits to User
-                    </button>
-                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--danger), #dc2626);" onclick="showBanUserModal()">
-                        <i class="fas fa-ban"></i> Ban User
-                    </button>
-                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--success), #059669);" onclick="showUnbanUserModal()">
-                        <i class="fas fa-check-circle"></i> Unban User
-                    </button>
-                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--secondary), #7c3aed);" onclick="viewAllUsers()">
-                        <i class="fas fa-users"></i> All Users
-                    </button>
-                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));" onclick="viewAllDeployments()">
-                        <i class="fas fa-server"></i> All Deployments
-                    </button>
-                    <button class="admin-btn" style="background: linear-gradient(135deg, var(--info), #0e7490);" onclick="viewActivityLog()">
-                        <i class="fas fa-history"></i> Activity Log
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom Navigation -->
-        <div class="bottom-nav">
-            <button class="nav-item active" onclick="switchPage('homePage', this)">
-                <div class="nav-icon"><i class="fas fa-home"></i></div>
-                <div class="nav-label">Home</div>
-            </button>
-            <button class="nav-item" onclick="switchPage('deploymentsPage', this)">
-                <div class="nav-icon"><i class="fas fa-rocket"></i></div>
-                <div class="nav-label">Deploys</div>
-            </button>
-            <button class="nav-item" onclick="switchPage('uploadPage', this)">
-                <div class="nav-icon"><i class="fas fa-plus-circle"></i></div>
-                <div class="nav-label">Upload</div>
-            </button>
-            <button class="nav-item" onclick="switchPage('profilePage', this)">
-                <div class="nav-icon"><i class="fas fa-user"></i></div>
-                <div class="nav-label">Profile</div>
-            </button>
+            
+            <div id="deploymentsList"></div>
         </div>
     </div>
-
-    <!-- Toast -->
-    <div id="toast" class="toast">
-        <div class="toast-icon"></div>
-        <div class="toast-message"></div>
+    
+    <!-- Fixed Bottom Buttons -->
+    <div class="fixed-buttons">
+        <button class="btn-deploy btn-file" onclick="showFileUpload()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            Upload File
+        </button>
+        
+        <button class="btn-deploy btn-github" onclick="showGithubDeploy()">
+            <i class="fab fa-github"></i>
+            GitHub Deploy
+        </button>
     </div>
-
-    <!-- Modal -->
-    <div id="modal" class="modal" onclick="if(event.target === this) closeModal()">
+    
+    <!-- File Upload Modal -->
+    <div class="modal" id="fileModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" id="modalTitle">Modal</h3>
-                <button class="close-btn" onclick="closeModal()">
+                <h3 class="modal-title">Upload & Deploy</h3>
+                <button class="close-btn" onclick="closeModal('fileModal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div id="modalBody"></div>
+            
+            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div style="font-weight: 600; margin-bottom: 4px;">Click to Upload</div>
+                <div style="font-size: 12px; color: var(--gray);">Python, JavaScript, ZIP files</div>
+                <input type="file" id="fileInput" hidden accept=".py,.js,.zip" onchange="uploadFile(this)">
+            </div>
+            
+            <div style="padding: 12px; background: var(--light); border-radius: 8px; font-size: 13px;">
+                <strong>Cost:</strong> 0.5 credits per deployment<br>
+                <strong>AI Features:</strong> Auto-detects and installs dependencies
+            </div>
         </div>
     </div>
-
+    
+    <!-- GitHub Deploy Modal -->
+    <div class="modal" id="githubModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Deploy from GitHub</h3>
+                <button class="close-btn" onclick="closeModal('githubModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="deployGithub(event)">
+                <div class="form-group">
+                    <label>Repository URL</label>
+                    <input type="url" id="repoUrl" placeholder="https://github.com/user/repo" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Branch</label>
+                    <input type="text" id="repoBranch" value="main" required>
+                </div>
+                
+                <button type="submit" class="btn-primary">
+                    <i class="fab fa-github"></i> Deploy (1.0 credit)
+                </button>
+            </form>
+            
+            <div style="padding: 12px; background: var(--light); border-radius: 8px; font-size: 13px; margin-top: 16px;">
+                <strong>AI Features:</strong> Auto-detects language, installs dependencies, and deploys
+            </div>
+        </div>
+    </div>
+    
+    <!-- Logs Modal -->
+    <div class="modal" id="logsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Deployment Logs</h3>
+                <button class="close-btn" onclick="closeModal('logsModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="logsContent" style="background: #1a202c; color: #48bb78; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+    
     <script>
-        let currentUser = null;
-        let isAdmin = false;
-
-        // Check session on load
-        window.addEventListener('load', async () => {
-            const session = await fetch('/api/auth/session').then(r => r.json());
-            if (session.authenticated) {
-                currentUser = session.user;
-                isAdmin = session.is_admin;
-                showApp();
-            } else {
-                document.getElementById('authScreen').style.display = 'flex';
-            }
-        });
-
-        // Auth Functions
-        function showLogin() {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-        }
-
-        function showRegister() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('registerForm').style.display = 'block';
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            showToast('info', '🔐 Authenticating...');
-            
-            try {
-                const res = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({email, password})
-                });
-                
-                const data = await res.json();
-                
-                if (data.success) {
-                    currentUser = data.user;
-                    isAdmin = data.is_admin;
-                    showToast('success', '✅ Login successful!');
-                    showApp();
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Login failed');
-            }
-        }
-
-        async function handleRegister(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            
-            showToast('info', '📝 Creating account...');
-            
-            try {
-                const res = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({name, email, password})
-                });
-                
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ Account created! Logging in...');
-                    setTimeout(() => {
-                        document.getElementById('loginEmail').value = email;
-                        document.getElementById('loginPassword').value = password;
-                        showLogin();
-                    }, 1500);
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Registration failed');
-            }
-        }
-
-        async function logout() {
-            if (!confirm('Logout from your account?')) return;
-            
-            await fetch('/api/auth/logout', {method: 'POST'});
-            
-            currentUser = null;
-            isAdmin = false;
-            
-            document.getElementById('appContainer').classList.remove('show');
-            document.getElementById('authScreen').style.display = 'flex';
-            
-            showToast('info', '👋 Logged out successfully');
-        }
-
-        function showApp() {
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('appContainer').classList.add('show');
-            
-            if (isAdmin) {
-                document.getElementById('adminNavBtn').style.display = 'flex';
-            }
-            
-            loadData();
-        }
-
-        // Page Switching
-        function switchPage(pageId, navBtn) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            
-            if (navBtn) {
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                navBtn.classList.add('active');
-            }
-            
-            window.scrollTo(0, 0);
-            
-            if (pageId === 'adminPage' && isAdmin) {
-                loadAdminStats();
-            }
-        }
-
-        // Load Data
-        async function loadData() {
-            await updateCredits();
-            await loadDeployments();
-        }
-
-        async function updateCredits() {
-            try {
-                const res = await fetch('/api/credits');
-                const data = await res.json();
-                const credits = data.credits === Infinity ? '∞' : data.credits.toFixed(1);
-                document.getElementById('creditBalance').textContent = credits;
-                document.getElementById('creditsDisplay').textContent = credits;
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        async function loadDeployments() {
-            try {
-                const res = await fetch('/api/deployments');
-                const data = await res.json();
-                
-                if (data.success) {
-                    const deployments = data.deployments;
-                    const listHtml = deployments.map(d => `
+        // Load deployments
+        function loadDeployments() {
+            fetch('/api/deployments')
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('deploymentsList');
+                    
+                    if (!data.deployments || data.deployments.length === 0) {
+                        list.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fas fa-rocket"></i></div>
+                                <div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">No Deployments Yet</div>
+                                <div>Click the buttons below to deploy your first app!</div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    list.innerHTML = data.deployments.map(d => `
                         <div class="deploy-card">
                             <div class="deploy-header">
                                 <div>
                                     <div class="deploy-name">${d.name}</div>
                                     <div class="deploy-meta">
-                                        <span class="meta-item"><i class="fas fa-fingerprint"></i> ${d.id}</span>
-                                        <span class="meta-item"><i class="fas fa-network-wired"></i> Port ${d.port || 'N/A'}</span>
+                                        <span><i class="fas fa-fingerprint"></i> ${d.id}</span>
+                                        <span><i class="fas fa-network-wired"></i> Port ${d.port}</span>
+                                        ${d.dependencies && d.dependencies.length > 0 ? `<span><i class="fas fa-robot"></i> ${d.dependencies.length} AI installs</span>` : ''}
                                     </div>
                                 </div>
                                 <span class="status-badge status-${d.status}">${d.status}</span>
                             </div>
+                            
                             <div class="deploy-actions">
-                                <button class="action-btn-small" style="background: var(--info);" onclick="viewLogs('${d.id}')">
-                                    <i class="fas fa-terminal"></i>
-                                    <span>Logs</span>
+                                <button class="btn-small" style="background: #4299e1;" onclick="viewLogs('${d.id}')">
+                                    <i class="fas fa-terminal"></i> Logs
                                 </button>
-                                <button class="action-btn-small" style="background: var(--warning);" onclick="stopDeploy('${d.id}')">
-                                    <i class="fas fa-stop"></i>
-                                    <span>Stop</span>
+                                <button class="btn-small" style="background: #ed8936;" onclick="stopDeploy('${d.id}')">
+                                    <i class="fas fa-stop"></i> Stop
                                 </button>
-                                <button class="action-btn-small" style="background: var(--success);" onclick="backupDeploy('${d.id}')">
-                                    <i class="fas fa-save"></i>
-                                    <span>Backup</span>
-                                </button>
-                                <button class="action-btn-small" style="background: var(--danger);" onclick="deleteDeploy('${d.id}')">
-                                    <i class="fas fa-trash"></i>
-                                    <span>Delete</span>
+                                <button class="btn-small" style="background: #f56565;" onclick="deleteDeploy('${d.id}')">
+                                    <i class="fas fa-trash"></i> Delete
                                 </button>
                             </div>
                         </div>
                     `).join('');
                     
-                    document.getElementById('deploymentsList').innerHTML = listHtml || '<div class="empty-state"><div class="empty-icon">🚀</div><div class="empty-desc">No deployments yet</div></div>';
-                    document.getElementById('recentDeployments').innerHTML = deployments.slice(0, 3).map(d => `
-                        <div class="deploy-card" style="margin-bottom: 8px; padding: 12px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${d.name}</div>
-                                    <div style="font-size: 11px; color: var(--gray);">Port ${d.port || 'N/A'}</div>
-                                </div>
-                                <span class="status-badge status-${d.status}">${d.status}</span>
-                            </div>
-                        </div>
-                    `).join('') || '<div class="empty-desc" style="padding: 20px; text-align: center;">No recent deployments</div>';
-                    
-                    document.getElementById('totalDeploys').textContent = deployments.length;
-                    document.getElementById('activeDeploys').textContent = deployments.filter(d => d.status === 'running').length;
-                }
-            } catch (err) {
-                console.error(err);
-            }
+                    document.getElementById('totalDeploys').textContent = data.deployments.length;
+                    document.getElementById('activeDeploys').textContent = data.deployments.filter(d => d.status === 'running').length;
+                });
         }
-
-        // File Upload
-        async function handleFileUpload(input) {
+        
+        function showFileUpload() {
+            document.getElementById('fileModal').classList.add('active');
+        }
+        
+        function showGithubDeploy() {
+            document.getElementById('githubModal').classList.add('active');
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        function uploadFile(input) {
             const file = input.files[0];
             if (!file) return;
             
             const formData = new FormData();
             formData.append('file', file);
             
-            showToast('info', '📤 Uploading...');
+            alert('🤖 Uploading and deploying... Please wait!');
+            closeModal('fileModal');
             
-            try {
-                const res = await fetch('/api/deploy/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                
+            fetch('/api/deploy/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
                 if (data.success) {
-                    showToast('success', '✅ ' + data.message);
+                    alert('✅ Deployment successful!\\n\\n' + data.message);
                     loadDeployments();
+                    updateCredits();
                 } else {
-                    showToast('error', '❌ ' + data.error);
+                    alert('❌ Error: ' + data.error);
                 }
-            } catch (err) {
-                showToast('error', '❌ Upload failed');
-            }
-            
-            input.value = '';
+            });
         }
-
-        // GitHub Deploy
-        async function deployGithub() {
+        
+        function deployGithub(e) {
+            e.preventDefault();
+            
             const url = document.getElementById('repoUrl').value;
-            const branch = document.getElementById('repoBranch').value || 'main';
+            const branch = document.getElementById('repoBranch').value;
             
-            if (!url) {
-                showToast('warning', '⚠️ Enter repository URL');
-                return;
-            }
+            alert('🤖 Cloning and deploying... This may take a minute!');
+            closeModal('githubModal');
             
-            showToast('info', '🚀 Deploying from GitHub...');
-            
-            try {
-                const res = await fetch('/api/deploy/github', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url, branch})
-                });
-                const data = await res.json();
-                
+            fetch('/api/deploy/github', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url, branch})
+            })
+            .then(r => r.json())
+            .then(data => {
                 if (data.success) {
-                    showToast('success', '✅ ' + data.message);
+                    alert('✅ GitHub deployment successful!\\n\\n' + data.message);
                     loadDeployments();
-                    document.getElementById('repoUrl').value = '';
+                    updateCredits();
                 } else {
-                    showToast('error', '❌ ' + data.error);
+                    alert('❌ Error: ' + data.error);
                 }
-            } catch (err) {
-                showToast('error', '❌ Deploy failed');
-            }
+            });
         }
-
-        // View Logs
-        async function viewLogs(deployId) {
-            try {
-                const res = await fetch(`/api/deployment/${deployId}/logs`);
-                const data = await res.json();
-                
-                if (data.success) {
-                    showModal('Deployment Logs', `<div class="terminal">${data.logs || 'No logs available'}</div>`);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed to load logs');
-            }
+        
+        function viewLogs(deployId) {
+            fetch(`/api/deployment/${deployId}/logs`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('logsContent').textContent = data.logs || 'No logs available';
+                    document.getElementById('logsModal').classList.add('active');
+                });
         }
-
-        // Stop Deployment
-        async function stopDeploy(deployId) {
+        
+        function stopDeploy(deployId) {
             if (!confirm('Stop this deployment?')) return;
             
-            try {
-                const res = await fetch(`/api/deployment/${deployId}/stop`, {method: 'POST'});
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ Deployment stopped');
+            fetch(`/api/deployment/${deployId}/stop`, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ Stopped' : '❌ ' + data.message);
                     loadDeployments();
-                } else {
-                    showToast('error', '❌ ' + data.message);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
+                });
         }
-
-        // Backup Deployment
-        async function backupDeploy(deployId) {
-            if (!confirm('Create backup?')) return;
+        
+        function deleteDeploy(deployId) {
+            if (!confirm('Delete this deployment permanently?')) return;
             
-            showToast('info', '📦 Creating backup...');
-            
-            try {
-                const res = await fetch(`/api/deployment/${deployId}/backup`, {method: 'POST'});
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ ' + data.message);
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
-        }
-
-        // Delete Deployment
-        async function deleteDeploy(deployId) {
-            if (!confirm('Delete permanently?')) return;
-            
-            try {
-                const res = await fetch(`/api/deployment/${deployId}`, {method: 'DELETE'});
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ Deleted');
+            fetch(`/api/deployment/${deployId}`, {method: 'DELETE'})
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.success ? '✅ Deleted' : '❌ Failed');
                     loadDeployments();
-                } else {
-                    showToast('error', '❌ Failed');
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
-        }
-
-        // Admin Functions
-        async function loadAdminStats() {
-            try {
-                const res = await fetch('/api/admin/stats');
-                const data = await res.json();
-                
-                if (data.success) {
-                    document.getElementById('adminUsers').textContent = data.stats.total_users;
-                    document.getElementById('adminDeploys').textContent = data.stats.total_deployments;
-                    document.getElementById('adminProcesses').textContent = data.stats.active_processes;
-                    document.getElementById('adminBanned').textContent = data.stats.banned_users;
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function showAddCreditsModal() {
-            showModal('Add Credits to User', `
-                <div class="input-group">
-                    <label class="input-label">User ID</label>
-                    <input type="number" class="input-field" id="targetUserId" placeholder="123456789">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Amount</label>
-                    <input type="number" class="input-field" id="creditAmount" placeholder="10.0" step="0.5">
-                </div>
-                <button class="btn" onclick="adminAddCredits()" style="background: var(--success);">
-                    <i class="fas fa-coins"></i> Add Credits
-                </button>
-            `);
-        }
-
-        async function adminAddCredits() {
-            const userId = document.getElementById('targetUserId').value;
-            const amount = document.getElementById('creditAmount').value;
-            
-            if (!userId || !amount) {
-                showToast('warning', '⚠️ Fill all fields');
-                return;
-            }
-            
-            try {
-                const res = await fetch('/api/admin/add-credits', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({user_id: parseInt(userId), amount: parseFloat(amount)})
                 });
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ Credits added');
-                    closeModal();
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
         }
-
-        function showBanUserModal() {
-            showModal('Ban User', `
-                <div class="input-group">
-                    <label class="input-label">User ID</label>
-                    <input type="number" class="input-field" id="banUserId" placeholder="123456789">
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Ban Reason</label>
-                    <input type="text" class="input-field" id="banReason" placeholder="Violation of terms">
-                </div>
-                <button class="btn" onclick="adminBanUser()" style="background: var(--danger);">
-                    <i class="fas fa-ban"></i> Ban User
-                </button>
-            `);
-        }
-
-        async function adminBanUser() {
-            const userId = document.getElementById('banUserId').value;
-            const reason = document.getElementById('banReason').value;
-            
-            if (!userId || !reason) {
-                showToast('warning', '⚠️ Fill all fields');
-                return;
-            }
-            
-            if (!confirm(`Ban user ${userId}?`)) return;
-            
-            try {
-                const res = await fetch('/api/admin/ban-user', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({user_id: parseInt(userId), reason})
+        
+        function updateCredits() {
+            fetch('/api/credits')
+                .then(r => r.json())
+                .then(data => {
+                    const credits = data.credits === Infinity ? '∞' : data.credits.toFixed(1);
+                    document.getElementById('creditBalance').textContent = credits;
                 });
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ User banned');
-                    closeModal();
-                    loadAdminStats();
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
+        }
+        
+        function logout() {
+            if (confirm('Logout from EliteHost?')) {
+                window.location.href = '/logout';
             }
         }
-
-        function showUnbanUserModal() {
-            showModal('Unban User', `
-                <div class="input-group">
-                    <label class="input-label">User ID</label>
-                    <input type="number" class="input-field" id="unbanUserId" placeholder="123456789">
-                </div>
-                <button class="btn" onclick="adminUnbanUser()" style="background: var(--success);">
-                    <i class="fas fa-check-circle"></i> Unban User
-                </button>
-            `);
-        }
-
-        async function adminUnbanUser() {
-            const userId = document.getElementById('unbanUserId').value;
-            
-            if (!userId) {
-                showToast('warning', '⚠️ Enter user ID');
-                return;
-            }
-            
-            try {
-                const res = await fetch('/api/admin/unban-user', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({user_id: parseInt(userId)})
-                });
-                const data = await res.json();
-                
-                if (data.success) {
-                    showToast('success', '✅ User unbanned');
-                    closeModal();
-                    loadAdminStats();
-                } else {
-                    showToast('error', '❌ ' + data.error);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
-        }
-
-        async function viewAllUsers() {
-            try {
-                const res = await fetch('/api/admin/users');
-                const data = await res.json();
-                
-                if (data.success) {
-                    const usersHtml = data.users.map(u => `
-                        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; margin-bottom: 10px;">
-                            <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px;">${u.first_name} ${u.is_banned ? '<span style="color: var(--danger);">[BANNED]</span>' : ''}</div>
-                            <div style="font-size: 11px; color: var(--gray); line-height: 1.6;">
-                                <div>ID: ${u.user_id}</div>
-                                <div>Email: ${u.email}</div>
-                                <div>Deploys: ${u.total_deployments}</div>
-                                <div>Joined: ${new Date(u.joined_date).toLocaleDateString()}</div>
-                                ${u.is_banned ? `<div style="color: var(--danger);">Reason: ${u.ban_reason}</div>` : ''}
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    showModal(`Users (${data.users.length})`, usersHtml);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
-        }
-
-        async function viewAllDeployments() {
-            try {
-                const res = await fetch('/api/admin/deployments');
-                const data = await res.json();
-                
-                if (data.success) {
-                    const deploysHtml = data.deployments.map(d => `
-                        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px; margin-bottom: 10px;">
-                            <div style="font-weight: 800; margin-bottom: 6px;">${d.name}</div>
-                            <div style="font-size: 11px; color: var(--gray); line-height: 1.6;">
-                                <div>ID: ${d.id}</div>
-                                <div>User: ${d.user_id}</div>
-                                <div>Status: <span class="status-badge status-${d.status}">${d.status}</span></div>
-                                <div>Port: ${d.port || 'N/A'}</div>
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    showModal(`Deployments (${data.deployments.length})`, deploysHtml);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
-        }
-
-        async function viewActivityLog() {
-            try {
-                const res = await fetch('/api/admin/activity');
-                const data = await res.json();
-                
-                if (data.success) {
-                    const activityHtml = data.activity.map(a => `
-                        <div style="background: rgba(30, 41, 59, 0.6); border-left: 3px solid var(--primary); padding: 12px; margin-bottom: 8px; border-radius: 8px;">
-                            <div style="font-weight: 700; font-size: 12px; margin-bottom: 4px;">${a.action}</div>
-                            <div style="font-size: 10px; color: var(--gray);">
-                                <div>User: ${a.user_id} (${a.email || 'N/A'})</div>
-                                <div>${a.details}</div>
-                                <div>${new Date(a.timestamp).toLocaleString()}</div>
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    showModal(`Activity Log (${data.activity.length})`, activityHtml);
-                }
-            } catch (err) {
-                showToast('error', '❌ Failed');
-            }
-        }
-
-        // Utility Functions
-        function showModal(title, body) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalBody').innerHTML = body;
-            document.getElementById('modal').classList.add('show');
-        }
-
-        function closeModal() {
-            document.getElementById('modal').classList.remove('show');
-        }
-
-        function showToast(type, message) {
-            const toast = document.getElementById('toast');
-            const icons = {
-                info: '<i class="fas fa-info-circle" style="color: var(--info);"></i>',
-                success: '<i class="fas fa-check-circle" style="color: var(--success);"></i>',
-                warning: '<i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i>',
-                error: '<i class="fas fa-times-circle" style="color: var(--danger);"></i>'
-            };
-            
-            toast.querySelector('.toast-icon').innerHTML = icons[type] || icons.info;
-            toast.querySelector('.toast-message').textContent = message;
-            toast.classList.add('show');
-            
-            setTimeout(() => toast.classList.remove('show'), 3500);
-        }
-
-        // Auto-refresh
-        setInterval(() => {
-            if (currentUser) {
-                updateCredits();
-                loadDeployments();
-                if (document.getElementById('adminPage').classList.contains('active') && isAdmin) {
-                    loadAdminStats();
-                }
-            }
-        }, 10000);
+        
+        // Load on page load
+        loadDeployments();
+        setInterval(loadDeployments, 10000);
+        setInterval(updateCredits, 15000);
     </script>
 </body>
 </html>
 """
 
-# ==================== FLASK ROUTES (Continue in next message due to length) ====================
+ADMIN_PANEL_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --danger: #f56565;
+            --success: #48bb78;
+            --warning: #ed8936;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), #764ba2);
+            color: white;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-light {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #718096;
+            font-weight: 600;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 12px;
+            background: #f7fafc;
+            font-weight: 700;
+            font-size: 13px;
+            color: #4a5568;
+            text-transform: uppercase;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .badge-success { background: #c6f6d5; color: #22543d; }
+        .badge-danger { background: #fed7d7; color: #742a2a; }
+        .badge-warning { background: #feebc8; color: #7c2d12; }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            margin-right: 6px;
+        }
+        
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-crown"></i> Admin Control Panel</h1>
+        <p>Manage users, deployments, and system settings</p>
+        <div class="header-actions">
+            <button class="btn btn-light" onclick="window.location.href='/dashboard'">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <button class="btn btn-light" onclick="location.reload()">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_deployments }}</div>
+                <div class="stat-label">Deployments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.active_processes }}</div>
+                <div class="stat-label">Active Now</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.pending_payments }}</div>
+                <div class="stat-label">Pending Payments</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">All Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Credits</th>
+                        <th>Deployments</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.credits }}</td>
+                        <td>{{ user.deployments|length }}</td>
+                        <td>{{ user.created_at[:10] }}</td>
+                        <td>
+                            {% if user.is_banned %}
+                            <span class="badge badge-danger">Banned</span>
+                            {% else %}
+                            <span class="badge badge-success">Active</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn-small btn-success" onclick="addCreditsPrompt('{{ user.id }}')">
+                                <i class="fas fa-plus"></i> Credits
+                            </button>
+                            {% if not user.is_banned %}
+                            <button class="btn-small btn-danger" onclick="banUser('{{ user.id }}')">
+                                <i class="fas fa-ban"></i> Ban
+                            </button>
+                            {% else %}
+                            <button class="btn-small btn-success" onclick="unbanUser('{{ user.id }}')">
+                                <i class="fas fa-check"></i> Unban
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">Payment Requests</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User Email</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.user_email }}</td>
+                        <td>{{ payment.amount }} credits</td>
+                        <td>{{ payment.created_at[:10] }}</td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if payment.status == 'approved' else 'warning' if payment.status == 'pending' else 'danger' }}">
+                                {{ payment.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if payment.status == 'pending' %}
+                            <button class="btn-small btn-success" onclick="approvePayment('{{ payment.id }}', '{{ payment.user_id }}', {{ payment.amount }})">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn-small btn-danger" onclick="rejectPayment('{{ payment.id }}')">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        function addCreditsPrompt(userId) {
+            const amount = prompt('Enter amount of credits to add:');
+            if (!amount || isNaN(amount)) return;
+            
+            fetch('/api/admin/add-credits', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, amount: parseFloat(amount)})
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.success ? '✅ Credits added!' : '❌ ' + data.error);
+                location.reload();
+            });
+        }
+        
+        function banUser(userId) {
+            if (!confirm('Ban this user? They will not be able to login.')) return;
+            
+            fetch('/api/admin/ban-user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, ban: true})
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.success ? '✅ User banned' : '❌ ' + data.error);
+                location.reload();
+            });
+        }
+        
+        function unbanUser(userId) {
+            if (!confirm('Unban this user?')) return;
+            
+            fetch('/api/admin/ban-user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, ban: false})
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.success ? '✅ User unbanned' : '❌ ' + data.error);
+                location.reload();
+            });
+        }
+        
+        function approvePayment(paymentId, userId, amount) {
+            if (!confirm(`Approve payment for ${amount} credits?`)) return;
+            
+            fetch('/api/admin/approve-payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({payment_id: paymentId, user_id: userId, amount: amount})
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.success ? '✅ Payment approved!' : '❌ ' + data.error);
+                location.reload();
+            });
+        }
+        
+        function rejectPayment(paymentId) {
+            if (!confirm('Reject this payment?')) return;
+            
+            fetch('/api/admin/reject-payment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({payment_id: paymentId})
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert(data.success ? '✅ Payment rejected' : '❌ ' + data.error);
+                location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
+"""
+
+# ==================== FLASK ROUTES ====================
+
+@app.route('/')
+def index():
+    return redirect('/login')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'GET':
+        return render_template_string(LOGIN_PAGE,
+            action='/register',
+            button_text='Create Account',
+            icon='user-plus',
+            toggle_text='Already have an account?',
+            toggle_link='/login',
+            toggle_action='Login here',
+            error=request.args.get('error'),
+            success=request.args.get('success')
+        )
+    
+    email = request.form.get('email')
+    password = request.form.get('password')
+    fingerprint = get_device_fingerprint(request)
+    ip = request.remote_addr
+    
+    # Check if device is banned
+    if is_device_banned(fingerprint):
+        return render_template_string(LOGIN_PAGE,
+            action='/register',
+            button_text='Create Account',
+            icon='user-plus',
+            toggle_text='Already have an account?',
+            toggle_link='/login',
+            toggle_action='Login here',
+            error='This device is banned from EliteHost'
+        )
+    
+    # Check if device already has an account
+    existing_user = check_existing_account(fingerprint)
+    if existing_user:
+        return render_template_string(LOGIN_PAGE,
+            action='/register',
+            button_text='Create Account',
+            icon='user-plus',
+            toggle_text='Already have an account?',
+            toggle_link='/login',
+            toggle_action='Login here',
+            error='This device already has an account. One account per device only.'
+        )
+    
+    # Check if email exists
+    for user_data in db['users'].values():
+        if user_data['email'] == email:
+            return render_template_string(LOGIN_PAGE,
+                action='/register',
+                button_text='Create Account',
+                icon='user-plus',
+                toggle_text='Already have an account?',
+                toggle_link='/login',
+                toggle_action='Login here',
+                error='Email already registered'
+            )
+    
+    # Create user
+    user_id = create_user(email, password, fingerprint, ip)
+    
+    return redirect('/login?success=Account created! Please login.')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template_string(LOGIN_PAGE,
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error=request.args.get('error'),
+            success=request.args.get('success')
+        )
+    
+    email = request.form.get('email')
+    password = request.form.get('password')
+    fingerprint = get_device_fingerprint(request)
+    
+    # Check if device is banned
+    if is_device_banned(fingerprint):
+        return render_template_string(LOGIN_PAGE,
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='This device is banned from EliteHost'
+        )
+    
+    # Authenticate
+    user_id = authenticate_user(email, password)
+    
+    if not user_id:
+        return render_template_string(LOGIN_PAGE,
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='Invalid email or password'
+        )
+    
+    user = get_user(user_id)
+    
+    # Check if user is banned
+    if user.get('is_banned'):
+        return render_template_string(LOGIN_PAGE,
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='Your account has been banned'
+        )
+    
+    # Check device fingerprint match
+    if user['device_fingerprint'] != fingerprint:
+        return render_template_string(LOGIN_PAGE,
+            action='/login',
+            button_text='Login',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register here',
+            error='This account is registered on a different device'
+        )
+    
+    # Create session
+    session_token = create_session(user_id, fingerprint)
+    
+    # Update last login
+    update_user(user_id, last_login=datetime.now().isoformat())
+    log_activity(user_id, 'USER_LOGIN', f'Login from {request.remote_addr}', request.remote_addr)
+    
+    # Set cookie
+    response = make_response(redirect('/dashboard'))
+    response.set_cookie('session_token', session_token, max_age=7*24*60*60)
+    return response
+
+@app.route('/logout')
+def logout():
+    session_token = request.cookies.get('session_token')
+    if session_token and session_token in db['sessions']:
+        del db['sessions'][session_token]
+        save_db(db)
+    
+    response = make_response(redirect('/login?success=Logged out successfully'))
+    response.set_cookie('session_token', '', max_age=0)
+    return response
+
+@app.route('/dashboard')
+def dashboard():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    
+    user_id = verify_session(session_token, fingerprint)
+    if not user_id:
+        return redirect('/login?error=Please login first')
+    
+    user = get_user(user_id)
+    if not user or user.get('is_banned'):
+        return redirect('/login?error=Access denied')
+    
+    # Get user deployments
+    user_deployments = [db['deployments'][d_id] for d_id in user.get('deployments', []) if d_id in db['deployments']]
+    active_deploys = len([d for d in user_deployments if d['status'] == 'running'])
+    
+    is_admin = str(user_id) == str(OWNER_ID) or str(user_id) == str(ADMIN_ID)
+    
+    return render_template_string(DASHBOARD_HTML,
+        credits=user['credits'] if user['credits'] != float('inf') else '∞',
+        total_deploys=len(user_deployments),
+        active_deploys=active_deploys,
+        is_admin=is_admin
+    )
+
+@app.route('/admin')
+def admin_panel():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    
+    user_id = verify_session(session_token, fingerprint)
+    if not user_id:
+        return redirect('/login?error=Please login first')
+    
+    # Check admin access
+    if str(user_id) != str(OWNER_ID) and str(user_id) != str(ADMIN_ID):
+        return redirect('/dashboard?error=Admin access denied')
+    
+    # Get stats
+    stats = {
+        'total_users': len(db['users']),
+        'total_deployments': len(db['deployments']),
+        'active_processes': len(active_processes),
+        'pending_payments': len([p for p in db.get('payments', {}).values() if p.get('status') == 'pending'])
+    }
+    
+    # Get all users
+    users = []
+    for uid, user_data in db['users'].items():
+        users.append({
+            'id': uid,
+            'email': user_data['email'],
+            'credits': user_data['credits'],
+            'deployments': user_data.get('deployments', []),
+            'created_at': user_data['created_at'],
+            'is_banned': user_data.get('is_banned', False)
+        })
+    
+    # Get payments
+    payments = []
+    for pid, payment_data in db.get('payments', {}).items():
+        user = get_user(payment_data['user_id'])
+        payments.append({
+            'id': pid,
+            'user_id': payment_data['user_id'],
+            'user_email': user['email'] if user else 'Unknown',
+            'amount': payment_data['amount'],
+            'status': payment_data['status'],
+            'created_at': payment_data['created_at']
+        })
+    
+    return render_template_string(ADMIN_PANEL_HTML,
+        stats=stats,
+        users=users,
+        payments=payments
+    )
+
+# ==================== API ROUTES ====================
+
+@app.route('/api/credits')
+def api_credits():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    return jsonify({'success': True, 'credits': get_credits(user_id)})
+
+@app.route('/api/deployments')
+def api_deployments():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    user = get_user(user_id)
+    deployments = [db['deployments'][d_id] for d_id in user.get('deployments', []) if d_id in db['deployments']]
+    
+    return jsonify({'success': True, 'deployments': deployments})
+
+@app.route('/api/deploy/upload', methods=['POST'])
+def api_deploy_upload():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file uploaded'})
+    
+    file = request.files['file']
+    if not file.filename:
+        return jsonify({'success': False, 'error': 'Empty filename'})
+    
+    try:
+        user_dir = os.path.join(UPLOADS_DIR, user_id)
+        os.makedirs(user_dir, exist_ok=True)
+        
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(user_dir, filename)
+        file.save(filepath)
+        
+        deploy_id, msg = deploy_from_file(user_id, filepath, filename)
+        
+        if deploy_id:
+            return jsonify({'success': True, 'deployment_id': deploy_id, 'message': msg})
+        else:
+            return jsonify({'success': False, 'error': msg})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/deploy/github', methods=['POST'])
+def api_deploy_github():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    user_id = verify_session(session_token, fingerprint)
+    
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Not authenticated'})
+    
+    data = request.get_json()
+    repo_url = data.get('url')
+    branch = data.get('branch', 'main')
+    
+    if not repo_url:
+        return jsonify({'success': False, 'error': 'Repository URL required'})
+    
+    deploy_id, msg = deploy_from_github(user_id, repo_url, branch)
+    
+    if deploy_id:
+        return jsonify({'success': True, 'deployment_id': deploy_id, 'message': msg})
+    else:
+        return jsonify({'success': False, 'error': msg})
+
+@app.route('/api/deployment/<deploy_id>/logs')
+def api_deployment_logs(deploy_id):
+    if deploy_id not in db['deployments']:
+        return jsonify({'success': False, 'error': 'Not found'})
+    
+    logs = db['deployments'][deploy_id].get('logs', 'No logs available')
+    return jsonify({'success': True, 'logs': logs})
+
+@app.route('/api/deployment/<deploy_id>/stop', methods=['POST'])
+def api_stop_deployment(deploy_id):
+    success, msg = stop_deployment(deploy_id)
+    return jsonify({'success': success, 'message': msg})
+
+@app.route('/api/deployment/<deploy_id>', methods=['DELETE'])
+def api_delete_deployment(deploy_id):
+    try:
+        stop_deployment(deploy_id)
+        if deploy_id in db['deployments']:
+            del db['deployments'][deploy_id]
+            save_db(db)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/admin/add-credits', methods=['POST'])
+def api_admin_add_credits():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    admin_id = verify_session(session_token, fingerprint)
+    
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
+    
+    data = request.get_json()
+    target_user = data.get('user_id')
+    amount = data.get('amount')
+    
+    if add_credits(target_user, amount, "Admin bonus"):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'error': 'Failed'})
+
+@app.route('/api/admin/ban-user', methods=['POST'])
+def api_admin_ban_user():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    admin_id = verify_session(session_token, fingerprint)
+    
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
+    
+    data = request.get_json()
+    target_user = data.get('user_id')
+    ban = data.get('ban', True)
+    
+    user = get_user(target_user)
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'})
+    
+    if ban:
+        # Ban user and device
+        db['banned_devices'].add(user['device_fingerprint'])
+    
+    update_user(target_user, is_banned=ban)
+    
+    return jsonify({'success': True})
+
+@app.route('/api/admin/approve-payment', methods=['POST'])
+def api_admin_approve_payment():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    admin_id = verify_session(session_token, fingerprint)
+    
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
+    
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    user_id = data.get('user_id')
+    amount = data.get('amount')
+    
+    if payment_id in db.get('payments', {}):
+        db['payments'][payment_id]['status'] = 'approved'
+        add_credits(user_id, amount, f"Payment approved: {payment_id}")
+        save_db(db)
+        return jsonify({'success': True})
+    
+    return jsonify({'success': False, 'error': 'Payment not found'})
+
+@app.route('/api/admin/reject-payment', methods=['POST'])
+def api_admin_reject_payment():
+    session_token = request.cookies.get('session_token')
+    fingerprint = get_device_fingerprint(request)
+    admin_id = verify_session(session_token, fingerprint)
+    
+    if str(admin_id) != str(OWNER_ID) and str(admin_id) != str(ADMIN_ID):
+        return jsonify({'success': False, 'error': 'Admin access required'})
+    
+    data = request.get_json()
+    payment_id = data.get('payment_id')
+    
+    if payment_id in db.get('payments', {}):
+        db['payments'][payment_id]['status'] = 'rejected'
+        save_db(db)
+        return jsonify({'success': True})
+    
+    return jsonify({'success': False, 'error': 'Payment not found'})
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+
+def keep_alive():
+    t = Thread(target=run_flask, daemon=True)
+    t.start()
+    logger.info(f"{Fore.GREEN}✅ Web App: http://localhost:{os.environ.get('PORT', 8080)}")
+
+# ==================== CLEANUP ====================
+
+def cleanup_on_exit():
+    logger.warning(f"{Fore.YELLOW}🛑 Shutting down...")
+    for deploy_id, process in list(active_processes.items()):
+        try:
+            process.terminate()
+            process.wait(timeout=3)
+        except:
+            try:
+                process.kill()
+            except:
+                pass
+    logger.warning(f"{Fore.GREEN}✅ Cleanup complete")
+
+atexit.register(cleanup_on_exit)
+
+def signal_handler(sig, frame):
+    cleanup_on_exit()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+# ==================== MAIN ====================
+
+if __name__ == '__main__':
+    print("\n" + "=" * 90)
+    print(f"{Fore.CYAN}{'🚀 ELITEHOST v10.0 - ENTERPRISE EDITION':^90}")
+    print("=" * 90)
+    print(f"{Fore.GREEN}✨ NEW FEATURES v10.0:")
+    print(f"{Fore.CYAN}   🔐 Email-based authentication")
+    print(f"{Fore.CYAN}   📱 Device fingerprinting (1 account per device)")
+    print(f"{Fore.CYAN}   💎 2 free credits for new users")
+    print(f"{Fore.CYAN}   👑 Admin panel with full control")
+    print(f"{Fore.CYAN}   🚫 User ban/unban functionality")
+    print(f"{Fore.CYAN}   💰 Payment approval system")
+    print(f"{Fore.CYAN}   📊 Advanced analytics")
+    print(f"{Fore.CYAN}   🤖 AI auto-install dependencies")
+    print(f"{Fore.CYAN}   📱 Fixed bottom deploy buttons")
+    print(f"{Fore.CYAN}   🎨 Professional UI/UX")
+    print("=" * 90)
+    
+    keep_alive()
+    
+    port = os.environ.get('PORT', 8080)
+    print(f"\n{Fore.GREEN}🌐 Web App: http://localhost:{port}")
+    print(f"{Fore.YELLOW}📱 Register: http://localhost:{port}/register")
+    print(f"{Fore.YELLOW}🔑 Login: http://localhost:{port}/login")
+    print(f"{Fore.MAGENTA}👑 Admin Panel: http://localhost:{port}/admin")
+    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v10.0 READY':^90}")
+    print("=" * 90 + "\n")
+    
+    # Keep running
+    while True:
+        try:
+            time.sleep(1)
+        
