@@ -879,7 +879,13 @@ DASHBOARD_HTML = """
                 <span class="text-xl font-bold">EliteHost</span>
             </div>
             
-            <nav class="space-y-1">
+                        <nav class="space-y-1">
+                <button onclick="window.history.back()" 
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 cursor-pointer transition text-slate-400 hover:text-white mb-2 group">
+                    <i class="fas fa-arrow-left w-5 group-hover:-translate-x-1 transition-transform"></i>
+                    <span>Go Back</span>
+                </button>
+                <div class="h-px bg-slate-800 mx-4 mb-2"></div>
                 <a @click="currentPage = 'overview'" :class="currentPage === 'overview' ? 'bg-purple-600' : 'hover:bg-slate-800'"
                    class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
                     <i class="fas fa-th-large w-5"></i>
@@ -902,6 +908,7 @@ DASHBOARD_HTML = """
                 </a>
                 {% endif %}
             </nav>
+
         </div>
         
         <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-800">
