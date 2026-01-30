@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 """
 🚀 ELITEHOST v11.0 - PROFESSIONAL EDITION
 Next-Generation Cloud Deployment Platform
@@ -879,24 +879,26 @@ DASHBOARD_HTML = """
                 <span class="text-xl font-bold">EliteHost</span>
             </div>
             
-                        <nav class="space-y-1">
-                <button onclick="window.history.back()" 
-                        class="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 cursor-pointer transition text-slate-400 hover:text-white mb-2 group">
-                    <i class="fas fa-arrow-left w-5 group-hover:-translate-x-1 transition-transform"></i>
-                    <span>Go Back</span>
+            <nav class="space-y-1">
+                <!-- Close Sidebar Button (Mobile Only) -->
+                <button @click="sidebarOpen = false" 
+                        class="md:hidden w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 cursor-pointer transition text-slate-400 hover:text-white mb-2 group">
+                    <i class="fas fa-times w-5"></i>
+                    <span>Close Menu</span>
                 </button>
-                <div class="h-px bg-slate-800 mx-4 mb-2"></div>
-                <a @click="currentPage = 'overview'" :class="currentPage === 'overview' ? 'bg-purple-600' : 'hover:bg-slate-800'"
+                <div class="h-px bg-slate-800 mx-4 mb-2 md:hidden"></div>
+                
+                <a @click="currentPage = 'overview'; sidebarOpen = false" :class="currentPage === 'overview' ? 'bg-purple-600' : 'hover:bg-slate-800'"
                    class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
                     <i class="fas fa-th-large w-5"></i>
                     <span>Overview</span>
                 </a>
-                <a @click="currentPage = 'deployments'" :class="currentPage === 'deployments' ? 'bg-purple-600' : 'hover:bg-slate-800'"
+                <a @click="currentPage = 'deployments'; sidebarOpen = false" :class="currentPage === 'deployments' ? 'bg-purple-600' : 'hover:bg-slate-800'"
                    class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
                     <i class="fas fa-rocket w-5"></i>
                     <span>Deployments</span>
                 </a>
-                <a @click="currentPage = 'new-deploy'" :class="currentPage === 'new-deploy' ? 'bg-purple-600' : 'hover:bg-slate-800'"
+                <a @click="currentPage = 'new-deploy'; sidebarOpen = false" :class="currentPage === 'new-deploy' ? 'bg-purple-600' : 'hover:bg-slate-800'"
                    class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
                     <i class="fas fa-plus-circle w-5"></i>
                     <span>New Deploy</span>
@@ -1183,7 +1185,7 @@ DASHBOARD_HTML = """
                         :class="detailsTab === 'env' ? 'border-purple-500 text-white' : 'border-transparent text-slate-400'"
                         class="px-4 py-2 border-b-2 transition">Environment</button>
                     <button @click="detailsTab = 'files'" 
-                        :class="detailsTab = 'files' ? 'border-purple-500 text-white' : 'border-transparent text-slate-400'"
+                        :class="detailsTab === 'files' ? 'border-purple-500 text-white' : 'border-transparent text-slate-400'"
                         class="px-4 py-2 border-b-2 transition">Files</button>
                     <button @click="detailsTab = 'backup'" 
                         :class="detailsTab === 'backup' ? 'border-purple-500 text-white' : 'border-transparent text-slate-400'"
