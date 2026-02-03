@@ -2518,7 +2518,7 @@ def admin_panel():
     )
 
 # Rest of Flask routes remain same...
-[Previous Flask routes from lines 831-1086 remain exactly the same]
+
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
