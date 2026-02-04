@@ -1209,6 +1209,7 @@ def get_system_metrics():
             'disk_total': 0
         }
 
+
 LOGIN_PAGE = """
 <!DOCTYPE html>
 <html lang="en" class="dark">
@@ -1231,24 +1232,35 @@ LOGIN_PAGE = """
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 min-h-screen flex items-center justify-center p-4">
     <div class="max-w-md w-full">
-        <div class="bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8">
+        <div class="bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8 fade-in">
             <div class="text-center mb-8">
-                <img src="/logo.jpg" alt="EliteHost Logo" class="w-16 h-16 mx-auto mb-4 rounded-xl">
+                <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/50">
+                    <i class="fas fa-rocket text-white text-3xl"></i>
+                </div>
                 <h1 class="text-3xl font-bold text-white mb-2">EliteHost</h1>
                 <p class="text-slate-400 text-sm">{{ subtitle }}</p>
             </div>
             
             {% if error %}
-            <div class="bg-red-500/10 border border-red-500/50 rounded-lg p-3 mb-4 text-red-400 text-sm">
+            <div class="bg-red-500/10 border border-red-500/50 rounded-lg p-3 mb-4 text-red-400 text-sm fade-in">
                 <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
             </div>
             {% endif %}
             
             {% if success %}
-            <div class="bg-green-500/10 border border-green-500/50 rounded-lg p-3 mb-4 text-green-400 text-sm">
+            <div class="bg-green-500/10 border border-green-500/50 rounded-lg p-3 mb-4 text-green-400 text-sm fade-in">
                 <i class="fas fa-check-circle mr-2"></i>{{ success }}
             </div>
             {% endif %}
@@ -1258,34 +1270,104 @@ LOGIN_PAGE = """
                 <strong>Secure Authentication:</strong> One account per device
             </div>
             
-            <form method="POST" action="{{ action }}" class="space-y-4">
+            <form method="POST" action="{{ action }}" class="space-y-4" id="authForm">
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">
                         <i class="fas fa-envelope mr-2"></i>Email Address
                     </label>
-                    <input type="email" name="email" required
-                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <input type="email" name="email" id="email" required
+                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="your.email@example.com"
+                        autocomplete="email">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">
                         <i class="fas fa-lock mr-2"></i>Password
                     </label>
-                    <input type="password" name="password" required
-                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <input type="password" name="password" id="password" required
+                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="Enter your password"
+                        autocomplete="{% if action == '/login' %}current-password{% else %}new-password{% endif %}">
                 </div>
                 
-                <button type="submit" 
-                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition transform hover:scale-105 active:scale-95">
-                    <i class="fas fa-{{ icon }} mr-2"></i>{{ button_text }}
+                <button type="submit" id="submitBtn"
+                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-{{ icon }} mr-2"></i><span id="btnText">{{ button_text }}</span>
                 </button>
             </form>
             
             <div class="text-center mt-6 text-sm text-slate-400">
-                {{ toggle_text }} <a href="{{ toggle_link }}" class="text-blue-400 hover:text-blue-300 font-semibold">{{ toggle_action }}</a>
+                {{ toggle_text }} <a href="{{ toggle_link }}" class="text-blue-400 hover:text-blue-300 font-semibold transition hover:underline">{{ toggle_action }}</a>
+            </div>
+            
+            <div class="mt-6 pt-6 border-t border-slate-700">
+                <div class="flex items-center justify-center gap-2 text-xs text-slate-500">
+                    <i class="fas fa-lock"></i>
+                    <span>Secured by EliteHost Security</span>
+                </div>
             </div>
         </div>
+        
+        <div class="text-center mt-6 text-xs text-slate-500">
+            <p>&copy; 2025 EliteHost. All rights reserved.</p>
+        </div>
     </div>
+    
+    <script>
+        // Form validation and UX improvements
+        const form = document.getElementById('authForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        
+        form.addEventListener('submit', function(e) {
+            // Basic validation
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            
+            if (!email || !password) {
+                e.preventDefault();
+                alert('Please fill in all fields');
+                return false;
+            }
+            
+            // Email format validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Please enter a valid email address');
+                emailInput.focus();
+                return false;
+            }
+            
+            // Password length check
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('Password must be at least 6 characters');
+                passwordInput.focus();
+                return false;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+        });
+        
+        // Auto-focus email field
+        window.addEventListener('load', function() {
+            emailInput.focus();
+        });
+        
+        // Enable Enter key to submit
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                passwordInput.focus();
+            }
+        });
+    </script>
 </body>
 </html>
 """
