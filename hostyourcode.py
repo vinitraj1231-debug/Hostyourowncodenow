@@ -2548,7 +2548,6 @@ ADMIN_PANEL_HTML = """
 
 @app.before_request
 def before_request():
-    """Check if device is banned before processing request"""
     fingerprint = get_device_fingerprint(request)
     if is_device_banned(fingerprint):
         return jsonify({'error': 'Access denied'}), 403
@@ -2565,7 +2564,6 @@ def after_request(response):
 
 @app.route('/')
 def index():
-    """Landing page"""
     session_token = request.cookies.get('session_token')
     fingerprint = get_device_fingerprint(request)
     user_id = verify_session(session_token, fingerprint)
@@ -2578,7 +2576,6 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("10 per hour")
 def register():
-    """User registration"""
     if request.method == 'GET':
         error = request.args.get('error', '')
         success = request.args.get('success', '')
@@ -2647,7 +2644,6 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per hour")
 def login():
-    """User login"""
     if request.method == 'GET':
         error = request.args.get('error', '')
         success = request.args.get('success', '')
@@ -2712,7 +2708,6 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """User logout"""
     session_token = request.cookies.get('session_token')
     
     if session_token:
@@ -2730,7 +2725,6 @@ def logout():
 
 @app.route('/dashboard')
 def dashboard():
-    """Main dashboard"""
     session_token = request.cookies.get('session_token')
     fingerprint = get_device_fingerprint(request)
     
@@ -2757,7 +2751,6 @@ def dashboard():
 
 @app.route('/admin')
 def admin_panel():
-    """Admin control panel"""
     session_token = request.cookies.get('session_token')
     fingerprint = get_device_fingerprint(request)
     
@@ -2853,7 +2846,6 @@ def admin_panel():
 
 @app.route('/logo.jpg')
 def serve_logo():
-    """Serve logo image"""
     logo_path = os.path.join(STATIC_DIR, 'logo.jpg')
     if os.path.exists(logo_path):
         return send_file(logo_path, mimetype='image/jpeg')
@@ -2861,7 +2853,6 @@ def serve_logo():
 
 @app.route('/qr.jpg')
 def serve_qr():
-    """Serve payment QR code"""
     qr_path = os.path.join(STATIC_DIR, 'qr.jpg')
     if os.path.exists(qr_path):
         return send_file(qr_path, mimetype='image/jpeg')
@@ -2872,7 +2863,6 @@ def serve_qr():
 @app.route('/api/credits')
 @limiter.limit("60 per minute")
 def api_credits():
-    """Get user credits"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -2895,7 +2885,6 @@ def api_credits():
 @app.route('/api/deployments')
 @limiter.limit("60 per minute")
 def api_deployments():
-    """Get user deployments"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -2931,7 +2920,6 @@ def api_deployments():
 @app.route('/api/deploy/upload', methods=['POST'])
 @limiter.limit("10 per hour")
 def api_deploy_upload():
-    """Upload and deploy file"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -2948,27 +2936,27 @@ def api_deploy_upload():
         if file.filename == '':
             return jsonify({'success': False, 'error': 'No file selected'})
         
-        # Validate file
+        
         filename = secure_filename(file.filename)
         file_ext = os.path.splitext(filename)[1].lower()
         
         if file_ext not in ALLOWED_EXTENSIONS:
             return jsonify({'success': False, 'error': f'File type not allowed. Allowed: {", ".join(ALLOWED_EXTENSIONS)}'})
         
-        # Save file temporarily
+        
         upload_path = os.path.join(UPLOADS_DIR, f"{user_id}_{int(time.time())}_{filename}")
         file.save(upload_path)
         
-        # Check file size
+        
         file_size = os.path.getsize(upload_path)
         if file_size > MAX_FILE_SIZE:
             os.remove(upload_path)
             return jsonify({'success': False, 'error': f'File too large (max {MAX_FILE_SIZE/1024/1024}MB)'})
         
-        # Deploy
+        
         deploy_id, message = deploy_from_file(user_id, upload_path, filename)
         
-        # Cleanup temporary file
+        
         try:
             os.remove(upload_path)
         except:
@@ -2993,7 +2981,6 @@ def api_deploy_upload():
 @app.route('/api/deploy/github', methods=['POST'])
 @limiter.limit("5 per hour")
 def api_deploy_github():
-    """Deploy from GitHub"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3033,7 +3020,6 @@ def api_deploy_github():
 @app.route('/api/deployment/<deploy_id>/stop', methods=['POST'])
 @limiter.limit("30 per minute")
 def api_stop_deployment(deploy_id):
-    """Stop deployment"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3064,7 +3050,6 @@ def api_stop_deployment(deploy_id):
 @app.route('/api/deployment/<deploy_id>', methods=['DELETE'])
 @limiter.limit("30 per minute")
 def api_delete_deployment(deploy_id):
-    """Delete deployment"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3095,7 +3080,6 @@ def api_delete_deployment(deploy_id):
 @app.route('/api/deployment/<deploy_id>/logs')
 @limiter.limit("60 per minute")
 def api_deployment_logs(deploy_id):
-    """Get deployment logs"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3123,7 +3107,6 @@ def api_deployment_logs(deploy_id):
 @app.route('/api/deployment/<deploy_id>/files')
 @limiter.limit("60 per minute")
 def api_deployment_files(deploy_id):
-    """Get deployment files"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3153,7 +3136,6 @@ def api_deployment_files(deploy_id):
 @app.route('/api/deployment/<deploy_id>/env', methods=['POST'])
 @limiter.limit("30 per minute")
 def api_add_env_var(deploy_id):
-    """Add environment variable"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3193,7 +3175,6 @@ def api_add_env_var(deploy_id):
 @app.route('/api/deployment/<deploy_id>/env/<key>', methods=['DELETE'])
 @limiter.limit("30 per minute")
 def api_delete_env_var(deploy_id, key):
-    """Delete environment variable"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3226,7 +3207,6 @@ def api_delete_env_var(deploy_id, key):
 @app.route('/api/deployment/<deploy_id>/backup', methods=['POST'])
 @limiter.limit("10 per hour")
 def api_create_backup(deploy_id):
-    """Create backup"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3261,7 +3241,6 @@ def api_create_backup(deploy_id):
 
 @app.route('/api/deployment/<deploy_id>/backup/download')
 def api_download_backup(deploy_id):
-    """Download backup"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3298,7 +3277,6 @@ def api_download_backup(deploy_id):
 @app.route('/api/payment/create', methods=['POST'])
 @limiter.limit("10 per hour")
 def api_create_payment():
-    """Create payment request"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3325,7 +3303,6 @@ def api_create_payment():
 @app.route('/api/payment/submit', methods=['POST'])
 @limiter.limit("10 per hour")
 def api_submit_payment():
-    """Submit payment proof"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3349,7 +3326,6 @@ def api_submit_payment():
 
 @app.route('/api/payment/<payment_id>/screenshot')
 def api_payment_screenshot(payment_id):
-    """View payment screenshot"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3393,7 +3369,6 @@ def api_payment_screenshot(payment_id):
 @app.route('/api/admin/metrics')
 @limiter.limit("60 per minute")
 def api_admin_metrics():
-    """Get system metrics (admin only)"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3424,7 +3399,6 @@ def api_admin_metrics():
 @app.route('/api/admin/add-credits', methods=['POST'])
 @limiter.limit("30 per minute")
 def api_admin_add_credits():
-    """Add credits to user (admin only)"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3462,7 +3436,6 @@ def api_admin_add_credits():
 @app.route('/api/admin/ban-user', methods=['POST'])
 @limiter.limit("30 per minute")
 def api_admin_ban_user():
-    """Ban/unban user (admin only)"""
     try:
         session_token = request.cookies.get('session_token')
         fingerprint = get_device_fingerprint(request)
@@ -3509,7 +3482,6 @@ def ratelimit_handler(e):
 # ==================== BACKGROUND TASKS ====================
 
 def cleanup_expired_sessions():
-    """Cleanup expired sessions periodically"""
     while True:
         try:
             time.sleep(3600)  # Every hour
@@ -3658,7 +3630,6 @@ if __name__ == '__main__':
     print(f"\n{Fore.GREEN}{'✅ ELITEHOST v13.0 READY - COMPLETE SYSTEM':^90}")
     print("=" * 90 + "\n")
     
-    # Keep main thread alive
     try:
         while True:
             time.sleep(1)
