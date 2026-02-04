@@ -3609,7 +3609,6 @@ def cleanup_on_exit():
 atexit.register(cleanup_on_exit)
 
 def signal_handler(sig, frame):
-    """Handle termination signals"""
     cleanup_on_exit()
     sys.exit(0)
 
