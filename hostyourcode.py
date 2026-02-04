@@ -1,7 +1,7 @@
 """
-🚀 ELITEHOST v13.0 - PROFESSIONAL EDITION
+🚀 ELITEHOST v13.0 - COMPLETE PROFESSIONAL EDITION
 Enterprise-Grade Cloud Deployment Platform
-Enhanced Security | Auto-Scaling | Advanced Monitoring | Payment Integration
+Full Website Design + Backend + Payment System
 """
 
 import sys
@@ -10,7 +10,7 @@ import os
 
 # ==================== DEPENDENCY INSTALLER ====================
 print("=" * 90)
-print("🔧 ELITEHOST v13.0 - PROFESSIONAL DEPENDENCY INSTALLER")
+print("🔧 ELITEHOST v13.0 - DEPENDENCY INSTALLER")
 print("=" * 90)
 
 REQUIRED_PACKAGES = {
@@ -26,15 +26,6 @@ REQUIRED_PACKAGES = {
     'colorama': 'colorama',
     'pillow': 'PIL',
     'bcrypt': 'bcrypt',
-    'redis': 'redis',
-    'sqlalchemy': 'sqlalchemy',
-    'celery': 'celery',
-    'prometheus-client': 'prometheus_client',
-    'sentry-sdk': 'sentry_sdk',
-    'python-jose': 'jose',
-    'passlib': 'passlib',
-    'aiohttp': 'aiohttp',
-    'qrcode': 'qrcode',
 }
 
 def smart_install(package, import_name):
@@ -64,12 +55,9 @@ for pkg, imp in REQUIRED_PACKAGES.items():
 
 if failed:
     print(f"\n❌ Failed: {', '.join(failed)}")
-    print(f"⚠️  Some features may not work. Continue anyway? (y/n)")
-    if input().lower() != 'y':
-        sys.exit(1)
 
 print("\n" + "=" * 90)
-print("✅ CORE DEPENDENCIES READY!")
+print("✅ DEPENDENCIES READY!")
 print("=" * 90 + "\n")
 
 # ==================== IMPORTS ====================
@@ -88,11 +76,11 @@ import hashlib
 import secrets
 import signal
 from pathlib import Path
-from flask import Flask, render_template_string, request, jsonify, session, send_file, redirect, make_response, send_from_directory
+from flask import Flask, render_template_string, request, jsonify, session, send_file, redirect, make_response
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from threading import Thread, Lock, Timer, Event
+from threading import Thread, Lock, Timer
 import uuid
 from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet
@@ -101,42 +89,13 @@ from colorama import Fore, Style, init
 import bcrypt
 import re
 from collections import defaultdict, deque
-from functools import wraps
 import traceback
-from queue import Queue, Empty
 import sqlite3
 from contextlib import contextmanager
-
-# Optional imports
-try:
-    import redis
-    REDIS_AVAILABLE = True
-except:
-    REDIS_AVAILABLE = False
-
-try:
-    from prometheus_client import Counter, Gauge, Histogram, generate_latest
-    PROMETHEUS_AVAILABLE = True
-except:
-    PROMETHEUS_AVAILABLE = False
-
-try:
-    import sentry_sdk
-    SENTRY_AVAILABLE = True
-except:
-    SENTRY_AVAILABLE = False
-
-try:
-    import qrcode
-    from io import BytesIO
-    QRCODE_AVAILABLE = True
-except:
-    QRCODE_AVAILABLE = False
 
 init(autoreset=True)
 
 # ==================== CONFIGURATION ====================
-# Load from environment variables for security
 TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '8133133627:AAHXG1M3I_5yV6mIo2IRl61h8zRUvg6Nn2Y')
 OWNER_ID = int(os.getenv('OWNER_ID', '7524032836'))
 ADMIN_ID = int(os.getenv('ADMIN_ID', '8285724366'))
@@ -145,52 +104,28 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '28@HumblerRaj')
 YOUR_USERNAME = os.getenv('TELEGRAM_USERNAME', '@Zolvit')
 TELEGRAM_LINK = os.getenv('TELEGRAM_LINK', 'https://t.me/Zolvit')
 WEB_SECRET_KEY = os.getenv('SECRET_KEY', secrets.token_hex(32))
-ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', Fernet.generate_key()).encode() if isinstance(os.getenv('ENCRYPTION_KEY', ''), str) else Fernet.generate_key()
+ENCRYPTION_KEY = Fernet.generate_key()
+fernet = Fernet(ENCRYPTION_KEY)
 
-# Payment Configuration
-UPI_ID = os.getenv('UPI_ID', 'your-upi@bank')
-PAYMENT_PHONE = os.getenv('PAYMENT_PHONE', '+91XXXXXXXXXX')
-
-# Redis Configuration (optional)
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-
-# Sentry Configuration (optional)
-SENTRY_DSN = os.getenv('SENTRY_DSN', '')
-
-# Feature Flags
-ENABLE_RATE_LIMITING = os.getenv('ENABLE_RATE_LIMITING', 'true').lower() == 'true'
-ENABLE_REDIS_CACHE = os.getenv('ENABLE_REDIS_CACHE', 'false').lower() == 'true' and REDIS_AVAILABLE
-ENABLE_METRICS = os.getenv('ENABLE_METRICS', 'true').lower() == 'true' and PROMETHEUS_AVAILABLE
-ENABLE_SENTRY = os.getenv('ENABLE_SENTRY', 'false').lower() == 'true' and SENTRY_AVAILABLE
-
-try:
-    fernet = Fernet(ENCRYPTION_KEY)
-except:
-    fernet = Fernet(Fernet.generate_key())
-    print(f"{Fore.YELLOW}⚠️  Invalid encryption key, generated new one")
-
-FREE_CREDITS = float(os.getenv('FREE_CREDITS', '2.0'))
+FREE_CREDITS = 2.0
 CREDIT_COSTS = {
-    'file_upload': float(os.getenv('COST_FILE_UPLOAD', '0.5')),
-    'github_deploy': float(os.getenv('COST_GITHUB_DEPLOY', '1.0')),
-    'backup': float(os.getenv('COST_BACKUP', '0.5')),
+    'file_upload': 0.5,
+    'github_deploy': 1.0,
+    'backup': 0.5,
 }
 
-# Payment Packages
 PAYMENT_PACKAGES = {
-    '10_credits': {'credits': 10, 'price': 50, 'name': '10 Credits Pack', 'discount': 0},
-    '99_credits': {'credits': 99, 'price': 399, 'name': '99 Credits Pack', 'discount': 96},
-    '500_credits': {'credits': 500, 'price': 1899, 'name': '500 Credits Pack', 'discount': 601},
+    '10_credits': {'credits': 10, 'price': 50, 'name': '10 Credits Pack'},
+    '99_credits': {'credits': 99, 'price': 399, 'name': '99 Credits Pack'},
 }
 
-# Security Settings
-MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', 100 * 1024 * 1024))  # 100MB
-ALLOWED_EXTENSIONS = {'.py', '.js', '.zip', '.tar.gz', '.html', '.css'}
-SESSION_TIMEOUT_DAYS = int(os.getenv('SESSION_TIMEOUT_DAYS', '7'))
-PAYMENT_TIMEOUT_MINUTES = int(os.getenv('PAYMENT_TIMEOUT_MINUTES', '5'))
-MAX_DEPLOYMENTS_PER_USER = int(os.getenv('MAX_DEPLOYMENTS_PER_USER', '10'))
-MAX_LOGIN_ATTEMPTS = int(os.getenv('MAX_LOGIN_ATTEMPTS', '5'))
-LOGIN_ATTEMPT_WINDOW = int(os.getenv('LOGIN_ATTEMPT_WINDOW', '300'))  # 5 minutes
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+ALLOWED_EXTENSIONS = {'.py', '.js', '.zip', '.tar.gz'}
+SESSION_TIMEOUT_DAYS = 7
+PAYMENT_TIMEOUT_MINUTES = 5
+MAX_DEPLOYMENTS_PER_USER = 10
+MAX_LOGIN_ATTEMPTS = 5
+LOGIN_ATTEMPT_WINDOW = 300
 
 # Directories
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -211,125 +146,42 @@ app = Flask(__name__)
 app.secret_key = WEB_SECRET_KEY
 CORS(app, supports_credentials=True)
 
-# Rate Limiting
-if ENABLE_RATE_LIMITING:
-    limiter = Limiter(
-        app=app,
-        key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],
-        storage_uri=REDIS_URL if ENABLE_REDIS_CACHE else "memory://"
-    )
-else:
-    # Dummy limiter that does nothing
-    class DummyLimiter:
-        def limit(self, *args, **kwargs):
-            def decorator(f):
-                return f
-            return decorator
-    limiter = DummyLimiter()
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 
 # Global state
 active_processes = {}
-deployment_logs = {}
 payment_timers = {}
 login_attempts = defaultdict(lambda: deque(maxlen=MAX_LOGIN_ATTEMPTS))
-
-# Thread-safe locks
 DB_LOCK = Lock()
 PROCESS_LOCK = Lock()
 
-# ==================== SENTRY INTEGRATION ====================
-if ENABLE_SENTRY and SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        traces_sample_rate=0.1,
-        profiles_sample_rate=0.1,
-    )
+# Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(LOGS_DIR, 'elitehost.log')),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-# ==================== PROMETHEUS METRICS ====================
-if ENABLE_METRICS:
-    metrics = {
-        'requests_total': Counter('elitehost_requests_total', 'Total requests', ['method', 'endpoint', 'status']),
-        'deployments_total': Counter('elitehost_deployments_total', 'Total deployments', ['type', 'status']),
-        'active_deployments': Gauge('elitehost_active_deployments', 'Active deployments'),
-        'credits_used': Counter('elitehost_credits_used', 'Credits used', ['action']),
-        'payment_requests': Counter('elitehost_payment_requests', 'Payment requests', ['status']),
-        'request_duration': Histogram('elitehost_request_duration_seconds', 'Request duration'),
-    }
-else:
-    metrics = None
-
-# ==================== REDIS CACHE ====================
-if ENABLE_REDIS_CACHE:
-    try:
-        redis_client = redis.from_url(REDIS_URL, decode_responses=True)
-        redis_client.ping()
-        print(f"{Fore.GREEN}✅ Redis cache connected")
-    except:
-        ENABLE_REDIS_CACHE = False
-        redis_client = None
-        print(f"{Fore.YELLOW}⚠️  Redis unavailable, using local cache")
-else:
-    redis_client = None
-
-# ==================== LOGGING SETUP ====================
-class ColoredFormatter(logging.Formatter):
-    COLORS = {
-        'DEBUG': Fore.CYAN,
-        'INFO': Fore.GREEN,
-        'WARNING': Fore.YELLOW,
-        'ERROR': Fore.RED,
-        'CRITICAL': Fore.RED + Style.BRIGHT,
-    }
-    
-    def format(self, record):
-        levelname = record.levelname
-        if levelname in self.COLORS:
-            record.levelname = f"{self.COLORS[levelname]}{levelname}{Style.RESET_ALL}"
-        return super().format(record)
-
-# Main logger
-logger = logging.getLogger('elitehost')
-logger.setLevel(logging.INFO)
-
-# Console handler
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(ColoredFormatter(
-    '%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-))
-
-# File handler
-file_handler = logging.FileHandler(os.path.join(LOGS_DIR, 'elitehost.log'))
-file_handler.setFormatter(logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-))
-
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
-
-# Error logger
-error_logger = logging.getLogger('elitehost.errors')
-error_logger.setLevel(logging.ERROR)
-error_handler = logging.FileHandler(os.path.join(LOGS_DIR, 'errors.log'))
-error_handler.setFormatter(logging.Formatter(
-    '%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
-))
-error_logger.addHandler(error_handler)
-
-# ==================== DATABASE (SQLite) ====================
+# ==================== DATABASE FUNCTIONS ====================
 
 def get_db_connection():
-    """Thread-safe database connection"""
     conn = sqlite3.connect(DB_FILE, check_same_thread=False, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
 @contextmanager
 def get_db():
-    """Context manager for database operations"""
     conn = get_db_connection()
     try:
         yield conn
@@ -341,11 +193,9 @@ def get_db():
         conn.close()
 
 def init_database():
-    """Initialize SQLite database with tables"""
     with get_db() as conn:
         cursor = conn.cursor()
         
-        # Users table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
@@ -359,14 +209,10 @@ def init_database():
                 last_login TEXT,
                 ip_address TEXT,
                 is_banned INTEGER DEFAULT 0,
-                telegram_id TEXT,
-                referral_code TEXT UNIQUE,
-                referred_by TEXT,
-                FOREIGN KEY (referred_by) REFERENCES users(id)
+                telegram_id TEXT
             )
         ''')
         
-        # Sessions table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS sessions (
                 token TEXT PRIMARY KEY,
@@ -374,12 +220,10 @@ def init_database():
                 fingerprint TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 expires_at TEXT NOT NULL,
-                last_activity TEXT,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
         
-        # Deployments table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS deployments (
                 id TEXT PRIMARY KEY,
@@ -402,7 +246,6 @@ def init_database():
             )
         ''')
         
-        # Payments table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS payments (
                 id TEXT PRIMARY KEY,
@@ -416,16 +259,13 @@ def init_database():
                 expires_at TEXT,
                 submitted_at TEXT,
                 approved_at TEXT,
-                rejected_at TEXT,
                 screenshot_path TEXT,
                 transaction_id TEXT,
                 approved_by TEXT,
-                rejected_by TEXT,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
         
-        # Activity log table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS activity_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -438,7 +278,6 @@ def init_database():
             )
         ''')
         
-        # Banned devices table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS banned_devices (
                 fingerprint TEXT PRIMARY KEY,
@@ -447,192 +286,71 @@ def init_database():
             )
         ''')
         
-        # Create indexes for better performance
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_deployments_user_id ON deployments(user_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_deployments_status ON deployments(status)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_activity_user_id ON activity_log(user_id)')
-        
-        logger.info(f"{Fore.GREEN}✅ Database initialized")
+        logger.info("✅ Database initialized")
 
-# Initialize database on startup
 init_database()
 
-# ==================== ERROR HANDLING ====================
+# ==================== HELPER FUNCTIONS ====================
 
-def log_error(error_msg, context="", exc_info=None):
-    """Enhanced error logging with stack trace"""
+def log_error(error_msg, context=""):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    error_log = f"[{timestamp}] ERROR in {context}: {error_msg}\n{traceback.format_exc()}\n"
     
-    error_details = {
-        'timestamp': timestamp,
-        'context': context,
-        'error': str(error_msg),
-        'traceback': traceback.format_exc() if exc_info else None
-    }
+    error_file = os.path.join(LOGS_DIR, 'errors.log')
+    with open(error_file, 'a') as f:
+        f.write(error_log)
     
-    error_logger.error(json.dumps(error_details, indent=2))
-    
-    if ENABLE_SENTRY:
-        try:
-            sentry_sdk.capture_exception(exc_info or error_msg)
-        except:
-            pass
-    
-    return error_details
-
-# ==================== CACHE LAYER ====================
-
-class Cache:
-    """Simple cache with Redis fallback"""
-    def __init__(self):
-        self.local_cache = {}
-        self.use_redis = ENABLE_REDIS_CACHE and redis_client is not None
-    
-    def get(self, key):
-        if self.use_redis:
-            try:
-                value = redis_client.get(f"elitehost:{key}")
-                return json.loads(value) if value else None
-            except:
-                pass
-        return self.local_cache.get(key)
-    
-    def set(self, key, value, ttl=300):
-        if self.use_redis:
-            try:
-                redis_client.setex(
-                    f"elitehost:{key}",
-                    ttl,
-                    json.dumps(value, default=str)
-                )
-            except:
-                pass
-        self.local_cache[key] = value
-    
-    def delete(self, key):
-        if self.use_redis:
-            try:
-                redis_client.delete(f"elitehost:{key}")
-            except:
-                pass
-        self.local_cache.pop(key, None)
-    
-    def clear(self):
-        if self.use_redis:
-            try:
-                keys = redis_client.keys("elitehost:*")
-                if keys:
-                    redis_client.delete(*keys)
-            except:
-                pass
-        self.local_cache.clear()
-
-cache = Cache()
-
-# ==================== DEVICE FINGERPRINTING ====================
+    logger.error(error_log)
 
 def get_device_fingerprint(request):
-    """Enhanced device fingerprinting"""
     components = [
         request.headers.get('User-Agent', ''),
-        request.remote_addr or request.environ.get('HTTP_X_REAL_IP', 'unknown'),
+        request.remote_addr or 'unknown',
         request.headers.get('Accept-Language', ''),
-        request.headers.get('Accept-Encoding', ''),
-        str(request.headers.get('Accept', '')),
     ]
-    fingerprint_str = '|'.join(components)
-    return hashlib.sha256(fingerprint_str.encode()).hexdigest()
+    return hashlib.sha256('|'.join(components).encode()).hexdigest()
 
 def is_device_banned(fingerprint):
-    """Check if device is banned"""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT 1 FROM banned_devices WHERE fingerprint = ?', (fingerprint,))
         return cursor.fetchone() is not None
 
-def ban_device(fingerprint, reason="Suspicious activity"):
-    """Ban a device"""
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT OR REPLACE INTO banned_devices (fingerprint, reason, banned_at)
-            VALUES (?, ?, ?)
-        ''', (fingerprint, reason, datetime.now().isoformat()))
-    cache.delete(f"device_banned:{fingerprint}")
-
 def check_existing_account(fingerprint):
-    """Check if device already has an account"""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT id FROM users WHERE device_fingerprint = ?', (fingerprint,))
         row = cursor.fetchone()
         return row['id'] if row else None
 
-# ==================== RATE LIMITING ====================
-
-def check_login_attempts(ip_address):
-    """Check if IP has exceeded login attempts"""
-    now = time.time()
-    attempts = login_attempts[ip_address]
-    
-    # Remove old attempts
-    while attempts and attempts[0] < now - LOGIN_ATTEMPT_WINDOW:
-        attempts.popleft()
-    
-    return len(attempts) >= MAX_LOGIN_ATTEMPTS
-
-def record_login_attempt(ip_address):
-    """Record a failed login attempt"""
-    login_attempts[ip_address].append(time.time())
-
-# ==================== USER FUNCTIONS (Updated for SQLite) ====================
-
 def hash_password(password):
-    """Hash password using bcrypt"""
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 def verify_password(password, hashed):
-    """Verify password against hash"""
     try:
         return bcrypt.checkpw(password.encode(), hashed.encode())
     except:
         return False
 
-def generate_referral_code():
-    """Generate unique referral code"""
-    return secrets.token_urlsafe(8).upper()
-
-def create_user(email, password, fingerprint, ip, referred_by=None):
-    """Create new user account"""
+def create_user(email, password, fingerprint, ip):
     try:
         user_id = str(uuid.uuid4())
-        referral_code = generate_referral_code()
         
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO users (
                     id, email, password, device_fingerprint, credits,
-                    total_earned, created_at, last_login, ip_address,
-                    referral_code, referred_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    total_earned, created_at, last_login, ip_address
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 user_id, email, hash_password(password), fingerprint,
                 FREE_CREDITS, FREE_CREDITS, datetime.now().isoformat(),
-                datetime.now().isoformat(), ip, referral_code, referred_by
+                datetime.now().isoformat(), ip
             ))
         
-        # Bonus for referrer
-        if referred_by:
-            add_credits(referred_by, 1.0, "Referral bonus")
-        
         log_activity(user_id, 'USER_REGISTER', f'New user: {email}', ip)
-        cache.delete(f"user:{user_id}")
         
-        # Notify owner via Telegram
         try:
             bot.send_message(
                 OWNER_ID,
@@ -640,21 +358,16 @@ def create_user(email, password, fingerprint, ip, referred_by=None):
                 f"📧 Email: `{email}`\n"
                 f"🆔 ID: `{user_id}`\n"
                 f"🌐 IP: `{ip}`\n"
-                f"🎁 Referral: `{referral_code}`\n"
                 f"⏰ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-        except Exception as e:
-            log_error(str(e), "create_user telegram notification")
+        except:
+            pass
         
         return user_id
-    except sqlite3.IntegrityError:
-        return None
-    except Exception as e:
-        log_error(str(e), "create_user", exc_info=e)
+    except:
         return None
 
 def authenticate_user(email, password):
-    """Authenticate user login"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -664,58 +377,32 @@ def authenticate_user(email, password):
             if row and verify_password(password, row['password']):
                 return row['id']
         return None
-    except Exception as e:
-        log_error(str(e), "authenticate_user", exc_info=e)
+    except:
         return None
 
 def create_session(user_id, fingerprint):
-    """Create user session"""
-    try:
-        session_token = secrets.token_urlsafe(32)
-        expires_at = datetime.now() + timedelta(days=SESSION_TIMEOUT_DAYS)
-        
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO sessions (token, user_id, fingerprint, created_at, expires_at, last_activity)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                session_token, user_id, fingerprint,
-                datetime.now().isoformat(), expires_at.isoformat(),
-                datetime.now().isoformat()
-            ))
-        
-        cache.set(f"session:{session_token}", {
-            'user_id': user_id,
-            'fingerprint': fingerprint,
-            'expires_at': expires_at.isoformat()
-        }, ttl=SESSION_TIMEOUT_DAYS * 86400)
-        
-        return session_token
-    except Exception as e:
-        log_error(str(e), "create_session", exc_info=e)
-        return None
+    session_token = secrets.token_urlsafe(32)
+    expires_at = datetime.now() + timedelta(days=SESSION_TIMEOUT_DAYS)
+    
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO sessions (token, user_id, fingerprint, created_at, expires_at)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (session_token, user_id, fingerprint, datetime.now().isoformat(), expires_at.isoformat()))
+    
+    return session_token
 
 def verify_session(session_token, fingerprint):
-    """Verify session token"""
     if not session_token:
         return None
     
-    # Check cache first
-    cached = cache.get(f"session:{session_token}")
-    if cached:
-        if cached['fingerprint'] == fingerprint:
-            if datetime.fromisoformat(cached['expires_at']) > datetime.now():
-                return cached['user_id']
-    
-    # Check database
     try:
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT user_id, fingerprint, expires_at
-                FROM sessions
-                WHERE token = ?
+                FROM sessions WHERE token = ?
             ''', (session_token,))
             row = cursor.fetchone()
             
@@ -724,29 +411,16 @@ def verify_session(session_token, fingerprint):
             
             if datetime.fromisoformat(row['expires_at']) < datetime.now():
                 cursor.execute('DELETE FROM sessions WHERE token = ?', (session_token,))
-                cache.delete(f"session:{session_token}")
                 return None
             
             if row['fingerprint'] != fingerprint:
                 return None
             
-            # Update last activity
-            cursor.execute('''
-                UPDATE sessions SET last_activity = ? WHERE token = ?
-            ''', (datetime.now().isoformat(), session_token))
-            
             return row['user_id']
-    except Exception as e:
-        log_error(str(e), "verify_session", exc_info=e)
+    except:
         return None
 
 def get_user(user_id):
-    """Get user data"""
-    # Check cache
-    cached = cache.get(f"user:{user_id}")
-    if cached:
-        return cached
-    
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -755,19 +429,14 @@ def get_user(user_id):
             
             if row:
                 user_data = dict(row)
-                # Get deployment IDs
                 cursor.execute('SELECT id FROM deployments WHERE user_id = ?', (user_id,))
                 user_data['deployments'] = [r['id'] for r in cursor.fetchall()]
-                
-                cache.set(f"user:{user_id}", user_data, ttl=300)
                 return user_data
         return None
-    except Exception as e:
-        log_error(str(e), "get_user", exc_info=e)
+    except:
         return None
 
 def update_user(user_id, **kwargs):
-    """Update user data"""
     try:
         set_clause = ', '.join([f"{k} = ?" for k in kwargs.keys()])
         values = list(kwargs.values()) + [user_id]
@@ -775,13 +444,10 @@ def update_user(user_id, **kwargs):
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute(f'UPDATE users SET {set_clause} WHERE id = ?', values)
-        
-        cache.delete(f"user:{user_id}")
     except Exception as e:
-        log_error(str(e), "update_user", exc_info=e)
+        log_error(str(e), "update_user")
 
 def log_activity(user_id, action, details, ip=''):
-    """Log user activity"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -789,93 +455,57 @@ def log_activity(user_id, action, details, ip=''):
                 INSERT INTO activity_log (user_id, action, details, ip_address, timestamp)
                 VALUES (?, ?, ?, ?, ?)
             ''', (user_id, action, details, ip, datetime.now().isoformat()))
-    except Exception as e:
-        log_error(str(e), "log_activity", exc_info=e)
-
-# ==================== CREDIT SYSTEM ====================
+    except:
+        pass
 
 def get_credits(user_id):
-    """Get user credits"""
     if str(user_id) == str(OWNER_ID):
         return float('inf')
-    
     user = get_user(user_id)
     return user['credits'] if user else 0
 
 def add_credits(user_id, amount, description="Credit added"):
-    """Add credits to user"""
-    try:
-        user = get_user(user_id)
-        if not user:
-            return False
-        
-        new_credits = user['credits'] + amount
-        new_earned = user['total_earned'] + amount
-        
-        update_user(user_id, credits=new_credits, total_earned=new_earned)
-        log_activity(user_id, 'CREDIT_ADD', f"{amount} - {description}")
-        
-        if metrics:
-            metrics['credits_used'].labels(action='add').inc(amount)
-        
-        return True
-    except Exception as e:
-        log_error(str(e), "add_credits", exc_info=e)
+    user = get_user(user_id)
+    if not user:
         return False
+    
+    new_credits = user['credits'] + amount
+    new_earned = user['total_earned'] + amount
+    
+    update_user(user_id, credits=new_credits, total_earned=new_earned)
+    log_activity(user_id, 'CREDIT_ADD', f"{amount} - {description}")
+    return True
 
 def deduct_credits(user_id, amount, description="Credit used"):
-    """Deduct credits from user"""
     if str(user_id) == str(OWNER_ID):
         return True
     
-    try:
-        user = get_user(user_id)
-        if not user or user['credits'] < amount:
-            return False
-        
-        new_credits = user['credits'] - amount
-        new_spent = user['total_spent'] + amount
-        
-        update_user(user_id, credits=new_credits, total_spent=new_spent)
-        log_activity(user_id, 'CREDIT_USE', f"{amount} - {description}")
-        
-        if metrics:
-            metrics['credits_used'].labels(action='deduct').inc(amount)
-        
-        return True
-    except Exception as e:
-        log_error(str(e), "deduct_credits", exc_info=e)
+    user = get_user(user_id)
+    if not user or user['credits'] < amount:
         return False
-
-# ==================== QR CODE GENERATION ====================
-
-def generate_payment_qr(upi_id, amount, name="EliteHost"):
-    """Generate UPI payment QR code"""
-    if not QRCODE_AVAILABLE:
-        return None
     
-    try:
-        upi_string = f"upi://pay?pa={upi_id}&pn={name}&am={amount}&cu=INR"
-        
-        qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data(upi_string)
-        qr.make(fit=True)
-        
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Save to bytes
-        buffer = BytesIO()
-        img.save(buffer, format='PNG')
-        buffer.seek(0)
-        
-        return buffer
-    except Exception as e:
-        log_error(str(e), "generate_payment_qr", exc_info=e)
-        return None
-# ==================== PAYMENT SYSTEM (Enhanced) ====================
+    new_credits = user['credits'] - amount
+    new_spent = user['total_spent'] + amount
+    
+    update_user(user_id, credits=new_credits, total_spent=new_spent)
+    log_activity(user_id, 'CREDIT_USE', f"{amount} - {description}")
+    return True
+
+def check_login_attempts(ip_address):
+    now = time.time()
+    attempts = login_attempts[ip_address]
+    
+    while attempts and attempts[0] < now - LOGIN_ATTEMPT_WINDOW:
+        attempts.popleft()
+    
+    return len(attempts) >= MAX_LOGIN_ATTEMPTS
+
+def record_login_attempt(ip_address):
+    login_attempts[ip_address].append(time.time())
+
+# ==================== PAYMENT FUNCTIONS ====================
 
 def create_payment_request(user_id, package_type, custom_amount=None):
-    """Create a new payment request with enhanced validation"""
     try:
         payment_id = str(uuid.uuid4())[:12]
         
@@ -910,15 +540,11 @@ def create_payment_request(user_id, package_type, custom_amount=None):
                 datetime.now().isoformat(), expires_at.isoformat()
             ))
         
-        # Start expiry timer
         timer = Timer(PAYMENT_TIMEOUT_MINUTES * 60, expire_payment, args=[payment_id])
         payment_timers[payment_id] = timer
         timer.start()
         
         log_activity(user_id, 'PAYMENT_REQUEST', f"Payment {payment_id}: {credits} credits for ₹{price}")
-        
-        if metrics:
-            metrics['payment_requests'].labels(status='created').inc()
         
         payment_data = {
             'id': payment_id,
@@ -933,13 +559,11 @@ def create_payment_request(user_id, package_type, custom_amount=None):
         }
         
         return payment_id, payment_data
-    
     except Exception as e:
-        log_error(str(e), "create_payment_request", exc_info=e)
+        log_error(str(e), "create_payment_request")
         return None, str(e)
 
 def expire_payment(payment_id):
-    """Auto-expire payment after timeout"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -947,16 +571,11 @@ def expire_payment(payment_id):
                 UPDATE payments SET status = 'expired'
                 WHERE id = ? AND status = 'pending'
             ''', (payment_id,))
-        
-        if metrics:
-            metrics['payment_requests'].labels(status='expired').inc()
-        
         logger.info(f"Payment {payment_id} expired")
-    except Exception as e:
-        log_error(str(e), "expire_payment", exc_info=e)
+    except:
+        pass
 
 def submit_payment_proof(payment_id, screenshot_data, transaction_id):
-    """Submit payment proof with validation"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -971,43 +590,20 @@ def submit_payment_proof(payment_id, screenshot_data, transaction_id):
             if payment['status'] != 'pending':
                 return False, f"Payment is {payment['status']}"
             
-            # Check if expired
             if datetime.fromisoformat(payment['expires_at']) < datetime.now():
-                cursor.execute('''
-                    UPDATE payments SET status = 'expired' WHERE id = ?
-                ''', (payment_id,))
+                cursor.execute('UPDATE payments SET status = "expired" WHERE id = ?', (payment_id,))
                 return False, "Payment expired"
             
-            # Validate transaction ID
-            if not transaction_id or len(transaction_id) < 6:
-                return False, "Invalid transaction ID"
-            
-            # Check for duplicate transaction ID
-            cursor.execute('''
-                SELECT id FROM payments 
-                WHERE transaction_id = ? AND id != ? AND status IN ('submitted', 'approved')
-            ''', (transaction_id, payment_id))
-            
-            if cursor.fetchone():
-                return False, "Transaction ID already used"
-            
-            # Save screenshot
             screenshot_path = os.path.join(PAYMENTS_DIR, f"{payment_id}_screenshot.jpg")
             try:
                 import base64
                 screenshot_bytes = base64.b64decode(screenshot_data.split(',')[1])
-                
-                # Validate image size
-                if len(screenshot_bytes) > 10 * 1024 * 1024:  # 10MB max
-                    return False, "Screenshot too large (max 10MB)"
-                
                 with open(screenshot_path, 'wb') as f:
                     f.write(screenshot_bytes)
             except Exception as e:
-                log_error(str(e), "screenshot save", exc_info=e)
+                log_error(str(e), "screenshot save")
                 return False, "Screenshot upload failed"
             
-            # Update payment
             cursor.execute('''
                 UPDATE payments 
                 SET screenshot_path = ?, transaction_id = ?, status = 'submitted',
@@ -1015,15 +611,10 @@ def submit_payment_proof(payment_id, screenshot_data, transaction_id):
                 WHERE id = ?
             ''', (screenshot_path, transaction_id, datetime.now().isoformat(), payment_id))
         
-        # Cancel expiry timer
         if payment_id in payment_timers:
             payment_timers[payment_id].cancel()
             del payment_timers[payment_id]
         
-        if metrics:
-            metrics['payment_requests'].labels(status='submitted').inc()
-        
-        # Notify admin via Telegram
         try:
             user = get_user(payment['user_id'])
             
@@ -1041,87 +632,23 @@ def submit_payment_proof(payment_id, screenshot_data, transaction_id):
                 f"💰 Amount: ₹{payment['price']}\n"
                 f"💎 Credits: {payment['credits']}\n"
                 f"🔢 Transaction ID: `{transaction_id}`\n"
-                f"📦 Package: {payment['package_type']}\n"
                 f"⏰ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
                 f"_Review the payment and take action:_",
                 reply_markup=markup
             )
             
-            # Send screenshot
             with open(screenshot_path, 'rb') as photo:
                 bot.send_photo(ADMIN_ID, photo, caption=f"Payment Screenshot - {payment_id}")
-        
         except Exception as e:
-            log_error(str(e), "payment notification", exc_info=e)
+            log_error(str(e), "payment notification")
         
         return True, "Payment proof submitted successfully"
-    
     except Exception as e:
-        log_error(str(e), "submit_payment_proof", exc_info=e)
+        log_error(str(e), "submit_payment_proof")
         return False, str(e)
-
-def approve_payment(payment_id, approved_by):
-    """Approve payment and add credits"""
-    try:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM payments WHERE id = ?', (payment_id,))
-            row = cursor.fetchone()
-            
-            if not row:
-                return False, "Payment not found"
-            
-            payment = dict(row)
-            
-            if payment['status'] != 'submitted':
-                return False, f"Payment is {payment['status']}"
-            
-            # Update payment status
-            cursor.execute('''
-                UPDATE payments 
-                SET status = 'approved', approved_at = ?, approved_by = ?
-                WHERE id = ?
-            ''', (datetime.now().isoformat(), approved_by, payment_id))
-            
-            # Add credits to user
-            add_credits(payment['user_id'], payment['credits'], f"Payment approved: {payment_id}")
-        
-        if metrics:
-            metrics['payment_requests'].labels(status='approved').inc()
-        
-        logger.info(f"Payment {payment_id} approved by {approved_by}")
-        return True, "Payment approved"
-    
-    except Exception as e:
-        log_error(str(e), "approve_payment", exc_info=e)
-        return False, str(e)
-
-def reject_payment(payment_id, rejected_by, reason=""):
-    """Reject payment"""
-    try:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE payments 
-                SET status = 'rejected', rejected_at = ?, rejected_by = ?
-                WHERE id = ?
-            ''', (datetime.now().isoformat(), rejected_by, payment_id))
-        
-        if metrics:
-            metrics['payment_requests'].labels(status='rejected').inc()
-        
-        logger.info(f"Payment {payment_id} rejected by {rejected_by}")
-        return True, "Payment rejected"
-    
-    except Exception as e:
-        log_error(str(e), "reject_payment", exc_info=e)
-        return False, str(e)
-
-# ==================== TELEGRAM BOT HANDLERS (Enhanced) ====================
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('payment_'))
 def handle_payment_action(call):
-    """Handle payment confirmation/rejection from Telegram"""
     try:
         action, payment_id = call.data.rsplit('_', 1)
         
@@ -1137,156 +664,61 @@ def handle_payment_action(call):
             payment = dict(row)
         
         if 'confirm' in action:
-            success, message = approve_payment(payment_id, str(call.from_user.id))
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE payments 
+                    SET status = 'approved', approved_at = ?, approved_by = ?
+                    WHERE id = ?
+                ''', (datetime.now().isoformat(), str(call.from_user.id), payment_id))
             
-            if success:
-                bot.answer_callback_query(call.id, "✅ Payment Approved!")
-                bot.edit_message_text(
-                    f"{call.message.text}\n\n✅ *APPROVED* by {call.from_user.first_name}",
-                    call.message.chat.id,
-                    call.message.message_id,
-                    parse_mode='Markdown'
-                )
-                
-                # Notify user (if telegram_id available)
-                user = get_user(payment['user_id'])
-                if user and user.get('telegram_id'):
-                    try:
-                        bot.send_message(
-                            user['telegram_id'],
-                            f"✅ *Payment Approved!*\n\n"
-                            f"💎 {payment['credits']} credits added to your account\n"
-                            f"💰 Amount: ₹{payment['price']}\n"
-                            f"🆔 Payment ID: `{payment_id}`"
-                        )
-                    except:
-                        pass
-            else:
-                bot.answer_callback_query(call.id, f"Error: {message}")
+            add_credits(payment['user_id'], payment['credits'], f"Payment approved: {payment_id}")
+            
+            bot.answer_callback_query(call.id, "✅ Payment Approved!")
+            bot.edit_message_text(
+                f"{call.message.text}\n\n✅ *APPROVED* by {call.from_user.first_name}",
+                call.message.chat.id,
+                call.message.message_id,
+                parse_mode='Markdown'
+            )
         
         elif 'reject' in action:
-            success, message = reject_payment(payment_id, str(call.from_user.id))
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE payments 
+                    SET status = 'rejected'
+                    WHERE id = ?
+                ''', (payment_id,))
             
-            if success:
-                bot.answer_callback_query(call.id, "❌ Payment Rejected")
-                bot.edit_message_text(
-                    f"{call.message.text}\n\n❌ *REJECTED* by {call.from_user.first_name}",
-                    call.message.chat.id,
-                    call.message.message_id,
-                    parse_mode='Markdown'
-                )
-                
-                # Notify user (if telegram_id available)
-                user = get_user(payment['user_id'])
-                if user and user.get('telegram_id'):
-                    try:
-                        bot.send_message(
-                            user['telegram_id'],
-                            f"❌ *Payment Rejected*\n\n"
-                            f"Your payment proof was not accepted.\n"
-                            f"Please contact support if you believe this is an error.\n"
-                            f"🆔 Payment ID: `{payment_id}`"
-                        )
-                    except:
-                        pass
-            else:
-                bot.answer_callback_query(call.id, f"Error: {message}")
-    
+            bot.answer_callback_query(call.id, "❌ Payment Rejected")
+            bot.edit_message_text(
+                f"{call.message.text}\n\n❌ *REJECTED* by {call.from_user.first_name}",
+                call.message.chat.id,
+                call.message.message_id,
+                parse_mode='Markdown'
+            )
     except Exception as e:
-        log_error(str(e), "handle_payment_action", exc_info=e)
+        log_error(str(e), "handle_payment_action")
         bot.answer_callback_query(call.id, f"Error: {str(e)}")
 
-@bot.message_handler(commands=['start'])
-def bot_start(message):
-    """Start command handler"""
-    try:
-        markup = types.InlineKeyboardMarkup()
-        markup.row(
-            types.InlineKeyboardButton("🌐 Open Dashboard", url=f"http://localhost:{os.getenv('PORT', 8080)}/dashboard")
-        )
-        
-        bot.send_message(
-            message.chat.id,
-            f"👋 *Welcome to EliteHost v13.0!*\n\n"
-            f"🚀 Next-Generation Cloud Deployment Platform\n\n"
-            f"*Features:*\n"
-            f"• 🤖 AI Auto-Deploy\n"
-            f"• 💳 Integrated Payments\n"
-            f"• 📊 Real-time Monitoring\n"
-            f"• 🔒 Enterprise Security\n\n"
-            f"Use /help for commands",
-            reply_markup=markup
-        )
-    except Exception as e:
-        log_error(str(e), "bot_start", exc_info=e)
-
-@bot.message_handler(commands=['help'])
-def bot_help(message):
-    """Help command handler"""
-    try:
-        bot.send_message(
-            message.chat.id,
-            f"📚 *EliteHost Commands*\n\n"
-            f"/start - Start the bot\n"
-            f"/help - Show this help\n"
-            f"/credits - Check your credits\n"
-            f"/link - Link Telegram account\n"
-            f"/stats - View your statistics\n\n"
-            f"💬 Contact: {YOUR_USERNAME}"
-        )
-    except Exception as e:
-        log_error(str(e), "bot_help", exc_info=e)
-
-@bot.message_handler(commands=['credits'])
-def bot_credits(message):
-    """Check credits command"""
-    try:
-        # Find user by telegram_id
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM users WHERE telegram_id = ?', (str(message.from_user.id),))
-            row = cursor.fetchone()
-        
-        if row:
-            user = dict(row)
-            bot.send_message(
-                message.chat.id,
-                f"💎 *Your Credits*\n\n"
-                f"Available: {user['credits']:.2f}\n"
-                f"Total Earned: {user['total_earned']:.2f}\n"
-                f"Total Spent: {user['total_spent']:.2f}\n\n"
-                f"📧 Email: {user['email']}"
-            )
-        else:
-            bot.send_message(
-                message.chat.id,
-                f"❌ No account linked to this Telegram.\n\n"
-                f"Use /link to connect your account."
-            )
-    except Exception as e:
-        log_error(str(e), "bot_credits", exc_info=e)
-
-# ==================== AI DEPENDENCY DETECTOR (Enhanced) ====================
+# ==================== AI DEPENDENCY DETECTION ====================
 
 def extract_imports_from_code(code_content):
-    """Enhanced import extraction with better parsing"""
     imports = set()
     import_patterns = [
         r'^\s*import\s+([a-zA-Z0-9_\.]+)',
         r'^\s*from\s+([a-zA-Z0-9_\.]+)\s+import',
     ]
-    
     for line in code_content.split('\n'):
         for pattern in import_patterns:
             match = re.match(pattern, line)
             if match:
                 module = match.group(1).split('.')[0]
                 imports.add(module)
-    
     return imports
 
 def get_package_name(import_name):
-    """Map import names to package names"""
     mapping = {
         'cv2': 'opencv-python',
         'PIL': 'pillow',
@@ -1295,14 +727,10 @@ def get_package_name(import_name):
         'dotenv': 'python-dotenv',
         'telebot': 'pyTelegramBotAPI',
         'bs4': 'beautifulsoup4',
-        'flask_limiter': 'flask-limiter',
-        'jose': 'python-jose',
-        'passlib': 'passlib',
     }
     return mapping.get(import_name, import_name)
 
 def detect_and_install_deps(project_path):
-    """AI-powered dependency detection and installation"""
     installed = []
     install_log = []
     
@@ -1310,150 +738,85 @@ def detect_and_install_deps(project_path):
     install_log.append("=" * 60)
     
     try:
-        # Check for requirements.txt
         req_file = os.path.join(project_path, 'requirements.txt')
         if os.path.exists(req_file):
             install_log.append("\n📦 PROCESSING REQUIREMENTS.TXT")
-            try:
-                with open(req_file, 'r') as f:
-                    packages = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-                
-                for pkg in packages:
-                    try:
-                        # Extract package name without version specifier
-                        pkg_name = re.split(r'[<>=!]', pkg)[0].strip()
-                        
-                        subprocess.run(
-                            [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
-                            check=True,
-                            capture_output=True,
-                            timeout=300
-                        )
-                        install_log.append(f"  ✅ {pkg}")
-                        installed.append(pkg_name)
-                    except subprocess.TimeoutExpired:
-                        install_log.append(f"  ⏱️  {pkg} (timeout)")
-                    except Exception as e:
-                        install_log.append(f"  ⚠️  {pkg} (error: {str(e)[:50]})")
-                        log_error(str(e), f"install {pkg}", exc_info=e)
-            except Exception as e:
-                install_log.append(f"❌ Error reading requirements.txt: {str(e)[:100]}")
-                log_error(str(e), "requirements.txt processing", exc_info=e)
+            with open(req_file, 'r') as f:
+                packages = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            
+            for pkg in packages:
+                try:
+                    subprocess.run(
+                        [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
+                        check=True,
+                        capture_output=True,
+                        timeout=300
+                    )
+                    install_log.append(f"  ✅ {pkg}")
+                    installed.append(pkg)
+                except:
+                    install_log.append(f"  ⚠️  {pkg} (skipped)")
         
-        # Check for package.json (Node.js)
-        package_json = os.path.join(project_path, 'package.json')
-        if os.path.exists(package_json):
-            install_log.append("\n📦 PROCESSING PACKAGE.JSON")
-            try:
-                result = subprocess.run(
-                    ['npm', 'install'],
-                    cwd=project_path,
-                    capture_output=True,
-                    text=True,
-                    timeout=600
-                )
-                if result.returncode == 0:
-                    install_log.append("  ✅ NPM packages installed")
-                else:
-                    install_log.append(f"  ⚠️  NPM install warnings")
-            except FileNotFoundError:
-                install_log.append("  ⚠️  npm not found, skipping")
-            except Exception as e:
-                install_log.append(f"  ❌ NPM install failed: {str(e)[:50]}")
-                log_error(str(e), "npm install", exc_info=e)
-        
-        # Scan Python files for imports
         python_files = []
         for root, dirs, files in os.walk(project_path):
-            # Skip common directories
-            dirs[:] = [d for d in dirs if d not in ['.git', '__pycache__', 'node_modules', 'venv', '.venv']]
+            dirs[:] = [d for d in dirs if d not in ['.git', '__pycache__', 'node_modules']]
             for file in files:
                 if file.endswith('.py'):
                     python_files.append(os.path.join(root, file))
         
         if python_files:
-            install_log.append(f"\n🔍 SCANNING {len(python_files)} PYTHON FILES")
             all_imports = set()
-            
-            for py_file in python_files[:50]:  # Limit to 50 files
+            for py_file in python_files[:20]:
                 try:
                     with open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
                         code = f.read()
                         imports = extract_imports_from_code(code)
                         all_imports.update(imports)
-                except Exception as e:
-                    log_error(str(e), f"reading {py_file}", exc_info=e)
+                except:
                     continue
             
             if all_imports:
-                stdlib = {
-                    'os', 'sys', 'time', 'json', 're', 'math', 'random', 'datetime',
-                    'collections', 'itertools', 'functools', 'pathlib', 'typing',
-                    'threading', 'multiprocessing', 'subprocess', 'io', 'tempfile',
-                    'shutil', 'glob', 'argparse', 'logging', 'traceback', 'warnings',
-                    'abc', 'enum', 'dataclasses', 'contextlib', 'copy', 'pickle',
-                    'csv', 'sqlite3', 'unittest', 'asyncio', 'concurrent', 'queue'
-                }
+                stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'random', 'datetime'}
                 third_party = all_imports - stdlib
-                
-                install_log.append(f"  📊 Found {len(third_party)} third-party imports")
                 
                 for imp in third_party:
                     pkg = get_package_name(imp)
-                    
-                    # Check if already installed
                     try:
                         __import__(imp)
-                        continue
                     except ImportError:
-                        pass
-                    
-                    # Try to install
-                    try:
-                        subprocess.run(
-                            [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
-                            check=True,
-                            capture_output=True,
-                            timeout=300
-                        )
-                        install_log.append(f"  ✅ {pkg} (auto-detected)")
-                        installed.append(pkg)
-                    except subprocess.TimeoutExpired:
-                        install_log.append(f"  ⏱️  {pkg} (timeout)")
-                    except Exception as e:
-                        # Silently skip packages that fail
-                        log_error(str(e), f"auto-install {pkg}", exc_info=e)
+                        try:
+                            subprocess.run(
+                                [sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
+                                check=True,
+                                capture_output=True,
+                                timeout=300
+                            )
+                            install_log.append(f"  ✅ {pkg} (auto-detected)")
+                            installed.append(pkg)
+                        except:
+                            pass
         
         install_log.append("\n" + "=" * 60)
         install_log.append(f"📦 Total Packages Installed: {len(set(installed))}")
         install_log.append("=" * 60)
         
         return list(set(installed)), "\n".join(install_log)
-    
     except Exception as e:
-        log_error(str(e), "detect_and_install_deps", exc_info=e)
+        log_error(str(e), "detect_and_install_deps")
         return installed, "\n".join(install_log) + f"\n\n❌ Error: {str(e)}"
 
-# ==================== DEPLOYMENT FUNCTIONS (Enhanced) ====================
+# ==================== DEPLOYMENT FUNCTIONS ====================
 
-def find_free_port(start_port=5000, max_attempts=100):
-    """Find available port with better algorithm"""
+def find_free_port():
     import socket
-    
-    for port in range(start_port, start_port + max_attempts):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('', port))
-                return port
-        except OSError:
-            continue
-    
-    raise RuntimeError("No free ports available")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))
+        s.listen(1)
+        port = s.getsockname()[1]
+    return port
 
 def create_deployment(user_id, name, deploy_type, **kwargs):
-    """Create deployment with validation"""
     try:
-        # Check deployment limit
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -1463,7 +826,7 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
             count = cursor.fetchone()['count']
             
             if count >= MAX_DEPLOYMENTS_PER_USER and str(user_id) != str(OWNER_ID):
-                return None, None, f"Maximum {MAX_DEPLOYMENTS_PER_USER} active deployments allowed"
+                return None, None
         
         deploy_id = str(uuid.uuid4())[:8]
         port = find_free_port()
@@ -1487,23 +850,15 @@ def create_deployment(user_id, name, deploy_type, **kwargs):
         
         log_activity(user_id, 'DEPLOYMENT_CREATE', f"{name} ({deploy_type})")
         
-        if metrics:
-            metrics['deployments_total'].labels(type=deploy_type, status='created').inc()
-            metrics['active_deployments'].inc()
-        
-        return deploy_id, port, None
-    
+        return deploy_id, port
     except Exception as e:
-        log_error(str(e), "create_deployment", exc_info=e)
-        return None, None, str(e)
+        log_error(str(e), "create_deployment")
+        return None, None
 
 def update_deployment(deploy_id, **kwargs):
-    """Update deployment with auto-refresh"""
     try:
-        # Always update timestamp
         kwargs['updated_at'] = datetime.now().isoformat()
         
-        # Convert lists/dicts to JSON
         for key in ['dependencies', 'env_vars']:
             if key in kwargs and isinstance(kwargs[key], (list, dict)):
                 kwargs[key] = json.dumps(kwargs[key])
@@ -1514,18 +869,10 @@ def update_deployment(deploy_id, **kwargs):
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute(f'UPDATE deployments SET {set_clause} WHERE id = ?', values)
-        
-        cache.delete(f"deployment:{deploy_id}")
     except Exception as e:
-        log_error(str(e), f"update_deployment {deploy_id}", exc_info=e)
+        log_error(str(e), f"update_deployment {deploy_id}")
 
 def get_deployment(deploy_id):
-    """Get deployment data"""
-    # Check cache
-    cached = cache.get(f"deployment:{deploy_id}")
-    if cached:
-        return cached
-    
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -1534,36 +881,30 @@ def get_deployment(deploy_id):
             
             if row:
                 deploy_data = dict(row)
-                # Parse JSON fields
                 deploy_data['dependencies'] = json.loads(deploy_data['dependencies'] or '[]')
                 deploy_data['env_vars'] = json.loads(deploy_data['env_vars'] or '{}')
-                
-                cache.set(f"deployment:{deploy_id}", deploy_data, ttl=60)
                 return deploy_data
         return None
-    except Exception as e:
-        log_error(str(e), f"get_deployment {deploy_id}", exc_info=e)
+    except:
         return None
 
 def deploy_from_file(user_id, file_path, filename):
-    """Deploy from uploaded file with enhanced error handling"""
     try:
         cost = CREDIT_COSTS['file_upload']
         if not deduct_credits(user_id, cost, f"File deploy: {filename}"):
             return None, f"❌ Need {cost} credits"
         
-        deploy_id, port, error = create_deployment(user_id, filename, 'file_upload')
+        deploy_id, port = create_deployment(user_id, filename, 'file_upload')
         
         if not deploy_id:
-            add_credits(user_id, cost, "Refund - deployment creation failed")
-            return None, error or "Failed to create deployment"
+            add_credits(user_id, cost, "Refund")
+            return None, "Failed to create deployment"
         
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         os.makedirs(deploy_dir, exist_ok=True)
         
         user = get_user(user_id)
         
-        # Notify owner
         try:
             bot.send_message(
                 OWNER_ID,
@@ -1571,195 +912,95 @@ def deploy_from_file(user_id, file_path, filename):
                 f"👤 User: {user['email']}\n"
                 f"📁 File: `{filename}`\n"
                 f"🆔 Deploy ID: `{deploy_id}`\n"
-                f"🌐 Port: {port}\n"
                 f"⏰ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-        except Exception as e:
-            log_error(str(e), "deploy notification", exc_info=e)
+        except:
+            pass
         
-        # Handle ZIP files
         if filename.endswith('.zip'):
             update_deployment(deploy_id, status='extracting', logs='📦 Extracting ZIP...')
-            try:
-                with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                    zip_ref.extractall(deploy_dir)
-            except zipfile.BadZipFile:
-                update_deployment(deploy_id, status='failed', logs='❌ Invalid ZIP file')
-                add_credits(user_id, cost, "Refund - invalid ZIP")
-                return None, "❌ Invalid ZIP file"
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                zip_ref.extractall(deploy_dir)
             
-            # Find main file
             main_file = None
-            priority_files = ['main.py', 'app.py', 'bot.py', 'index.js', 'server.js', 'app.js']
-            
             for root, dirs, files in os.walk(deploy_dir):
-                for pf in priority_files:
-                    if pf in files:
-                        main_file = os.path.join(root, pf)
+                for file in files:
+                    if file in ['main.py', 'app.py', 'bot.py', 'index.js', 'server.js']:
+                        main_file = os.path.join(root, file)
                         break
                 if main_file:
                     break
             
             if not main_file:
-                update_deployment(deploy_id, status='failed', logs='❌ No entry point found')
-                add_credits(user_id, cost, "Refund - no entry point")
-                return None, "❌ No main file found (main.py, app.py, bot.py, index.js, etc.)"
+                update_deployment(deploy_id, status='failed', logs='❌ No entry point')
+                add_credits(user_id, cost, "Refund")
+                return None, "❌ No main file found"
             
             file_path = main_file
         else:
             shutil.copy(file_path, os.path.join(deploy_dir, filename))
             file_path = os.path.join(deploy_dir, filename)
         
-        # AI dependency detection
-        update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing dependencies...')
+        update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
-        update_deployment(deploy_id, dependencies=installed_deps, 
-                         logs=f"{install_log}\n\n🚀 Preparing to launch...")
+        update_deployment(deploy_id, dependencies=installed_deps)
         
-        # Prepare environment
         env = os.environ.copy()
         env['PORT'] = str(port)
-        env['DEPLOYMENT_ID'] = deploy_id
         
         deployment = get_deployment(deploy_id)
         for key, value in deployment.get('env_vars', {}).items():
             env[key] = value
         
-        # Determine command
+        update_deployment(deploy_id, status='starting', logs=f'🚀 Launching on port {port}...')
+        
         if file_path.endswith('.py'):
-            cmd = [sys.executable, '-u', file_path]
+            cmd = [sys.executable, file_path]
         elif file_path.endswith('.js'):
             cmd = ['node', file_path]
         else:
-            update_deployment(deploy_id, status='failed', logs='❌ Unsupported file type')
-            add_credits(user_id, cost, "Refund - unsupported file")
-            return None, "❌ Unsupported file type"
+            cmd = [sys.executable, file_path]
         
-        update_deployment(deploy_id, status='starting', logs=f'🚀 Launching on port {port}...')
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=os.path.dirname(file_path),
+            env=env
+        )
         
-        # Start process
-        try:
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=os.path.dirname(file_path),
-                env=env,
-                bufsize=1,
-                universal_newlines=True
-            )
-            
-            with PROCESS_LOCK:
-                active_processes[deploy_id] = {
-                    'process': process,
-                    'start_time': datetime.now(),
-                    'restarts': 0
-                }
-            
-            # Wait a moment to check if it starts successfully
-            time.sleep(2)
-            
-            if process.poll() is not None:
-                # Process died immediately
-                stdout, _ = process.communicate(timeout=1)
-                error_log = f"❌ Process failed to start\n\n{stdout}"
-                update_deployment(deploy_id, status='failed', logs=error_log, pid=None)
-                add_credits(user_id, cost, "Refund - process failed")
-                return None, "❌ Process failed to start. Check logs for details."
-            
-            update_deployment(deploy_id, status='running', pid=process.pid, 
-                            logs=f'✅ Successfully deployed!\n\nPort: {port}\nPID: {process.pid}')
-            
-            # Start log monitoring in background
-            Thread(target=monitor_process_logs, args=(deploy_id, process), daemon=True).start()
-            
-            return deploy_id, f"🎉 Deployed successfully! Running on port {port}"
+        active_processes[deploy_id] = process
+        update_deployment(deploy_id, status='running', pid=process.pid, logs=f'✅ Live on port {port}!')
         
-        except Exception as e:
-            log_error(str(e), f"start process {deploy_id}", exc_info=e)
-            update_deployment(deploy_id, status='failed', logs=f'❌ Failed to start: {str(e)}')
-            add_credits(user_id, cost, "Refund - start failed")
-            return None, f"❌ Failed to start: {str(e)}"
-    
+        return deploy_id, f"🎉 Deployed! Port {port}"
     except Exception as e:
-        log_error(str(e), "deploy_from_file", exc_info=e)
+        log_error(str(e), "deploy_from_file")
         if 'deploy_id' in locals() and deploy_id:
             update_deployment(deploy_id, status='failed', logs=str(e))
-            if 'cost' in locals():
-                add_credits(user_id, cost, "Refund - unexpected error")
+            add_credits(user_id, cost, "Refund")
         return None, str(e)
 
-def monitor_process_logs(deploy_id, process):
-    """Monitor and store process logs"""
-    try:
-        log_buffer = []
-        max_log_lines = 1000
-        
-        for line in iter(process.stdout.readline, ''):
-            if not line:
-                break
-            
-            log_buffer.append(line.rstrip())
-            
-            # Keep only last max_log_lines
-            if len(log_buffer) > max_log_lines:
-                log_buffer = log_buffer[-max_log_lines:]
-            
-            # Update logs every 10 lines
-            if len(log_buffer) % 10 == 0:
-                update_deployment(deploy_id, logs='\n'.join(log_buffer[-100:]))
-        
-        # Final update
-        if log_buffer:
-            update_deployment(deploy_id, logs='\n'.join(log_buffer[-100:]))
-        
-        # Check if process ended
-        return_code = process.wait()
-        if return_code != 0:
-            update_deployment(deploy_id, status='crashed', 
-                            logs=f"Process exited with code {return_code}\n\n" + '\n'.join(log_buffer[-100:]))
-            
-            # Auto-restart logic (optional)
-            with PROCESS_LOCK:
-                if deploy_id in active_processes:
-                    proc_data = active_processes[deploy_id]
-                    if proc_data['restarts'] < 3:
-                        logger.warning(f"Auto-restarting deployment {deploy_id}")
-                        # TODO: Implement auto-restart
-    
-    except Exception as e:
-        log_error(str(e), f"monitor_process_logs {deploy_id}", exc_info=e)
-
 def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd=''):
-    """Deploy from GitHub with enhanced validation"""
     try:
         cost = CREDIT_COSTS['github_deploy']
         if not deduct_credits(user_id, cost, f"GitHub: {repo_url}"):
             return None, f"❌ Need {cost} credits"
         
-        # Validate GitHub URL
-        if not re.match(r'https?://github\.com/[\w-]+/[\w.-]+', repo_url):
-            add_credits(user_id, cost, "Refund - invalid URL")
-            return None, "❌ Invalid GitHub URL"
-        
         repo_name = repo_url.split('/')[-1].replace('.git', '')
-        deploy_id, port, error = create_deployment(
-            user_id, repo_name, 'github',
-            repo_url=repo_url, branch=branch,
-            build_command=build_cmd, start_command=start_cmd
-        )
+        deploy_id, port = create_deployment(user_id, repo_name, 'github', 
+                                           repo_url=repo_url, branch=branch,
+                                           build_command=build_cmd, start_command=start_cmd)
         
         if not deploy_id:
-            add_credits(user_id, cost, "Refund - deployment creation failed")
-            return None, error or "Failed to create deployment"
+            add_credits(user_id, cost, "Refund")
+            return None, "Failed to create deployment"
         
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         os.makedirs(deploy_dir, exist_ok=True)
         
         user = get_user(user_id)
         
-        # Notify owner
         try:
             bot.send_message(
                 OWNER_ID,
@@ -1768,219 +1009,128 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
                 f"📦 Repo: `{repo_url}`\n"
                 f"🌿 Branch: `{branch}`\n"
                 f"🆔 Deploy ID: `{deploy_id}`\n"
-                f"🌐 Port: {port}\n"
                 f"⏰ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-        except Exception as e:
-            log_error(str(e), "github deploy notification", exc_info=e)
+        except:
+            pass
         
-        # Clone repository
-        update_deployment(deploy_id, status='cloning', logs=f'🔄 Cloning {repo_url} (branch: {branch})...')
+        update_deployment(deploy_id, status='cloning', logs=f'🔄 Cloning {repo_url}...')
         
-        try:
-            result = subprocess.run(
-                ['git', 'clone', '-b', branch, '--depth', '1', repo_url, deploy_dir],
+        result = subprocess.run(
+            ['git', 'clone', '-b', branch, '--depth', '1', repo_url, deploy_dir],
+            capture_output=True,
+            text=True,
+            timeout=600
+        )
+        
+        if result.returncode != 0:
+            update_deployment(deploy_id, status='failed', logs='❌ Clone failed')
+            add_credits(user_id, cost, "Refund")
+            return None, "❌ Clone failed"
+        
+        if build_cmd:
+            update_deployment(deploy_id, status='building', logs=f'🔨 Running: {build_cmd}')
+            build_result = subprocess.run(
+                build_cmd,
+                shell=True,
+                cwd=deploy_dir,
                 capture_output=True,
                 text=True,
                 timeout=600
             )
-            
-            if result.returncode != 0:
-                error_msg = f"❌ Git clone failed\n\n{result.stderr}"
-                update_deployment(deploy_id, status='failed', logs=error_msg)
-                add_credits(user_id, cost, "Refund - clone failed")
-                return None, "❌ Failed to clone repository. Check URL and branch."
+            if build_result.returncode != 0:
+                update_deployment(deploy_id, status='failed', logs=f'❌ Build failed')
+                add_credits(user_id, cost, "Refund")
+                return None, "❌ Build failed"
         
-        except subprocess.TimeoutExpired:
-            update_deployment(deploy_id, status='failed', logs='❌ Clone timeout (>10 minutes)')
-            add_credits(user_id, cost, "Refund - clone timeout")
-            return None, "❌ Clone took too long (timeout)"
-        
-        except FileNotFoundError:
-            update_deployment(deploy_id, status='failed', logs='❌ git not installed')
-            add_credits(user_id, cost, "Refund - git unavailable")
-            return None, "❌ Git is not available on this system"
-        
-        # Build command (if provided)
-        if build_cmd:
-            update_deployment(deploy_id, status='building', logs=f'🔨 Building: {build_cmd}')
-            try:
-                build_result = subprocess.run(
-                    build_cmd,
-                    shell=True,
-                    cwd=deploy_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=600
-                )
-                
-                if build_result.returncode != 0:
-                    error_msg = f"❌ Build failed\n\n{build_result.stderr}"
-                    update_deployment(deploy_id, status='failed', logs=error_msg)
-                    add_credits(user_id, cost, "Refund - build failed")
-                    return None, "❌ Build command failed"
-            
-            except subprocess.TimeoutExpired:
-                update_deployment(deploy_id, status='failed', logs='❌ Build timeout')
-                add_credits(user_id, cost, "Refund - build timeout")
-                return None, "❌ Build took too long"
-        
-        # AI dependency detection
-        update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing dependencies...')
+        update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
         
-        update_deployment(deploy_id, dependencies=installed_deps,
-                         logs=f"{install_log}\n\n🚀 Preparing to launch...")
+        update_deployment(deploy_id, dependencies=installed_deps)
         
-        # Determine start command
         if not start_cmd:
-            priority_files = {
-                'main.py': f'{sys.executable} -u main.py',
-                'app.py': f'{sys.executable} -u app.py',
-                'bot.py': f'{sys.executable} -u bot.py',
-                'server.py': f'{sys.executable} -u server.py',
+            main_files = {
+                'main.py': f'{sys.executable} main.py',
+                'app.py': f'{sys.executable} app.py',
+                'bot.py': f'{sys.executable} bot.py',
                 'index.js': 'node index.js',
                 'server.js': 'node server.js',
-                'app.js': 'node app.js',
             }
             
-            for file, cmd in priority_files.items():
+            for file, cmd in main_files.items():
                 if os.path.exists(os.path.join(deploy_dir, file)):
                     start_cmd = cmd
                     break
         
         if not start_cmd:
-            update_deployment(deploy_id, status='failed', 
-                            logs='❌ No start command specified and no main file found')
-            add_credits(user_id, cost, "Refund - no start command")
-            return None, "❌ Please specify a start command"
+            update_deployment(deploy_id, status='failed', logs='❌ No start command')
+            add_credits(user_id, cost, "Refund")
+            return None, "❌ No start command found"
         
-        # Prepare environment
+        update_deployment(deploy_id, status='starting', logs=f'🚀 Starting: {start_cmd}')
+        
         env = os.environ.copy()
         env['PORT'] = str(port)
-        env['DEPLOYMENT_ID'] = deploy_id
         
         deployment = get_deployment(deploy_id)
         for key, value in deployment.get('env_vars', {}).items():
             env[key] = value
         
-        update_deployment(deploy_id, status='starting', 
-                         logs=f'🚀 Starting: {start_cmd}\nPort: {port}')
+        process = subprocess.Popen(
+            start_cmd.split(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=deploy_dir,
+            env=env
+        )
         
-        # Start process
-        try:
-            process = subprocess.Popen(
-                start_cmd.split(),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=deploy_dir,
-                env=env,
-                bufsize=1,
-                universal_newlines=True
-            )
-            
-            with PROCESS_LOCK:
-                active_processes[deploy_id] = {
-                    'process': process,
-                    'start_time': datetime.now(),
-                    'restarts': 0
-                }
-            
-            # Wait to check if it starts successfully
-            time.sleep(2)
-            
-            if process.poll() is not None:
-                stdout, _ = process.communicate(timeout=1)
-                error_log = f"❌ Process failed to start\n\n{stdout}"
-                update_deployment(deploy_id, status='failed', logs=error_log, pid=None)
-                add_credits(user_id, cost, "Refund - process failed")
-                return None, "❌ Process failed to start. Check logs."
-            
-            update_deployment(deploy_id, status='running', pid=process.pid,
-                            start_command=start_cmd,
-                            logs=f'✅ Successfully deployed!\n\nPort: {port}\nPID: {process.pid}')
-            
-            # Start log monitoring
-            Thread(target=monitor_process_logs, args=(deploy_id, process), daemon=True).start()
-            
-            return deploy_id, f"🎉 Deployed successfully! Running on port {port}"
+        active_processes[deploy_id] = process
+        update_deployment(deploy_id, status='running', pid=process.pid, 
+                         logs=f'✅ Running on port {port}!', start_command=start_cmd)
         
-        except Exception as e:
-            log_error(str(e), f"start github process {deploy_id}", exc_info=e)
-            update_deployment(deploy_id, status='failed', logs=f'❌ Failed to start: {str(e)}')
-            add_credits(user_id, cost, "Refund - start failed")
-            return None, f"❌ Failed to start: {str(e)}"
-    
+        return deploy_id, f"🎉 Deployed! Port {port}"
     except Exception as e:
-        log_error(str(e), "deploy_from_github", exc_info=e)
+        log_error(str(e), "deploy_from_github")
         if 'deploy_id' in locals() and deploy_id:
             update_deployment(deploy_id, status='failed', logs=str(e))
-            if 'cost' in locals():
-                add_credits(user_id, cost, "Refund - unexpected error")
+            add_credits(user_id, cost, "Refund")
         return None, str(e)
 
 def stop_deployment(deploy_id):
-    """Stop deployment gracefully"""
     try:
-        with PROCESS_LOCK:
-            if deploy_id not in active_processes:
-                return False, "Not running"
-            
-            proc_data = active_processes[deploy_id]
-            process = proc_data['process']
-        
-        # Try graceful shutdown first
-        process.terminate()
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            # Force kill if necessary
-            process.kill()
-            process.wait(timeout=2)
-        
-        with PROCESS_LOCK:
+        if deploy_id in active_processes:
+            process = active_processes[deploy_id]
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except:
+                process.kill()
             del active_processes[deploy_id]
-        
-        update_deployment(deploy_id, status='stopped', logs='🛑 Deployment stopped', pid=None)
-        
-        if metrics:
-            metrics['active_deployments'].dec()
-        
-        return True, "Stopped successfully"
-    
+            update_deployment(deploy_id, status='stopped', logs='🛑 Stopped')
+            return True, "Stopped"
+        return False, "Not running"
     except Exception as e:
-        log_error(str(e), f"stop_deployment {deploy_id}", exc_info=e)
+        log_error(str(e), f"stop_deployment {deploy_id}")
         return False, str(e)
 
 def delete_deployment(deploy_id):
-    """Delete deployment and cleanup"""
     try:
-        # Stop if running
         stop_deployment(deploy_id)
         
-        # Delete files
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         if os.path.exists(deploy_dir):
             shutil.rmtree(deploy_dir, ignore_errors=True)
         
-        # Delete from database
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute('DELETE FROM deployments WHERE id = ?', (deploy_id,))
         
-        cache.delete(f"deployment:{deploy_id}")
-        
-        if metrics:
-            metrics['deployments_total'].labels(type='any', status='deleted').inc()
-        
         return True, "Deleted successfully"
-    
     except Exception as e:
-        log_error(str(e), f"delete_deployment {deploy_id}", exc_info=e)
+        log_error(str(e), f"delete_deployment {deploy_id}")
         return False, str(e)
 
 def create_backup(deploy_id):
-    """Create deployment backup"""
     try:
         deployment = get_deployment(deploy_id)
         if not deployment:
@@ -1994,34 +1144,27 @@ def create_backup(deploy_id):
         
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         if not os.path.exists(deploy_dir):
-            add_credits(user_id, cost, "Refund - directory not found")
+            add_credits(user_id, cost, "Refund")
             return None, "Deployment directory not found"
         
         backup_name = f"{deployment['name']}_{deploy_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
         backup_path = os.path.join(BACKUPS_DIR, backup_name)
         
-        # Create ZIP backup
         with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(deploy_dir):
-                # Skip .git directory
-                dirs[:] = [d for d in dirs if d != '.git']
-                
                 for file in files:
                     file_path = os.path.join(root, file)
                     arcname = os.path.relpath(file_path, deploy_dir)
                     zipf.write(file_path, arcname)
         
-        logger.info(f"Backup created: {backup_name}")
         return backup_path, backup_name
-    
     except Exception as e:
-        log_error(str(e), f"create_backup {deploy_id}", exc_info=e)
+        log_error(str(e), f"create_backup {deploy_id}")
         if 'user_id' in locals() and 'cost' in locals():
-            add_credits(user_id, cost, "Refund - backup failed")
+            add_credits(user_id, cost, "Refund")
         return None, str(e)
 
 def get_deployment_files(deploy_id):
-    """Get list of files in deployment"""
     try:
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         if not os.path.exists(deploy_dir):
@@ -2029,34 +1172,22 @@ def get_deployment_files(deploy_id):
         
         files = []
         for root, dirs, filenames in os.walk(deploy_dir):
-            # Skip .git
-            dirs[:] = [d for d in dirs if d != '.git']
-            
             for filename in filenames:
                 file_path = os.path.join(root, filename)
                 rel_path = os.path.relpath(file_path, deploy_dir)
-                
-                try:
-                    size = os.path.getsize(file_path)
-                    modified = datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
-                    
-                    files.append({
-                        'name': filename,
-                        'path': rel_path,
-                        'size': size,
-                        'modified': modified
-                    })
-                except:
-                    continue
+                size = os.path.getsize(file_path)
+                files.append({
+                    'name': filename,
+                    'path': rel_path,
+                    'size': size,
+                    'modified': datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
+                })
         
         return files
-    
-    except Exception as e:
-        log_error(str(e), f"get_deployment_files {deploy_id}", exc_info=e)
+    except:
         return []
 
 def get_system_metrics():
-    """Get system resource metrics"""
     try:
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
@@ -2069,49 +1200,1365 @@ def get_system_metrics():
             'memory_total': round(memory.total / (1024**3), 2),
             'disk_percent': round(disk.percent, 1),
             'disk_used': round(disk.used / (1024**3), 2),
-            'disk_total': round(disk.total / (1024**3), 2),
-            'active_processes': len(active_processes)
+            'disk_total': round(disk.total / (1024**3), 2)
         }
-    
-    except Exception as e:
-        log_error(str(e), "get_system_metrics", exc_info=e)
+    except:
         return {
             'cpu': 0, 'memory_percent': 0, 'memory_used': 0,
             'memory_total': 0, 'disk_percent': 0, 'disk_used': 0,
-            'disk_total': 0, 'active_processes': 0
+            'disk_total': 0
         }
 
+LOGIN_PAGE = """
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost - {{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        dark: '#0f172a',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full">
+        <div class="bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8">
+            <div class="text-center mb-8">
+                <img src="/logo.jpg" alt="EliteHost Logo" class="w-16 h-16 mx-auto mb-4 rounded-xl">
+                <h1 class="text-3xl font-bold text-white mb-2">EliteHost</h1>
+                <p class="text-slate-400 text-sm">{{ subtitle }}</p>
+            </div>
+            
+            {% if error %}
+            <div class="bg-red-500/10 border border-red-500/50 rounded-lg p-3 mb-4 text-red-400 text-sm">
+                <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
+            </div>
+            {% endif %}
+            
+            {% if success %}
+            <div class="bg-green-500/10 border border-green-500/50 rounded-lg p-3 mb-4 text-green-400 text-sm">
+                <i class="fas fa-check-circle mr-2"></i>{{ success }}
+            </div>
+            {% endif %}
+            
+            <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-3 mb-6 text-blue-400 text-xs">
+                <i class="fas fa-shield-alt mr-2"></i>
+                <strong>Secure Authentication:</strong> One account per device
+            </div>
+            
+            <form method="POST" action="{{ action }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">
+                        <i class="fas fa-envelope mr-2"></i>Email Address
+                    </label>
+                    <input type="email" name="email" required
+                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Password
+                    </label>
+                    <input type="password" name="password" required
+                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                </div>
+                
+                <button type="submit" 
+                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition transform hover:scale-105 active:scale-95">
+                    <i class="fas fa-{{ icon }} mr-2"></i>{{ button_text }}
+                </button>
+            </form>
+            
+            <div class="text-center mt-6 text-sm text-slate-400">
+                {{ toggle_text }} <a href="{{ toggle_link }}" class="text-blue-400 hover:text-blue-300 font-semibold">{{ toggle_action }}</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
 
-# ==================== FLASK ROUTES (Enhanced) ====================
+DASHBOARD_HTML = """
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-white" x-data="dashboardApp()">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 z-50 transform transition-transform duration-300"
+         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-8">
+                <img src="/logo.jpg" alt="Logo" class="w-10 h-10 rounded-lg">
+                <span class="text-xl font-bold">EliteHost</span>
+            </div>
+            
+            <nav class="space-y-1">
+                <button @click="sidebarOpen = false" 
+                        class="md:hidden w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 cursor-pointer transition text-slate-400 hover:text-white mb-2 group">
+                    <i class="fas fa-times w-5"></i>
+                    <span>Close Menu</span>
+                </button>
+                <div class="h-px bg-slate-800 mx-4 mb-2 md:hidden"></div>
+                
+                <a @click="currentPage = 'overview'; sidebarOpen = false" :class="currentPage === 'overview' ? 'bg-blue-600' : 'hover:bg-slate-800'"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
+                    <i class="fas fa-th-large w-5"></i>
+                    <span>Overview</span>
+                </a>
+                <a @click="currentPage = 'deployments'; sidebarOpen = false" :class="currentPage === 'deployments' ? 'bg-blue-600' : 'hover:bg-slate-800'"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
+                    <i class="fas fa-rocket w-5"></i>
+                    <span>Deployments</span>
+                </a>
+                <a @click="currentPage = 'new-deploy'; sidebarOpen = false" :class="currentPage === 'new-deploy' ? 'bg-blue-600' : 'hover:bg-slate-800'"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
+                    <i class="fas fa-plus-circle w-5"></i>
+                    <span>New Deploy</span>
+                </a>
+                <a @click="currentPage = 'buy-credits'; sidebarOpen = false" :class="currentPage === 'buy-credits' ? 'bg-blue-600' : 'hover:bg-slate-800'"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition">
+                    <i class="fas fa-gem w-5"></i>
+                    <span>Buy Credits</span>
+                </a>
+                {% if is_admin %}
+                <a href="/admin" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+                    <i class="fas fa-crown w-5 text-yellow-500"></i>
+                    <span>Admin Panel</span>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        
+        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-800">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-4 mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold">Credits</span>
+                    <i class="fas fa-gem"></i>
+                </div>
+                <div class="text-2xl font-bold" x-text="credits"></div>
+            </div>
+            <button @click="logout()" class="w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 px-4 py-2 rounded-lg transition">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
+        </div>
+    </div>
+    
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 p-4 z-40 flex items-center justify-between">
+        <button @click="sidebarOpen = !sidebarOpen" class="text-white">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+        <img src="/logo.jpg" alt="Logo" class="w-8 h-8 rounded-lg">
+        <div class="w-6"></div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="md:ml-64 min-h-screen">
+        <div class="p-4 md:p-8 mt-16 md:mt-0">
+            <!-- Overview Page -->
+            <div x-show="currentPage === 'overview'" x-transition>
+                <h1 class="text-3xl font-bold mb-8">Dashboard Overview</h1>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-rocket text-blue-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold mb-1" x-text="stats.total"></div>
+                        <div class="text-slate-400 text-sm">Total Deployments</div>
+                    </div>
+                    
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold mb-1 text-green-400" x-text="stats.running"></div>
+                        <div class="text-slate-400 text-sm">Active Now</div>
+                    </div>
+                    
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-gem text-blue-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold mb-1 text-blue-400" x-text="credits"></div>
+                        <div class="text-slate-400 text-sm">Available Credits</div>
+                    </div>
+                    
+                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-robot text-cyan-400 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold mb-1">AI</div>
+                        <div class="text-slate-400 text-sm">Auto Deploy</div>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <h2 class="text-xl font-bold mb-4">Recent Deployments</h2>
+                    <div class="space-y-3" x-show="deployments.length > 0">
+                        <template x-for="deploy in deployments.slice(0, 5)" :key="deploy.id">
+                            <div class="bg-slate-800/50 rounded-lg p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-rocket text-blue-400"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold" x-text="deploy.name"></div>
+                                        <div class="text-sm text-slate-400">
+                                            <span x-text="deploy.id"></span> • Port <span x-text="deploy.port"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                      :class="{
+                                          'bg-green-500/20 text-green-400': deploy.status === 'running',
+                                          'bg-yellow-500/20 text-yellow-400': deploy.status === 'pending',
+                                          'bg-red-500/20 text-red-400': deploy.status === 'stopped'
+                                      }"
+                                      x-text="deploy.status"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="deployments.length === 0" class="text-center py-12 text-slate-400">
+                        <i class="fas fa-inbox text-5xl mb-4 opacity-20"></i>
+                        <p>No deployments yet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Deployments Page -->
+            <div x-show="currentPage === 'deployments'" x-transition>
+                <div class="flex items-center justify-between mb-8">
+                    <h1 class="text-3xl font-bold">All Deployments</h1>
+                    <button @click="loadDeployments()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+                
+                <div class="grid gap-4">
+                    <template x-for="deploy in deployments" :key="deploy.id">
+                        <div class="bg-slate-900 rounded-xl border border-slate-800 p-6">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                                <div>
+                                    <h3 class="text-xl font-bold mb-2" x-text="deploy.name"></h3>
+                                    <div class="flex flex-wrap gap-3 text-sm text-slate-400">
+                                        <span><i class="fas fa-fingerprint mr-1"></i><span x-text="deploy.id"></span></span>
+                                        <span><i class="fas fa-network-wired mr-1"></i>Port <span x-text="deploy.port"></span></span>
+                                        <span><i class="fas fa-code-branch mr-1"></i><span x-text="deploy.type"></span></span>
+                                    </div>
+                                </div>
+                                <span class="px-4 py-2 rounded-lg text-sm font-semibold w-fit"
+                                      :class="{
+                                          'bg-green-500/20 text-green-400': deploy.status === 'running',
+                                          'bg-yellow-500/20 text-yellow-400': deploy.status === 'pending',
+                                          'bg-red-500/20 text-red-400': deploy.status === 'stopped'
+                                      }"
+                                      x-text="deploy.status.toUpperCase()"></span>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-2">
+                                <button @click="viewDeployment(deploy.id)" 
+                                    class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition">
+                                    <i class="fas fa-eye mr-2"></i>View Details
+                                </button>
+                                <button @click="viewLogs(deploy.id)" 
+                                    class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm transition">
+                                    <i class="fas fa-terminal mr-2"></i>Logs
+                                </button>
+                                <button @click="stopDeploy(deploy.id)" 
+                                    class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm transition">
+                                    <i class="fas fa-stop mr-2"></i>Stop
+                                </button>
+                                <button @click="deleteDeploy(deploy.id)" 
+                                    class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
+                                    <i class="fas fa-trash mr-2"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                <div x-show="deployments.length === 0" class="bg-slate-900 rounded-xl border border-slate-800 p-12 text-center">
+                    <i class="fas fa-rocket text-6xl text-slate-700 mb-4"></i>
+                    <h3 class="text-xl font-bold mb-2">No Deployments Yet</h3>
+                    <p class="text-slate-400 mb-4">Get started by deploying your first app</p>
+                    <button @click="currentPage = 'new-deploy'" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg transition">
+                        <i class="fas fa-plus mr-2"></i>Create Deployment
+                    </button>
+                </div>
+            </div>
+            
+            <!-- New Deploy Page -->
+            <div x-show="currentPage === 'new-deploy'" x-transition>
+                <h1 class="text-3xl font-bold mb-8">New Deployment</h1>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- File Upload -->
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-cloud-upload-alt text-blue-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold">Upload Files</h3>
+                                <p class="text-sm text-slate-400">Deploy .py, .js, or .zip files</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center mb-4 cursor-pointer hover:border-blue-500 transition"
+                             onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-file-upload text-4xl text-slate-600 mb-3"></i>
+                            <p class="text-slate-400 mb-2">Click to upload or drag and drop</p>
+                            <p class="text-xs text-slate-500">Python, JavaScript, ZIP (max 100MB)</p>
+                            <input type="file" id="fileInput" class="hidden" accept=".py,.js,.zip" @change="uploadFile($event)">
+                        </div>
+                        
+                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-400">
+                            <i class="fas fa-info-circle mr-2"></i>Cost: 0.5 credits • AI auto-installs dependencies
+                        </div>
+                    </div>
+                    
+                    <!-- GitHub Deploy -->
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fab fa-github text-cyan-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold">Deploy from GitHub</h3>
+                                <p class="text-sm text-slate-400">Import and deploy repositories</p>
+                            </div>
+                        </div>
+                        
+                        <form @submit.prevent="deployGithub()" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Repository URL</label>
+                                <input type="url" x-model="githubForm.url" required
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="https://github.com/user/repo">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Branch</label>
+                                <input type="text" x-model="githubForm.branch"
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="main">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Build Command (Optional)</label>
+                                <input type="text" x-model="githubForm.buildCmd"
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="npm install">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-2">Start Command (Optional)</label>
+                                <input type="text" x-model="githubForm.startCmd"
+                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="npm start">
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-4 py-3 rounded-lg font-semibold transition">
+                                <i class="fab fa-github mr-2"></i>Deploy from GitHub (1.0 credit)
+                            </button>
+                        </form>
+                        
+                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-400 mt-4">
+                            <i class="fas fa-robot mr-2"></i>AI auto-detects language and installs dependencies
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Buy Credits Page -->
+            <div x-show="currentPage === 'buy-credits'" x-transition>
+                <h1 class="text-3xl font-bold mb-8">Buy Credits</h1>
+                
+                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                    <!-- 10 Credits Pack -->
+                    <div class="bg-slate-900 rounded-xl border-2 border-slate-800 hover:border-blue-500 p-6 transition cursor-pointer"
+                         @click="selectPackage('10_credits')">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-gem text-blue-400 text-xl"></i>
+                            </div>
+                            <span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-semibold">Starter</span>
+                        </div>
+                        <div class="text-3xl font-bold mb-2">10 Credits</div>
+                        <div class="text-2xl text-blue-400 font-bold mb-4">₹50</div>
+                        <ul class="text-sm text-slate-400 space-y-2 mb-6">
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>20 File Deployments</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>10 GitHub Deployments</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>20 Backups</li>
+                        </ul>
+                        <button class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-shopping-cart mr-2"></i>Select Package
+                        </button>
+                    </div>
+                    
+                    <!-- 99 Credits Pack -->
+                    <div class="bg-slate-900 rounded-xl border-2 border-blue-500 p-6 relative">
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs font-bold">
+                            BEST VALUE
+                        </div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-crown text-yellow-400 text-xl"></i>
+                            </div>
+                            <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">Pro</span>
+                        </div>
+                        <div class="text-3xl font-bold mb-2">99 Credits</div>
+                        <div class="text-2xl text-blue-400 font-bold mb-1">₹399</div>
+                        <div class="text-xs text-green-400 mb-4"><del class="text-slate-500">₹495</del> Save ₹96</div>
+                        <ul class="text-sm text-slate-400 space-y-2 mb-6">
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>198 File Deployments</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>99 GitHub Deployments</li>
+                            <li><i class="fas fa-check text-green-400 mr-2"></i>198 Backups</li>
+                            <li><i class="fas fa-star text-yellow-400 mr-2"></i>Priority Support</li>
+                        </ul>
+                        <button @click="selectPackage('99_credits')" 
+                                class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-4 py-2 rounded-lg transition font-semibold">
+                            <i class="fas fa-shopping-cart mr-2"></i>Select Package
+                        </button>
+                    </div>
+                    
+                    <!-- Custom Amount -->
+                    <div class="bg-slate-900 rounded-xl border-2 border-slate-800 hover:border-blue-500 p-6 transition">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-infinity text-cyan-400 text-xl"></i>
+                            </div>
+                            <span class="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold">Custom</span>
+                        </div>
+                        <div class="text-3xl font-bold mb-2">Custom</div>
+                        <div class="text-2xl text-cyan-400 font-bold mb-4">Your Choice</div>
+                        <input type="number" x-model="customAmount" placeholder="Enter amount" min="1"
+                               class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white mb-4">
+                        <p class="text-sm text-slate-400 mb-6">
+                            <i class="fas fa-info-circle mr-2"></i>Need help? <a href="{{ telegram_link }}" target="_blank" class="text-blue-400 hover:underline">Contact {{ username }}</a>
+                        </p>
+                        <button @click="selectCustomPackage()" 
+                                class="w-full bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-comments mr-2"></i>Contact for Custom
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Modal -->
+    <div x-show="modal === 'payment'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" @click.self="modal = null">
+        <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-md w-full p-6">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold mb-2">Complete Payment</h2>
+                <p class="text-slate-400 text-sm">Scan QR code and submit proof</p>
+            </div>
+            
+            <div class="bg-slate-800/50 rounded-lg p-4 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-slate-400">Package:</span>
+                    <span class="font-semibold" x-text="paymentData.package"></span>
+                </div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-slate-400">Credits:</span>
+                    <span class="font-semibold text-blue-400" x-text="paymentData.credits"></span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Amount:</span>
+                    <span class="text-2xl font-bold text-green-400">₹<span x-text="paymentData.price"></span></span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4 mb-6 text-center">
+                <img src="/qr.jpg" alt="Payment QR Code" class="w-64 h-64 mx-auto">
+                <p class="text-slate-900 font-semibold mt-2">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-300 mb-2">Upload Screenshot</label>
+                <input type="file" accept="image/*" @change="uploadScreenshot($event)" 
+                       class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-300 mb-2">Transaction ID</label>
+                <input type="text" x-model="paymentData.transactionId" placeholder="Enter transaction/UTR ID" required
+                       class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+            
+            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm text-yellow-400 mb-6">
+                <i class="fas fa-clock mr-2"></i>
+                <span>Time remaining: </span>
+                <span class="font-bold" x-text="formatTime(timeRemaining)"></span>
+            </div>
+            
+            <div class="flex gap-3">
+                <button @click="modal = null" class="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg transition">
+                    Cancel
+                </button>
+                <button @click="submitPayment()" class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg transition font-semibold">
+                    <i class="fas fa-check mr-2"></i>Submit
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deployment Details Modal -->
+    <div x-show="modal === 'details'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" @click.self="modal = null">
+        <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-slate-900 z-10">
+                <h2 class="text-2xl font-bold">Deployment Details</h2>
+                <button @click="modal = null" class="text-slate-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6" x-show="selectedDeploy">
+                <div class="flex gap-2 mb-6 border-b border-slate-800">
+                    <button @click="detailsTab = 'info'" 
+                        :class="detailsTab === 'info' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
+                        class="px-4 py-2 border-b-2 transition">Info</button>
+                    <button @click="detailsTab = 'env'" 
+                        :class="detailsTab === 'env' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
+                        class="px-4 py-2 border-b-2 transition">Environment</button>
+                    <button @click="detailsTab = 'files'" 
+                        :class="detailsTab === 'files' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
+                        class="px-4 py-2 border-b-2 transition">Files</button>
+                    <button @click="detailsTab = 'backup'" 
+                        :class="detailsTab === 'backup' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
+                        class="px-4 py-2 border-b-2 transition">Backup</button>
+                    <button @click="detailsTab = 'console'"
+                        :class="detailsTab === 'console' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
+                        class="px-4 py-2 border-b-2 transition">Console</button>
+                </div>
+                
+                <div x-show="detailsTab === 'info'" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-800/50 rounded-lg p-4">
+                            <div class="text-sm text-slate-400 mb-1">Deployment ID</div>
+                            <div class="font-mono" x-text="selectedDeploy.id"></div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-4">
+                            <div class="text-sm text-slate-400 mb-1">Port</div>
+                            <div class="font-mono" x-text="selectedDeploy.port"></div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-4">
+                            <div class="text-sm text-slate-400 mb-1">Status</div>
+                            <div class="font-mono" x-text="selectedDeploy.status"></div>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-4">
+                            <div class="text-sm text-slate-400 mb-1">Type</div>
+                            <div class="font-mono" x-text="selectedDeploy.type"></div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="selectedDeploy.dependencies && selectedDeploy.dependencies.length > 0">
+                        <div class="text-sm font-semibold text-slate-300 mb-2">AI Installed Dependencies</div>
+                        <div class="bg-slate-800/50 rounded-lg p-4">
+                            <template x-for="dep in selectedDeploy.dependencies" :key="dep">
+                                <span class="inline-block bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs mr-2 mb-2" x-text="dep"></span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                <div x-show="detailsTab === 'env'">
+                    <div class="mb-4">
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" x-model="newEnv.key" placeholder="KEY" 
+                                class="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                            <input type="text" x-model="newEnv.value" placeholder="value" 
+                                class="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                            <button @click="addEnvVar()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <template x-for="(value, key) in selectedDeploy.env_vars" :key="key">
+                            <div class="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between">
+                                <div class="font-mono text-sm">
+                                    <span class="text-blue-400" x-text="key"></span> = <span x-text="value"></span>
+                                </div>
+                                <button @click="deleteEnvVar(key)" class="text-red-400 hover:text-red-300">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </template>
+                        <div x-show="!selectedDeploy.env_vars || Object.keys(selectedDeploy.env_vars).length === 0" 
+                            class="text-center py-8 text-slate-400">
+                            No environment variables set
+                        </div>
+                    </div>
+                </div>
+                
+                <div x-show="detailsTab === 'files'">
+                    <button @click="loadFiles()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg mb-4">
+                        <i class="fas fa-sync mr-2"></i>Refresh Files
+                    </button>
+                    
+                    <div class="space-y-2">
+                        <template x-for="file in deployFiles" :key="file.path">
+                            <div class="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-file-code text-slate-400"></i>
+                                    <div>
+                                        <div class="font-mono text-sm" x-text="file.path"></div>
+                                        <div class="text-xs text-slate-500" x-text="formatBytes(file.size)"></div>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-slate-400" x-text="formatDate(file.modified)"></div>
+                            </div>
+                        </template>
+                        <div x-show="deployFiles.length === 0" class="text-center py-8 text-slate-400">
+                            No files found
+                        </div>
+                    </div>
+                </div>
+                
+                <div x-show="detailsTab === 'backup'">
+                    <div class="text-center py-8">
+                        <i class="fas fa-archive text-6xl text-slate-700 mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">Create Backup</h3>
+                        <p class="text-slate-400 mb-6">Download a complete snapshot of this deployment</p>
+                        <button @click="createBackup()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg">
+                            <i class="fas fa-download mr-2"></i>Create & Download Backup (0.5 credits)
+                        </button>
+                    </div>
+                </div>
+                
+                <div x-show="detailsTab === 'console'">
+                    <div class="bg-slate-950 rounded-lg p-4 font-mono text-sm text-green-400 h-96 overflow-y-auto whitespace-pre-wrap" 
+                         x-ref="console" x-text="consoleLogs"></div>
+                    <button @click="refreshLogs()" class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
+                        <i class="fas fa-sync mr-2"></i>Refresh Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function dashboardApp() {
+            return {
+                sidebarOpen: false,
+                currentPage: 'overview',
+                modal: null,
+                detailsTab: 'info',
+                credits: {{ credits }},
+                deployments: [],
+                stats: {
+                    total: 0,
+                    running: 0
+                },
+                selectedDeploy: null,
+                deployFiles: [],
+                consoleLogs: '',
+                githubForm: {
+                    url: '',
+                    branch: 'main',
+                    buildCmd: '',
+                    startCmd: ''
+                },
+                newEnv: {
+                    key: '',
+                    value: ''
+                },
+                customAmount: '',
+                paymentData: {
+                    id: '',
+                    package: '',
+                    credits: 0,
+                    price: 0,
+                    screenshot: null,
+                    transactionId: ''
+                },
+                timeRemaining: 300,
+                timerInterval: null,
+                
+                init() {
+                    this.loadDeployments();
+                    setInterval(() => this.loadDeployments(), 10000);
+                    setInterval(() => this.updateCredits(), 15000);
+                },
+                
+                async loadDeployments() {
+                    const res = await fetch('/api/deployments');
+                    const data = await res.json();
+                    if (data.success) {
+                        this.deployments = data.deployments;
+                        this.stats.total = data.deployments.length;
+                        this.stats.running = data.deployments.filter(d => d.status === 'running').length;
+                    }
+                },
+                
+                async updateCredits() {
+                    const res = await fetch('/api/credits');
+                    const data = await res.json();
+                    if (data.success) {
+                        this.credits = data.credits === Infinity ? '∞' : data.credits.toFixed(1);
+                    }
+                },
+                
+                async uploadFile(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    this.showNotification('🤖 Uploading and deploying...', 'info');
+                    
+                    const res = await fetch('/api/deploy/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        this.showNotification('✅ Deployment successful!', 'success');
+                        this.loadDeployments();
+                        this.updateCredits();
+                        this.currentPage = 'deployments';
+                    } else {
+                        this.showNotification('❌ ' + data.error, 'error');
+                    }
+                },
+                
+                async deployGithub() {
+                    if (!this.githubForm.url) return;
+                    
+                    this.showNotification('🤖 Cloning and deploying...', 'info');
+                    
+                    const res = await fetch('/api/deploy/github', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            url: this.githubForm.url,
+                            branch: this.githubForm.branch || 'main',
+                            build_command: this.githubForm.buildCmd,
+                            start_command: this.githubForm.startCmd
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        this.showNotification('✅ GitHub deployment successful!', 'success');
+                        this.loadDeployments();
+                        this.updateCredits();
+                        this.currentPage = 'deployments';
+                        this.githubForm = { url: '', branch: 'main', buildCmd: '', startCmd: '' };
+                    } else {
+                        this.showNotification('❌ ' + data.error, 'error');
+                    }
+                },
+                
+                async selectPackage(packageType) {
+                    const res = await fetch('/api/payment/create', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ package_type: packageType })
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        this.paymentData = data.payment;
+                        this.paymentData.package = packageType.replace('_', ' ').toUpperCase();
+                        this.modal = 'payment';
+                        this.startTimer();
+                    } else {
+                        this.showNotification('❌ ' + data.error, 'error');
+                    }
+                },
+                
+                async selectCustomPackage() {
+                    if (!this.customAmount || this.customAmount <= 0) {
+                        this.showNotification('❌ Enter valid amount', 'error');
+                        return;
+                    }
+                    
+                    const res = await fetch('/api/payment/create', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ 
+                            package_type: 'custom',
+                            custom_amount: parseInt(this.customAmount)
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        this.paymentData = data.payment;
+                        this.paymentData.package = 'CUSTOM';
+                        this.modal = 'payment';
+                        this.startTimer();
+                    } else {
+                        this.showNotification('❌ ' + data.error, 'error');
+                    }
+                },
+                
+                uploadScreenshot(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.paymentData.screenshot = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+                
+                async submitPayment() {
+                    if (!this.paymentData.screenshot) {
+                        this.showNotification('❌ Upload screenshot', 'error');
+                        return;
+                    }
+                    
+                    if (!this.paymentData.transactionId) {
+                        this.showNotification('❌ Enter transaction ID', 'error');
+                        return;
+                    }
+                    
+                    const res = await fetch('/api/payment/submit', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            payment_id: this.paymentData.id,
+                            screenshot: this.paymentData.screenshot,
+                            transaction_id: this.paymentData.transactionId
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        this.stopTimer();
+                        this.modal = null;
+                        this.showNotification('✅ Payment submitted! Waiting for approval...', 'success');
+                    } else {
+                        this.showNotification('❌ ' + data.error, 'error');
+                    }
+                },
+                
+                startTimer() {
+                    this.timeRemaining = 300;
+                    this.timerInterval = setInterval(() => {
+                        this.timeRemaining--;
+                        if (this.timeRemaining <= 0) {
+                            this.stopTimer();
+                            this.modal = null;
+                            this.showNotification('❌ Payment expired', 'error');
+                        }
+                    }, 1000);
+                },
+                
+                stopTimer() {
+                    if (this.timerInterval) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
+                    }
+                },
+                
+                formatTime(seconds) {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                },
+                
+                async viewDeployment(id) {
+                    this.selectedDeploy = this.deployments.find(d => d.id === id);
+                    this.modal = 'details';
+                    this.detailsTab = 'info';
+                },
+                
+                async viewLogs(id) {
+                    this.selectedDeploy = this.deployments.find(d => d.id === id);
+                    this.modal = 'details';
+                    this.detailsTab = 'console';
+                    this.refreshLogs();
+                },
+                
+                async refreshLogs() {
+                    if (!this.selectedDeploy) return;
+                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/logs`);
+                    const data = await res.json();
+                    this.consoleLogs = data.logs || 'No logs available';
+                    this.$nextTick(() => {
+                        if (this.$refs.console) {
+                            this.$refs.console.scrollTop = this.$refs.console.scrollHeight;
+                        }
+                    });
+                },
+                
+                async loadFiles() {
+                    if (!this.selectedDeploy) return;
+                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/files`);
+                    const data = await res.json();
+                    this.deployFiles = data.files || [];
+                },
+                
+                async addEnvVar() {
+                    if (!this.newEnv.key || !this.newEnv.value) return;
+                    
+                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            key: this.newEnv.key,
+                            value: this.newEnv.value
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        this.selectedDeploy.env_vars = data.env_vars;
+                        this.newEnv = { key: '', value: '' };
+                        this.showNotification('✅ Environment variable added', 'success');
+                    }
+                },
+                
+                async deleteEnvVar(key) {
+                    if (!confirm(`Delete ${key}?`)) return;
+                    
+                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env/${key}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        this.selectedDeploy.env_vars = data.env_vars;
+                        this.showNotification('✅ Environment variable deleted', 'success');
+                    }
+                },
+                
+                async createBackup() {
+                    if (!confirm('Create backup for 0.5 credits?')) return;
+                    
+                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/backup`, {
+                        method: 'POST'
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        window.location.href = `/api/deployment/${this.selectedDeploy.id}/backup/download`;
+                        this.showNotification('✅ Backup created!', 'success');
+                        this.updateCredits();
+                    } else {
+                        this.showNotification('❌ ' + data.error, 'error');
+                    }
+                },
+                
+                async stopDeploy(id) {
+                    if (!confirm('Stop this deployment?')) return;
+                    
+                    const res = await fetch(`/api/deployment/${id}/stop`, { method: 'POST' });
+                    const data = await res.json();
+                    
+                    this.showNotification(data.success ? '✅ Stopped' : '❌ Failed', data.success ? 'success' : 'error');
+                    this.loadDeployments();
+                },
+                
+                async deleteDeploy(id) {
+                    if (!confirm('Delete this deployment permanently?')) return;
+                    
+                    const res = await fetch(`/api/deployment/${id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    
+                    this.showNotification(data.success ? '✅ Deleted' : '❌ Failed', data.success ? 'success' : 'error');
+                    this.loadDeployments();
+                    this.modal = null;
+                },
+                
+                logout() {
+                    if (confirm('Logout from EliteHost?')) {
+                        window.location.href = '/logout';
+                    }
+                },
+                
+                showNotification(message, type) {
+                    alert(message);
+                },
+                
+                formatBytes(bytes) {
+                    if (bytes === 0) return '0 B';
+                    const k = 1024;
+                    const sizes = ['B', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+                },
+                
+                formatDate(date) {
+                    return new Date(date).toLocaleString();
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</body>
+</html>
+"""
 
-# Request timing middleware
+ADMIN_PANEL_HTML = """
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-white" x-data="adminApp()">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 shadow-2xl">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <img src="/logo.jpg" alt="Logo" class="w-12 h-12 rounded-xl">
+                        <div>
+                            <h1 class="text-3xl font-bold mb-1">
+                                <i class="fas fa-crown mr-2"></i>Admin Control Panel
+                            </h1>
+                            <p class="text-blue-100">System Management & Monitoring</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="/dashboard" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-arrow-left mr-2"></i>Dashboard
+                        </a>
+                        <button @click="location.reload()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-sync mr-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-blue-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1">{{ stats.total_users }}</div>
+                    <div class="text-slate-400 text-sm">Total Users</div>
+                </div>
+                
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-rocket text-green-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1">{{ stats.total_deployments }}</div>
+                    <div class="text-slate-400 text-sm">Deployments</div>
+                </div>
+                
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-server text-cyan-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1">{{ stats.active_processes }}</div>
+                    <div class="text-slate-400 text-sm">Active Now</div>
+                </div>
+                
+                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-dollar-sign text-yellow-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold mb-1">{{ stats.pending_payments }}</div>
+                    <div class="text-slate-400 text-sm">Pending Payments</div>
+                </div>
+            </div>
+            
+            <!-- System Metrics -->
+            <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-8">
+                <h2 class="text-xl font-bold mb-4">System Resources</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-400">CPU Usage</span>
+                            <span class="text-sm font-semibold" x-text="metrics.cpu + '%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full transition-all" :style="`width: ${metrics.cpu}%`"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-400">Memory</span>
+                            <span class="text-sm font-semibold" x-text="metrics.memory_percent + '%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full transition-all" :style="`width: ${metrics.memory_percent}%`"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-400">Disk</span>
+                            <span class="text-sm font-semibold" x-text="metrics.disk_percent + '%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div class="bg-cyan-500 h-2 rounded-full transition-all" :style="`width: ${metrics.disk_percent}%`"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Table -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800 mb-8">
+                <div class="p-6 border-b border-slate-800">
+                    <h2 class="text-xl font-bold">All Users</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-800/50">
+                            <tr>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Email</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Credits</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Deployments</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Joined</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Status</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr class="border-b border-slate-800 hover:bg-slate-800/30">
+                                <td class="p-4 text-sm">{{ user.email }}</td>
+                                <td class="p-4 text-sm font-mono">{{ user.credits }}</td>
+                                <td class="p-4 text-sm">{{ user.deployments|length }}</td>
+                                <td class="p-4 text-sm text-slate-400">{{ user.created_at[:10] }}</td>
+                                <td class="p-4">
+                                    {% if user.is_banned %}
+                                    <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-semibold">Banned</span>
+                                    {% else %}
+                                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="p-4">
+                                    <div class="flex gap-2">
+                                        <button onclick="addCreditsPrompt('{{ user.id }}')" 
+                                            class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs transition">
+                                            <i class="fas fa-plus mr-1"></i>Credits
+                                        </button>
+                                        {% if not user.is_banned %}
+                                        <button onclick="banUser('{{ user.id }}')" 
+                                            class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs transition">
+                                            <i class="fas fa-ban mr-1"></i>Ban
+                                        </button>
+                                        {% else %}
+                                        <button onclick="unbanUser('{{ user.id }}')" 
+                                            class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs transition">
+                                            <i class="fas fa-check mr-1"></i>Unban
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Payments Table -->
+            <div class="bg-slate-900 rounded-xl border border-slate-800">
+                <div class="p-6 border-b border-slate-800">
+                    <h2 class="text-xl font-bold">Payment Requests</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-slate-800/50">
+                            <tr>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">User</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Amount</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Transaction ID</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Date</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Status</th>
+                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr class="border-b border-slate-800 hover:bg-slate-800/30">
+                                <td class="p-4 text-sm">{{ payment.user_email }}</td>
+                                <td class="p-4 text-sm font-mono">{{ payment.credits }} credits (₹{{ payment.price }})</td>
+                                <td class="p-4 text-sm font-mono text-blue-400">{{ payment.transaction_id or 'N/A' }}</td>
+                                <td class="p-4 text-sm text-slate-400">{{ payment.created_at[:16] }}</td>
+                                <td class="p-4">
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                        {% if payment.status == 'approved' %}bg-green-500/20 text-green-400
+                                        {% elif payment.status == 'submitted' %}bg-blue-500/20 text-blue-400
+                                        {% elif payment.status == 'pending' %}bg-yellow-500/20 text-yellow-400
+                                        {% elif payment.status == 'expired' %}bg-gray-500/20 text-gray-400
+                                        {% else %}bg-red-500/20 text-red-400{% endif %}">
+                                        {{ payment.status }}
+                                    </span>
+                                </td>
+                                <td class="p-4">
+                                    {% if payment.status == 'submitted' %}
+                                    <div class="flex gap-2">
+                                        <button onclick="viewScreenshot('{{ payment.id }}')" 
+                                            class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs transition">
+                                            <i class="fas fa-image mr-1"></i>View
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function adminApp() {
+            return {
+                metrics: {
+                    cpu: 0,
+                    memory_percent: 0,
+                    disk_percent: 0
+                },
+                
+                init() {
+                    this.loadMetrics();
+                    setInterval(() => this.loadMetrics(), 5000);
+                },
+                
+                async loadMetrics() {
+                    const res = await fetch('/api/admin/metrics');
+                    const data = await res.json();
+                    if (data.success) {
+                        this.metrics = data.metrics;
+                    }
+                }
+            }
+        }
+        
+        async function addCreditsPrompt(userId) {
+            const amount = prompt('Enter amount of credits to add:');
+            if (!amount || isNaN(amount)) return;
+            
+            const res = await fetch('/api/admin/add-credits', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, amount: parseFloat(amount)})
+            });
+            
+            const data = await res.json();
+            alert(data.success ? '✅ Credits added!' : '❌ ' + data.error);
+            location.reload();
+        }
+        
+        async function banUser(userId) {
+            if (!confirm('Ban this user?')) return;
+            
+            const res = await fetch('/api/admin/ban-user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, ban: true})
+            });
+            
+            const data = await res.json();
+            alert(data.success ? '✅ User banned' : '❌ ' + data.error);
+            location.reload();
+        }
+        
+        async function unbanUser(userId) {
+            if (!confirm('Unban this user?')) return;
+            
+            const res = await fetch('/api/admin/ban-user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, ban: false})
+            });
+            
+            const data = await res.json();
+            alert(data.success ? '✅ User unbanned' : '❌ ' + data.error);
+            location.reload();
+        }
+        
+        function viewScreenshot(paymentId) {
+            window.open(`/api/payment/${paymentId}/screenshot`, '_blank');
+        }
+    </script>
+</body>
+</html>
+
+
+# ==================== FLASK ROUTES (COMPLETE) ====================
+
 @app.before_request
 def before_request():
-    request.start_time = time.time()
-    
-    # Check if device is banned
+    """Check if device is banned before processing request"""
     fingerprint = get_device_fingerprint(request)
     if is_device_banned(fingerprint):
         return jsonify({'error': 'Access denied'}), 403
 
 @app.after_request
 def after_request(response):
-    # Record metrics
-    if metrics and hasattr(request, 'start_time'):
-        duration = time.time() - request.start_time
-        metrics['request_duration'].observe(duration)
-        metrics['requests_total'].labels(
-            method=request.method,
-            endpoint=request.endpoint or 'unknown',
-            status=response.status_code
-        ).inc()
-    
-    # Security headers
+    """Add security headers"""
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    
     return response
 
 # ==================== AUTH ROUTES ====================
@@ -2194,7 +2641,7 @@ def register():
         return response
     
     except Exception as e:
-        log_error(str(e), "register", exc_info=e)
+        log_error(str(e), "register")
         return redirect('/register?error=An error occurred')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -2243,9 +2690,7 @@ def login():
         
         # Check device fingerprint
         if user['device_fingerprint'] != fingerprint:
-            # Device changed - potential security issue
-            ban_device(fingerprint, "Device mismatch on login")
-            return redirect('/login?error=Security error. Contact support')
+            return redirect('/login?error=Security error. Please use your original device')
         
         # Update last login
         update_user(user_id, last_login=datetime.now().isoformat())
@@ -2262,7 +2707,7 @@ def login():
         return response
     
     except Exception as e:
-        log_error(str(e), "login", exc_info=e)
+        log_error(str(e), "login")
         return redirect('/login?error=An error occurred')
 
 @app.route('/logout')
@@ -2275,9 +2720,8 @@ def logout():
             with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM sessions WHERE token = ?', (session_token,))
-            cache.delete(f"session:{session_token}")
         except Exception as e:
-            log_error(str(e), "logout", exc_info=e)
+            log_error(str(e), "logout")
     
     response = make_response(redirect('/login?success=Logged out successfully'))
     response.set_cookie('session_token', '', expires=0)
@@ -2402,7 +2846,7 @@ def admin_panel():
         )
     
     except Exception as e:
-        log_error(str(e), "admin_panel", exc_info=e)
+        log_error(str(e), "admin_panel")
         return redirect('/dashboard?error=Error loading admin panel')
 
 # ==================== STATIC FILES ====================
@@ -2413,50 +2857,14 @@ def serve_logo():
     logo_path = os.path.join(STATIC_DIR, 'logo.jpg')
     if os.path.exists(logo_path):
         return send_file(logo_path, mimetype='image/jpeg')
-    
-    # Generate placeholder if not exists
-    if QRCODE_AVAILABLE:
-        try:
-            from PIL import Image, ImageDraw, ImageFont
-            
-            img = Image.new('RGB', (200, 200), color='#3b82f6')
-            draw = ImageDraw.Draw(img)
-            
-            # Draw "EH" text
-            try:
-                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)
-            except:
-                font = ImageFont.load_default()
-            
-            draw.text((50, 60), "EH", fill='white', font=font)
-            
-            img.save(logo_path, 'JPEG')
-            return send_file(logo_path, mimetype='image/jpeg')
-        except:
-            pass
-    
     return '', 404
 
 @app.route('/qr.jpg')
 def serve_qr():
     """Serve payment QR code"""
     qr_path = os.path.join(STATIC_DIR, 'qr.jpg')
-    
-    # Try to serve existing QR
     if os.path.exists(qr_path):
         return send_file(qr_path, mimetype='image/jpeg')
-    
-    # Generate QR code
-    if QRCODE_AVAILABLE:
-        try:
-            qr_buffer = generate_payment_qr(UPI_ID, 0, "EliteHost")
-            if qr_buffer:
-                with open(qr_path, 'wb') as f:
-                    f.write(qr_buffer.getvalue())
-                return send_file(qr_path, mimetype='image/jpeg')
-        except Exception as e:
-            log_error(str(e), "serve_qr", exc_info=e)
-    
     return '', 404
 
 # ==================== API ROUTES ====================
@@ -2481,7 +2889,7 @@ def api_credits():
         })
     
     except Exception as e:
-        log_error(str(e), "api_credits", exc_info=e)
+        log_error(str(e), "api_credits")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployments')
@@ -2517,7 +2925,7 @@ def api_deployments():
         })
     
     except Exception as e:
-        log_error(str(e), "api_deployments", exc_info=e)
+        log_error(str(e), "api_deployments")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deploy/upload', methods=['POST'])
@@ -2579,7 +2987,7 @@ def api_deploy_upload():
             })
     
     except Exception as e:
-        log_error(str(e), "api_deploy_upload", exc_info=e)
+        log_error(str(e), "api_deploy_upload")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deploy/github', methods=['POST'])
@@ -2619,7 +3027,7 @@ def api_deploy_github():
             })
     
     except Exception as e:
-        log_error(str(e), "api_deploy_github", exc_info=e)
+        log_error(str(e), "api_deploy_github")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>/stop', methods=['POST'])
@@ -2650,7 +3058,7 @@ def api_stop_deployment(deploy_id):
         })
     
     except Exception as e:
-        log_error(str(e), f"api_stop_deployment {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_stop_deployment {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>', methods=['DELETE'])
@@ -2681,7 +3089,7 @@ def api_delete_deployment(deploy_id):
         })
     
     except Exception as e:
-        log_error(str(e), f"api_delete_deployment {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_delete_deployment {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>/logs')
@@ -2709,7 +3117,7 @@ def api_deployment_logs(deploy_id):
         })
     
     except Exception as e:
-        log_error(str(e), f"api_deployment_logs {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_deployment_logs {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>/files')
@@ -2739,7 +3147,7 @@ def api_deployment_files(deploy_id):
         })
     
     except Exception as e:
-        log_error(str(e), f"api_deployment_files {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_deployment_files {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>/env', methods=['POST'])
@@ -2779,7 +3187,7 @@ def api_add_env_var(deploy_id):
         })
     
     except Exception as e:
-        log_error(str(e), f"api_add_env_var {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_add_env_var {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>/env/<key>', methods=['DELETE'])
@@ -2812,7 +3220,7 @@ def api_delete_env_var(deploy_id, key):
         })
     
     except Exception as e:
-        log_error(str(e), f"api_delete_env_var {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_delete_env_var {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>/backup', methods=['POST'])
@@ -2848,7 +3256,7 @@ def api_create_backup(deploy_id):
             })
     
     except Exception as e:
-        log_error(str(e), f"api_create_backup {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_create_backup {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/deployment/<deploy_id>/backup/download')
@@ -2882,7 +3290,7 @@ def api_download_backup(deploy_id):
         return send_file(backup_path, as_attachment=True, download_name=backup_files[0])
     
     except Exception as e:
-        log_error(str(e), f"api_download_backup {deploy_id}", exc_info=e)
+        log_error(str(e), f"api_download_backup {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
 
 # ==================== PAYMENT API ROUTES ====================
@@ -2911,7 +3319,7 @@ def api_create_payment():
             return jsonify({'success': False, 'error': payment_data})
     
     except Exception as e:
-        log_error(str(e), "api_create_payment", exc_info=e)
+        log_error(str(e), "api_create_payment")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/payment/submit', methods=['POST'])
@@ -2936,7 +3344,7 @@ def api_submit_payment():
         return jsonify({'success': success, 'message': message})
     
     except Exception as e:
-        log_error(str(e), "api_submit_payment", exc_info=e)
+        log_error(str(e), "api_submit_payment")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/payment/<payment_id>/screenshot')
@@ -2977,7 +3385,7 @@ def api_payment_screenshot(payment_id):
         return 'Screenshot not found', 404
     
     except Exception as e:
-        log_error(str(e), f"api_payment_screenshot {payment_id}", exc_info=e)
+        log_error(str(e), f"api_payment_screenshot {payment_id}")
         return str(e), 500
 
 # ==================== ADMIN API ROUTES ====================
@@ -3010,7 +3418,7 @@ def api_admin_metrics():
         })
     
     except Exception as e:
-        log_error(str(e), "api_admin_metrics", exc_info=e)
+        log_error(str(e), "api_admin_metrics")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/admin/add-credits', methods=['POST'])
@@ -3048,7 +3456,7 @@ def api_admin_add_credits():
             return jsonify({'success': False, 'error': 'Failed to add credits'})
     
     except Exception as e:
-        log_error(str(e), "api_admin_add_credits", exc_info=e)
+        log_error(str(e), "api_admin_add_credits")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/admin/ban-user', methods=['POST'])
@@ -3077,25 +3485,11 @@ def api_admin_ban_user():
         
         update_user(target_user_id, is_banned=1 if ban else 0)
         
-        # Also ban device if banning user
-        if ban:
-            target_user = get_user(target_user_id)
-            if target_user:
-                ban_device(target_user['device_fingerprint'], f"User banned by admin")
-        
         return jsonify({'success': True})
     
     except Exception as e:
-        log_error(str(e), "api_admin_ban_user", exc_info=e)
+        log_error(str(e), "api_admin_ban_user")
         return jsonify({'success': False, 'error': str(e)})
-
-# ==================== PROMETHEUS METRICS ENDPOINT ====================
-
-if ENABLE_METRICS:
-    @app.route('/metrics')
-    def prometheus_metrics():
-        """Prometheus metrics endpoint"""
-        return generate_latest(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 # ==================== ERROR HANDLERS ====================
 
@@ -3105,7 +3499,7 @@ def not_found(e):
 
 @app.errorhandler(500)
 def internal_error(e):
-    log_error(str(e), "internal_error", exc_info=e)
+    log_error(str(e), "internal_error")
     return jsonify({'error': 'Internal server error'}), 500
 
 @app.errorhandler(429)
@@ -3132,7 +3526,7 @@ def cleanup_expired_sessions():
                     logger.info(f"Cleaned up {deleted} expired sessions")
         
         except Exception as e:
-            log_error(str(e), "cleanup_expired_sessions", exc_info=e)
+            log_error(str(e), "cleanup_expired_sessions")
 
 def monitor_deployments():
     """Monitor deployment health"""
@@ -3141,9 +3535,7 @@ def monitor_deployments():
             time.sleep(30)  # Every 30 seconds
             
             with PROCESS_LOCK:
-                for deploy_id, proc_data in list(active_processes.items()):
-                    process = proc_data['process']
-                    
+                for deploy_id, process in list(active_processes.items()):
                     # Check if process is still running
                     if process.poll() is not None:
                         # Process died
@@ -3161,37 +3553,9 @@ def monitor_deployments():
                             
                             # Remove from active processes
                             del active_processes[deploy_id]
-                            
-                            if metrics:
-                                metrics['active_deployments'].dec()
         
         except Exception as e:
-            log_error(str(e), "monitor_deployments", exc_info=e)
-
-def cleanup_old_backups():
-    """Cleanup old backup files"""
-    while True:
-        try:
-            time.sleep(86400)  # Every 24 hours
-            
-            cutoff_date = datetime.now() - timedelta(days=30)
-            deleted_count = 0
-            
-            for filename in os.listdir(BACKUPS_DIR):
-                filepath = os.path.join(BACKUPS_DIR, filename)
-                
-                if os.path.isfile(filepath):
-                    mtime = datetime.fromtimestamp(os.path.getmtime(filepath))
-                    
-                    if mtime < cutoff_date:
-                        os.remove(filepath)
-                        deleted_count += 1
-            
-            if deleted_count > 0:
-                logger.info(f"Cleaned up {deleted_count} old backups")
-        
-        except Exception as e:
-            log_error(str(e), "cleanup_old_backups", exc_info=e)
+            log_error(str(e), "monitor_deployments")
 
 # ==================== STARTUP & SHUTDOWN ====================
 
@@ -3214,7 +3578,7 @@ def run_bot():
         logger.info(f"{Fore.GREEN}🤖 Starting Telegram Bot...")
         bot.infinity_polling(timeout=10, long_polling_timeout=5)
     except Exception as e:
-        log_error(str(e), "Telegram bot", exc_info=e)
+        log_error(str(e), "Telegram bot")
 
 def cleanup_on_exit():
     """Cleanup on shutdown"""
@@ -3222,9 +3586,8 @@ def cleanup_on_exit():
     
     # Stop all deployments
     with PROCESS_LOCK:
-        for deploy_id, proc_data in list(active_processes.items()):
+        for deploy_id, process in list(active_processes.items()):
             try:
-                process = proc_data['process']
                 process.terminate()
                 try:
                     process.wait(timeout=3)
@@ -3232,7 +3595,7 @@ def cleanup_on_exit():
                     process.kill()
                     process.wait(timeout=2)
             except Exception as e:
-                log_error(str(e), f"cleanup deployment {deploy_id}", exc_info=e)
+                log_error(str(e), f"cleanup deployment {deploy_id}")
     
     # Cancel payment timers
     for payment_id, timer in list(payment_timers.items()):
@@ -3257,22 +3620,20 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'🚀 ELITEHOST v13.0 - PROFESSIONAL EDITION':^90}")
+    print(f"{Fore.CYAN}{'🚀 ELITEHOST v13.0 - COMPLETE PROFESSIONAL EDITION':^90}")
     print("=" * 90)
-    print(f"{Fore.GREEN}✨ ENTERPRISE FEATURES:")
-    print(f"{Fore.CYAN}   🗄️  SQLite Database (Scalable)")
-    print(f"{Fore.CYAN}   🔒 Advanced Security (Rate Limiting, CSRF Protection)")
-    print(f"{Fore.CYAN}   💳 Complete Payment Gateway")
-    print(f"{Fore.CYAN}   📊 Prometheus Metrics" + (" (Enabled)" if ENABLE_METRICS else " (Disabled)"))
-    print(f"{Fore.CYAN}   🚦 Redis Caching" + (" (Enabled)" if ENABLE_REDIS_CACHE else " (Disabled)"))
-    print(f"{Fore.CYAN}   🐛 Sentry Error Tracking" + (" (Enabled)" if ENABLE_SENTRY else " (Disabled)"))
+    print(f"{Fore.GREEN}✨ FEATURES:")
+    print(f"{Fore.CYAN}   🗄️  SQLite Database (Production Ready)")
+    print(f"{Fore.CYAN}   🔒 Advanced Security (Rate Limiting, Device Fingerprinting)")
+    print(f"{Fore.CYAN}   💳 Complete Payment System with QR Codes")
     print(f"{Fore.CYAN}   🤖 AI Auto-Deploy & Dependency Detection")
-    print(f"{Fore.CYAN}   📈 Auto-Scaling & Health Monitoring")
-    print(f"{Fore.CYAN}   💾 Automated Backups")
-    print(f"{Fore.CYAN}   🔄 Auto-Recovery (Process Monitoring)")
+    print(f"{Fore.CYAN}   📊 Real-time Monitoring & Health Checks")
+    print(f"{Fore.CYAN}   💾 Automated Backups & Recovery")
     print(f"{Fore.CYAN}   📱 Telegram Bot Integration")
-    print(f"{Fore.CYAN}   🎨 Modern Blue UI Design")
+    print(f"{Fore.CYAN}   🎨 Modern Blue UI Design (Complete)")
     print(f"{Fore.CYAN}   📝 Enhanced Logging & Error Tracking")
+    print(f"{Fore.CYAN}   🚀 File & GitHub Deployments")
+    print(f"{Fore.CYAN}   👑 Admin Panel with Full Control")
     print("=" * 90)
     
     # Create placeholder images if needed
@@ -3284,7 +3645,6 @@ if __name__ == '__main__':
     # Start background tasks
     Thread(target=cleanup_expired_sessions, daemon=True).start()
     Thread(target=monitor_deployments, daemon=True).start()
-    Thread(target=cleanup_old_backups, daemon=True).start()
     
     # Start Flask
     keep_alive()
@@ -3299,9 +3659,8 @@ if __name__ == '__main__':
     print(f"{Fore.YELLOW}🔑 Login: http://localhost:{port}/login")
     print(f"{Fore.MAGENTA}👑 Admin: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
     print(f"{Fore.CYAN}💳 Payment System: Active")
-    print(f"{Fore.CYAN}📊 Metrics: http://localhost:{port}/metrics" if ENABLE_METRICS else "")
     print(f"{Fore.CYAN}📞 Support: {TELEGRAM_LINK}")
-    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v13.0 READY':^90}")
+    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v13.0 READY - COMPLETE SYSTEM':^90}")
     print("=" * 90 + "\n")
     
     # Keep main thread alive
