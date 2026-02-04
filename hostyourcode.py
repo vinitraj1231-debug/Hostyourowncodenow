@@ -1,7 +1,7 @@
 """
-🚀 ELITEHOST v13.0 - COMPLETE PROFESSIONAL EDITION
+🚀 ELITEHOST v14.0 - ULTRA PROFESSIONAL EDITION
 Enterprise-Grade Cloud Deployment Platform
-Full Website Design + Backend + Payment System
+Full Website Design + Backend + Payment System + Mobile Optimized
 """
 
 import sys
@@ -10,7 +10,7 @@ import os
 
 # ==================== DEPENDENCY INSTALLER ====================
 print("=" * 90)
-print("🔧 ELITEHOST v13.0 - DEPENDENCY INSTALLER")
+print("🔧 ELITEHOST v14.0 - DEPENDENCY INSTALLER")
 print("=" * 90)
 
 REQUIRED_PACKAGES = {
@@ -734,7 +734,7 @@ def detect_and_install_deps(project_path):
     installed = []
     install_log = []
     
-    install_log.append("🤖 AI DEPENDENCY ANALYZER v13.0")
+    install_log.append("🤖 AI DEPENDENCY ANALYZER v14.0")
     install_log.append("=" * 60)
     
     try:
@@ -1209,12 +1209,14 @@ def get_system_metrics():
             'disk_total': 0
         }
 
+# ==================== HTML TEMPLATES ====================
+
 LOGIN_PAGE = """
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EliteHost - {{ title }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -1231,59 +1233,123 @@ LOGIN_PAGE = """
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            animation: gradientShift 10s ease infinite;
+            background-size: 200% 200%;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        input:focus {
+            transform: scale(1.02);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 10px 30px -10px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.95);
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-md w-full">
-        <div class="bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8">
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 overflow-hidden">
+    <!-- Animated Background -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute w-96 h-96 bg-purple-500 rounded-full opacity-20 blur-3xl -top-48 -left-48 animate-pulse"></div>
+        <div class="absolute w-96 h-96 bg-blue-500 rounded-full opacity-20 blur-3xl -bottom-48 -right-48 animate-pulse" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <div class="max-w-md w-full relative z-10">
+        <div class="glass-card rounded-3xl shadow-2xl p-8">
+            <!-- Logo & Title -->
             <div class="text-center mb-8">
-                <img src="/logo.jpg" alt="EliteHost Logo" class="w-16 h-16 mx-auto mb-4 rounded-xl">
-                <h1 class="text-3xl font-bold text-white mb-2">EliteHost</h1>
-                <p class="text-slate-400 text-sm">{{ subtitle }}</p>
+                <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-rocket text-3xl text-white"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-white mb-2 tracking-tight">EliteHost</h1>
+                <p class="text-blue-200 text-sm">{{ subtitle }}</p>
             </div>
             
+            <!-- Alerts -->
             {% if error %}
-            <div class="bg-red-500/10 border border-red-500/50 rounded-lg p-3 mb-4 text-red-400 text-sm">
-                <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
+            <div class="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-6 text-red-300 text-sm backdrop-blur-sm animate-pulse">
+                <i class="fas fa-exclamation-triangle mr-2"></i>{{ error }}
             </div>
             {% endif %}
             
             {% if success %}
-            <div class="bg-green-500/10 border border-green-500/50 rounded-lg p-3 mb-4 text-green-400 text-sm">
+            <div class="bg-green-500/20 border border-green-500/50 rounded-xl p-4 mb-6 text-green-300 text-sm backdrop-blur-sm">
                 <i class="fas fa-check-circle mr-2"></i>{{ success }}
             </div>
             {% endif %}
             
-            <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-3 mb-6 text-blue-400 text-xs">
+            <!-- Security Notice -->
+            <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3 mb-6 text-blue-200 text-xs backdrop-blur-sm">
                 <i class="fas fa-shield-alt mr-2"></i>
-                <strong>Secure Authentication:</strong> One account per device
+                <strong>Secure:</strong> One account per device
             </div>
             
-            <form method="POST" action="{{ action }}" class="space-y-4">
+            <!-- Form -->
+            <form method="POST" action="{{ action }}" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">
+                    <label class="block text-sm font-semibold text-blue-100 mb-2">
                         <i class="fas fa-envelope mr-2"></i>Email Address
                     </label>
-                    <input type="email" name="email" required
-                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    <input type="email" name="email" required autofocus
+                        class="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all backdrop-blur-sm"
+                        placeholder="your@email.com">
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">
+                    <label class="block text-sm font-semibold text-blue-100 mb-2">
                         <i class="fas fa-lock mr-2"></i>Password
                     </label>
                     <input type="password" name="password" required
-                        class="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        class="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all backdrop-blur-sm"
+                        placeholder="••••••••">
                 </div>
                 
                 <button type="submit" 
-                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition transform hover:scale-105 active:scale-95">
+                    class="btn-primary w-full text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 mt-6">
                     <i class="fas fa-{{ icon }} mr-2"></i>{{ button_text }}
                 </button>
             </form>
             
-            <div class="text-center mt-6 text-sm text-slate-400">
-                {{ toggle_text }} <a href="{{ toggle_link }}" class="text-blue-400 hover:text-blue-300 font-semibold">{{ toggle_action }}</a>
+            <!-- Toggle Link -->
+            <div class="text-center mt-6 text-sm text-blue-100">
+                {{ toggle_text }} 
+                <a href="{{ toggle_link }}" class="text-white font-bold hover:underline">
+                    {{ toggle_action }}
+                </a>
             </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-6 text-blue-100 text-xs opacity-75">
+            <p>© 2024 EliteHost. Powered by AI.</p>
         </div>
     </div>
 </body>
@@ -1295,7 +1361,7 @@ DASHBOARD_HTML = """
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EliteHost - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -1312,14 +1378,37 @@ DASHBOARD_HTML = """
             }
         }
     </script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        [x-cloak] { display: none !important; }
+        
+        .safe-area-top {
+            padding-top: env(safe-area-inset-top);
+        }
+        
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        /* Mobile-optimized scrolling */
+        .mobile-scroll {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+    </style>
 </head>
-<body class="bg-slate-950 text-white" x-data="dashboardApp()">
+<body class="bg-slate-950 text-white mobile-scroll" x-data="dashboardApp()">
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 z-50 transform transition-transform duration-300"
+    <div class="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 z-50 transform transition-transform duration-300 safe-area-top safe-area-bottom"
          :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
         <div class="p-6">
             <div class="flex items-center gap-3 mb-8">
-                <img src="/logo.jpg" alt="Logo" class="w-10 h-10 rounded-lg">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-rocket text-white"></i>
+                </div>
                 <span class="text-xl font-bold">EliteHost</span>
             </div>
             
@@ -1375,80 +1464,82 @@ DASHBOARD_HTML = """
     </div>
     
     <!-- Mobile Header -->
-    <div class="md:hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 p-4 z-40 flex items-center justify-between">
-        <button @click="sidebarOpen = !sidebarOpen" class="text-white">
+    <div class="md:hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 p-4 z-40 flex items-center justify-between safe-area-top">
+        <button @click="sidebarOpen = !sidebarOpen" class="text-white p-2 -ml-2">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <img src="/logo.jpg" alt="Logo" class="w-8 h-8 rounded-lg">
-        <div class="w-6"></div>
+        <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-600 rounded-xl flex items-center justify-center">
+            <i class="fas fa-rocket text-white"></i>
+        </div>
+        <div class="w-10"></div>
     </div>
     
     <!-- Main Content -->
-    <div class="md:ml-64 min-h-screen">
-        <div class="p-4 md:p-8 mt-16 md:mt-0">
+    <div class="md:ml-64 min-h-screen safe-area-bottom">
+        <div class="p-4 md:p-8 pt-20 md:pt-8">
             <!-- Overview Page -->
             <div x-show="currentPage === 'overview'" x-transition>
-                <h1 class="text-3xl font-bold mb-8">Dashboard Overview</h1>
+                <h1 class="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Dashboard Overview</h1>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-rocket text-blue-400 text-xl"></i>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+                    <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3 md:mb-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-rocket text-blue-400 text-lg md:text-xl"></i>
                             </div>
                         </div>
-                        <div class="text-3xl font-bold mb-1" x-text="stats.total"></div>
-                        <div class="text-slate-400 text-sm">Total Deployments</div>
+                        <div class="text-2xl md:text-3xl font-bold mb-1" x-text="stats.total"></div>
+                        <div class="text-slate-400 text-xs md:text-sm">Total Deployments</div>
                     </div>
                     
-                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check-circle text-green-400 text-xl"></i>
+                    <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3 md:mb-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle text-green-400 text-lg md:text-xl"></i>
                             </div>
                         </div>
-                        <div class="text-3xl font-bold mb-1 text-green-400" x-text="stats.running"></div>
-                        <div class="text-slate-400 text-sm">Active Now</div>
+                        <div class="text-2xl md:text-3xl font-bold mb-1 text-green-400" x-text="stats.running"></div>
+                        <div class="text-slate-400 text-xs md:text-sm">Active Now</div>
                     </div>
                     
-                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-gem text-blue-400 text-xl"></i>
+                    <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3 md:mb-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-gem text-blue-400 text-lg md:text-xl"></i>
                             </div>
                         </div>
-                        <div class="text-3xl font-bold mb-1 text-blue-400" x-text="credits"></div>
-                        <div class="text-slate-400 text-sm">Available Credits</div>
+                        <div class="text-2xl md:text-3xl font-bold mb-1 text-blue-400" x-text="credits"></div>
+                        <div class="text-slate-400 text-xs md:text-sm">Available Credits</div>
                     </div>
                     
-                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-robot text-cyan-400 text-xl"></i>
+                    <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                        <div class="flex items-center justify-between mb-3 md:mb-4">
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-robot text-cyan-400 text-lg md:text-xl"></i>
                             </div>
                         </div>
-                        <div class="text-3xl font-bold mb-1">AI</div>
-                        <div class="text-slate-400 text-sm">Auto Deploy</div>
+                        <div class="text-2xl md:text-3xl font-bold mb-1">AI</div>
+                        <div class="text-slate-400 text-xs md:text-sm">Auto Deploy</div>
                     </div>
                 </div>
                 
-                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                    <h2 class="text-xl font-bold mb-4">Recent Deployments</h2>
+                <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                    <h2 class="text-lg md:text-xl font-bold mb-4">Recent Deployments</h2>
                     <div class="space-y-3" x-show="deployments.length > 0">
                         <template x-for="deploy in deployments.slice(0, 5)" :key="deploy.id">
-                            <div class="bg-slate-800/50 rounded-lg p-4 flex items-center justify-between">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                        <i class="fas fa-rocket text-blue-400"></i>
+                            <div class="bg-slate-800/50 rounded-lg p-3 md:p-4 flex items-center justify-between flex-wrap gap-2">
+                                <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                                    <div class="w-8 h-8 md:w-10 md:h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="fas fa-rocket text-blue-400 text-sm md:text-base"></i>
                                     </div>
-                                    <div>
-                                        <div class="font-semibold" x-text="deploy.name"></div>
-                                        <div class="text-sm text-slate-400">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-semibold truncate text-sm md:text-base" x-text="deploy.name"></div>
+                                        <div class="text-xs md:text-sm text-slate-400">
                                             <span x-text="deploy.id"></span> • Port <span x-text="deploy.port"></span>
                                         </div>
                                     </div>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold"
+                                <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold"
                                       :class="{
                                           'bg-green-500/20 text-green-400': deploy.status === 'running',
                                           'bg-yellow-500/20 text-yellow-400': deploy.status === 'pending',
@@ -1458,70 +1549,72 @@ DASHBOARD_HTML = """
                             </div>
                         </template>
                     </div>
-                    <div x-show="deployments.length === 0" class="text-center py-12 text-slate-400">
-                        <i class="fas fa-inbox text-5xl mb-4 opacity-20"></i>
-                        <p>No deployments yet</p>
+                    <div x-show="deployments.length === 0" class="text-center py-8 md:py-12 text-slate-400">
+                        <i class="fas fa-inbox text-4xl md:text-5xl mb-4 opacity-20"></i>
+                        <p class="text-sm md:text-base">No deployments yet</p>
                     </div>
                 </div>
             </div>
             
             <!-- Deployments Page -->
             <div x-show="currentPage === 'deployments'" x-transition>
-                <div class="flex items-center justify-between mb-8">
-                    <h1 class="text-3xl font-bold">All Deployments</h1>
-                    <button @click="loadDeployments()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+                <div class="flex items-center justify-between mb-6 md:mb-8 flex-wrap gap-4">
+                    <h1 class="text-2xl md:text-3xl font-bold">All Deployments</h1>
+                    <button @click="loadDeployments()" class="bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded-lg transition text-sm md:text-base">
                         <i class="fas fa-sync-alt mr-2"></i>Refresh
                     </button>
                 </div>
                 
                 <div class="grid gap-4">
                     <template x-for="deploy in deployments" :key="deploy.id">
-                        <div class="bg-slate-900 rounded-xl border border-slate-800 p-6">
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                                <div>
-                                    <h3 class="text-xl font-bold mb-2" x-text="deploy.name"></h3>
-                                    <div class="flex flex-wrap gap-3 text-sm text-slate-400">
-                                        <span><i class="fas fa-fingerprint mr-1"></i><span x-text="deploy.id"></span></span>
-                                        <span><i class="fas fa-network-wired mr-1"></i>Port <span x-text="deploy.port"></span></span>
-                                        <span><i class="fas fa-code-branch mr-1"></i><span x-text="deploy.type"></span></span>
+                        <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 md:p-6">
+                            <div class="flex flex-col gap-4 mb-4">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-lg md:text-xl font-bold mb-2 truncate" x-text="deploy.name"></h3>
+                                        <div class="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-slate-400">
+                                            <span><i class="fas fa-fingerprint mr-1"></i><span x-text="deploy.id"></span></span>
+                                            <span><i class="fas fa-network-wired mr-1"></i>Port <span x-text="deploy.port"></span></span>
+                                            <span><i class="fas fa-code-branch mr-1"></i><span x-text="deploy.type"></span></span>
+                                        </div>
                                     </div>
+                                    <span class="px-3 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm font-semibold whitespace-nowrap"
+                                          :class="{
+                                              'bg-green-500/20 text-green-400': deploy.status === 'running',
+                                              'bg-yellow-500/20 text-yellow-400': deploy.status === 'pending',
+                                              'bg-red-500/20 text-red-400': deploy.status === 'stopped'
+                                          }"
+                                          x-text="deploy.status.toUpperCase()"></span>
                                 </div>
-                                <span class="px-4 py-2 rounded-lg text-sm font-semibold w-fit"
-                                      :class="{
-                                          'bg-green-500/20 text-green-400': deploy.status === 'running',
-                                          'bg-yellow-500/20 text-yellow-400': deploy.status === 'pending',
-                                          'bg-red-500/20 text-red-400': deploy.status === 'stopped'
-                                      }"
-                                      x-text="deploy.status.toUpperCase()"></span>
                             </div>
                             
-                            <div class="flex flex-wrap gap-2">
+                            <div class="grid grid-cols-2 gap-2">
                                 <button @click="viewDeployment(deploy.id)" 
-                                    class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition">
-                                    <i class="fas fa-eye mr-2"></i>View Details
+                                    class="bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm transition">
+                                    <i class="fas fa-eye mr-1 md:mr-2"></i>Details
                                 </button>
                                 <button @click="viewLogs(deploy.id)" 
-                                    class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm transition">
-                                    <i class="fas fa-terminal mr-2"></i>Logs
+                                    class="bg-slate-700 hover:bg-slate-600 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm transition">
+                                    <i class="fas fa-terminal mr-1 md:mr-2"></i>Logs
                                 </button>
                                 <button @click="stopDeploy(deploy.id)" 
-                                    class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm transition">
-                                    <i class="fas fa-stop mr-2"></i>Stop
+                                    class="bg-orange-600 hover:bg-orange-700 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm transition">
+                                    <i class="fas fa-stop mr-1 md:mr-2"></i>Stop
                                 </button>
                                 <button @click="deleteDeploy(deploy.id)" 
-                                    class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
-                                    <i class="fas fa-trash mr-2"></i>Delete
+                                    class="bg-red-600 hover:bg-red-700 px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm transition">
+                                    <i class="fas fa-trash mr-1 md:mr-2"></i>Delete
                                 </button>
                             </div>
                         </div>
                     </template>
                 </div>
                 
-                <div x-show="deployments.length === 0" class="bg-slate-900 rounded-xl border border-slate-800 p-12 text-center">
-                    <i class="fas fa-rocket text-6xl text-slate-700 mb-4"></i>
-                    <h3 class="text-xl font-bold mb-2">No Deployments Yet</h3>
-                    <p class="text-slate-400 mb-4">Get started by deploying your first app</p>
-                    <button @click="currentPage = 'new-deploy'" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg transition">
+                <div x-show="deployments.length === 0" class="bg-slate-900 rounded-xl border border-slate-800 p-8 md:p-12 text-center">
+                    <i class="fas fa-rocket text-5xl md:text-6xl text-slate-700 mb-4"></i>
+                    <h3 class="text-lg md:text-xl font-bold mb-2">No Deployments Yet</h3>
+                    <p class="text-slate-400 mb-4 md:mb-6 text-sm md:text-base">Get started by deploying your first app</p>
+                    <button @click="currentPage = 'new-deploy'" class="bg-blue-600 hover:bg-blue-700 px-4 md:px-6 py-2 md:py-3 rounded-lg transition text-sm md:text-base">
                         <i class="fas fa-plus mr-2"></i>Create Deployment
                     </button>
                 </div>
@@ -1529,81 +1622,81 @@ DASHBOARD_HTML = """
             
             <!-- New Deploy Page -->
             <div x-show="currentPage === 'new-deploy'" x-transition>
-                <h1 class="text-3xl font-bold mb-8">New Deployment</h1>
+                <h1 class="text-2xl md:text-3xl font-bold mb-6 md:mb-8">New Deployment</h1>
                 
-                <div class="grid md:grid-cols-2 gap-6">
+                <div class="grid md:grid-cols-2 gap-4 md:gap-6">
                     <!-- File Upload -->
-                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-6">
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 md:p-6">
                         <div class="flex items-center gap-3 mb-4">
-                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-cloud-upload-alt text-blue-400 text-xl"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-cloud-upload-alt text-blue-400 text-lg md:text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold">Upload Files</h3>
-                                <p class="text-sm text-slate-400">Deploy .py, .js, or .zip files</p>
+                                <h3 class="text-base md:text-lg font-bold">Upload Files</h3>
+                                <p class="text-xs md:text-sm text-slate-400">Deploy .py, .js, or .zip files</p>
                             </div>
                         </div>
                         
-                        <div class="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center mb-4 cursor-pointer hover:border-blue-500 transition"
+                        <div class="border-2 border-dashed border-slate-700 rounded-xl p-6 md:p-8 text-center mb-4 cursor-pointer hover:border-blue-500 transition"
                              onclick="document.getElementById('fileInput').click()">
-                            <i class="fas fa-file-upload text-4xl text-slate-600 mb-3"></i>
-                            <p class="text-slate-400 mb-2">Click to upload or drag and drop</p>
+                            <i class="fas fa-file-upload text-3xl md:text-4xl text-slate-600 mb-3"></i>
+                            <p class="text-slate-400 mb-2 text-sm md:text-base">Click to upload or drag and drop</p>
                             <p class="text-xs text-slate-500">Python, JavaScript, ZIP (max 100MB)</p>
                             <input type="file" id="fileInput" class="hidden" accept=".py,.js,.zip" @change="uploadFile($event)">
                         </div>
                         
-                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-400">
+                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs md:text-sm text-blue-400">
                             <i class="fas fa-info-circle mr-2"></i>Cost: 0.5 credits • AI auto-installs dependencies
                         </div>
                     </div>
                     
                     <!-- GitHub Deploy -->
-                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-6">
+                    <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 md:p-6">
                         <div class="flex items-center gap-3 mb-4">
-                            <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fab fa-github text-cyan-400 text-xl"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fab fa-github text-cyan-400 text-lg md:text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold">Deploy from GitHub</h3>
-                                <p class="text-sm text-slate-400">Import and deploy repositories</p>
+                                <h3 class="text-base md:text-lg font-bold">Deploy from GitHub</h3>
+                                <p class="text-xs md:text-sm text-slate-400">Import and deploy repositories</p>
                             </div>
                         </div>
                         
                         <form @submit.prevent="deployGithub()" class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-2">Repository URL</label>
+                                <label class="block text-xs md:text-sm font-medium text-slate-300 mb-2">Repository URL</label>
                                 <input type="url" x-model="githubForm.url" required
-                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-3 md:px-4 py-2 md:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="https://github.com/user/repo">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-2">Branch</label>
+                                <label class="block text-xs md:text-sm font-medium text-slate-300 mb-2">Branch</label>
                                 <input type="text" x-model="githubForm.branch"
-                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-3 md:px-4 py-2 md:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="main">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-2">Build Command (Optional)</label>
+                                <label class="block text-xs md:text-sm font-medium text-slate-300 mb-2">Build Command (Optional)</label>
                                 <input type="text" x-model="githubForm.buildCmd"
-                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-3 md:px-4 py-2 md:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="npm install">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-slate-300 mb-2">Start Command (Optional)</label>
+                                <label class="block text-xs md:text-sm font-medium text-slate-300 mb-2">Start Command (Optional)</label>
                                 <input type="text" x-model="githubForm.startCmd"
-                                    class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-3 md:px-4 py-2 md:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="npm start">
                             </div>
                             
-                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-4 py-3 rounded-lg font-semibold transition">
+                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-4 py-2 md:py-3 rounded-lg font-semibold transition text-sm md:text-base">
                                 <i class="fab fa-github mr-2"></i>Deploy from GitHub (1.0 credit)
                             </button>
                         </form>
                         
-                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-sm text-blue-400 mt-4">
+                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs md:text-sm text-blue-400 mt-4">
                             <i class="fas fa-robot mr-2"></i>AI auto-detects language and installs dependencies
                         </div>
                     </div>
@@ -1612,73 +1705,73 @@ DASHBOARD_HTML = """
             
             <!-- Buy Credits Page -->
             <div x-show="currentPage === 'buy-credits'" x-transition>
-                <h1 class="text-3xl font-bold mb-8">Buy Credits</h1>
+                <h1 class="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Buy Credits</h1>
                 
-                <div class="grid md:grid-cols-3 gap-6 mb-8">
+                <div class="grid md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                     <!-- 10 Credits Pack -->
-                    <div class="bg-slate-900 rounded-xl border-2 border-slate-800 hover:border-blue-500 p-6 transition cursor-pointer"
+                    <div class="bg-slate-900 rounded-xl border-2 border-slate-800 hover:border-blue-500 p-4 md:p-6 transition cursor-pointer"
                          @click="selectPackage('10_credits')">
                         <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-gem text-blue-400 text-xl"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-gem text-blue-400 text-lg md:text-xl"></i>
                             </div>
-                            <span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-semibold">Starter</span>
+                            <span class="bg-blue-500/20 text-blue-400 px-2 md:px-3 py-1 rounded-full text-xs font-semibold">Starter</span>
                         </div>
-                        <div class="text-3xl font-bold mb-2">10 Credits</div>
-                        <div class="text-2xl text-blue-400 font-bold mb-4">₹50</div>
-                        <ul class="text-sm text-slate-400 space-y-2 mb-6">
+                        <div class="text-2xl md:text-3xl font-bold mb-2">10 Credits</div>
+                        <div class="text-xl md:text-2xl text-blue-400 font-bold mb-4">₹50</div>
+                        <ul class="text-xs md:text-sm text-slate-400 space-y-2 mb-4 md:mb-6">
                             <li><i class="fas fa-check text-green-400 mr-2"></i>20 File Deployments</li>
                             <li><i class="fas fa-check text-green-400 mr-2"></i>10 GitHub Deployments</li>
                             <li><i class="fas fa-check text-green-400 mr-2"></i>20 Backups</li>
                         </ul>
-                        <button class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+                        <button class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition text-sm md:text-base">
                             <i class="fas fa-shopping-cart mr-2"></i>Select Package
                         </button>
                     </div>
                     
                     <!-- 99 Credits Pack -->
-                    <div class="bg-slate-900 rounded-xl border-2 border-blue-500 p-6 relative">
-                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-xs font-bold">
+                    <div class="bg-slate-900 rounded-xl border-2 border-blue-500 p-4 md:p-6 relative">
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-3 md:px-4 py-1 rounded-full text-xs font-bold">
                             BEST VALUE
                         </div>
                         <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-crown text-yellow-400 text-xl"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-crown text-yellow-400 text-lg md:text-xl"></i>
                             </div>
-                            <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold">Pro</span>
+                            <span class="bg-blue-500 text-white px-2 md:px-3 py-1 rounded-full text-xs font-semibold">Pro</span>
                         </div>
-                        <div class="text-3xl font-bold mb-2">99 Credits</div>
-                        <div class="text-2xl text-blue-400 font-bold mb-1">₹399</div>
+                        <div class="text-2xl md:text-3xl font-bold mb-2">99 Credits</div>
+                        <div class="text-xl md:text-2xl text-blue-400 font-bold mb-1">₹399</div>
                         <div class="text-xs text-green-400 mb-4"><del class="text-slate-500">₹495</del> Save ₹96</div>
-                        <ul class="text-sm text-slate-400 space-y-2 mb-6">
+                        <ul class="text-xs md:text-sm text-slate-400 space-y-2 mb-4 md:mb-6">
                             <li><i class="fas fa-check text-green-400 mr-2"></i>198 File Deployments</li>
                             <li><i class="fas fa-check text-green-400 mr-2"></i>99 GitHub Deployments</li>
                             <li><i class="fas fa-check text-green-400 mr-2"></i>198 Backups</li>
                             <li><i class="fas fa-star text-yellow-400 mr-2"></i>Priority Support</li>
                         </ul>
                         <button @click="selectPackage('99_credits')" 
-                                class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-4 py-2 rounded-lg transition font-semibold">
+                                class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 px-4 py-2 rounded-lg transition font-semibold text-sm md:text-base">
                             <i class="fas fa-shopping-cart mr-2"></i>Select Package
                         </button>
                     </div>
                     
                     <!-- Custom Amount -->
-                    <div class="bg-slate-900 rounded-xl border-2 border-slate-800 hover:border-blue-500 p-6 transition">
+                    <div class="bg-slate-900 rounded-xl border-2 border-slate-800 hover:border-blue-500 p-4 md:p-6 transition">
                         <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-infinity text-cyan-400 text-xl"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-infinity text-cyan-400 text-lg md:text-xl"></i>
                             </div>
-                            <span class="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold">Custom</span>
+                            <span class="bg-cyan-500/20 text-cyan-400 px-2 md:px-3 py-1 rounded-full text-xs font-semibold">Custom</span>
                         </div>
-                        <div class="text-3xl font-bold mb-2">Custom</div>
-                        <div class="text-2xl text-cyan-400 font-bold mb-4">Your Choice</div>
+                        <div class="text-2xl md:text-3xl font-bold mb-2">Custom</div>
+                        <div class="text-xl md:text-2xl text-cyan-400 font-bold mb-4">Your Choice</div>
                         <input type="number" x-model="customAmount" placeholder="Enter amount" min="1"
-                               class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white mb-4">
-                        <p class="text-sm text-slate-400 mb-6">
+                               class="w-full px-3 md:px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white mb-4 text-sm md:text-base">
+                        <p class="text-xs md:text-sm text-slate-400 mb-4 md:mb-6">
                             <i class="fas fa-info-circle mr-2"></i>Need help? <a href="{{ telegram_link }}" target="_blank" class="text-blue-400 hover:underline">Contact {{ username }}</a>
                         </p>
                         <button @click="selectCustomPackage()" 
-                                class="w-full bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-lg transition">
+                                class="w-full bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-lg transition text-sm md:text-base">
                             <i class="fas fa-comments mr-2"></i>Contact for Custom
                         </button>
                     </div>
@@ -1687,117 +1780,146 @@ DASHBOARD_HTML = """
         </div>
     </div>
     
-    <!-- Payment Modal -->
-    <div x-show="modal === 'payment'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" @click.self="modal = null">
-        <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-md w-full p-6">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold mb-2">Complete Payment</h2>
-                <p class="text-slate-400 text-sm">Scan QR code and submit proof</p>
-            </div>
+    <!-- Payment Modal - FIXED FOR MOBILE -->
+    <div x-show="modal === 'payment'" x-cloak 
+         class="fixed inset-0 bg-black/90 z-50 flex items-end md:items-center justify-center p-0 md:p-4 safe-area-bottom" 
+         @click.self="modal = null"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100">
+        <div class="bg-slate-900 rounded-t-3xl md:rounded-2xl border-t md:border border-slate-800 w-full md:max-w-md max-h-[90vh] overflow-y-auto mobile-scroll"
+             @click.stop
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="translate-y-full md:translate-y-0 md:scale-95"
+             x-transition:enter-end="translate-y-0 md:scale-100">
             
-            <div class="bg-slate-800/50 rounded-lg p-4 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400">Package:</span>
-                    <span class="font-semibold" x-text="paymentData.package"></span>
+            <!-- Header -->
+            <div class="sticky top-0 bg-slate-900 p-4 md:p-6 border-b border-slate-800 z-10">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-xl md:text-2xl font-bold">Complete Payment</h2>
+                    <button @click="modal = null" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition">
+                        <i class="fas fa-times text-slate-400"></i>
+                    </button>
                 </div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400">Credits:</span>
-                    <span class="font-semibold text-blue-400" x-text="paymentData.credits"></span>
+                <p class="text-slate-400 text-xs md:text-sm">Scan QR code and submit proof</p>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-4 md:p-6">
+                <div class="bg-slate-800/50 rounded-xl p-4 mb-6">
+                    <div class="flex items-center justify-between mb-3 md:mb-4">
+                        <span class="text-slate-400 text-sm md:text-base">Package:</span>
+                        <span class="font-semibold text-sm md:text-base" x-text="paymentData.package"></span>
+                    </div>
+                    <div class="flex items-center justify-between mb-3 md:mb-4">
+                        <span class="text-slate-400 text-sm md:text-base">Credits:</span>
+                        <span class="font-semibold text-blue-400 text-sm md:text-base" x-text="paymentData.credits"></span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400 text-sm md:text-base">Amount:</span>
+                        <span class="text-xl md:text-2xl font-bold text-green-400">₹<span x-text="paymentData.price"></span></span>
+                    </div>
                 </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-400">Amount:</span>
-                    <span class="text-2xl font-bold text-green-400">₹<span x-text="paymentData.price"></span></span>
+                
+                <div class="bg-white rounded-xl p-4 mb-6 text-center">
+                    <div class="w-48 h-48 md:w-64 md:h-64 mx-auto bg-gray-200 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-qrcode text-6xl md:text-8xl text-gray-400"></i>
+                    </div>
+                    <p class="text-slate-900 font-semibold mt-3 text-sm md:text-base">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
                 </div>
-            </div>
-            
-            <div class="bg-white rounded-lg p-4 mb-6 text-center">
-                <img src="/qr.jpg" alt="Payment QR Code" class="w-64 h-64 mx-auto">
-                <p class="text-slate-900 font-semibold mt-2">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-300 mb-2">Upload Screenshot</label>
-                <input type="file" accept="image/*" @change="uploadScreenshot($event)" 
-                       class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-slate-300 mb-2">Transaction ID</label>
-                <input type="text" x-model="paymentData.transactionId" placeholder="Enter transaction/UTR ID" required
-                       class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white">
-            </div>
-            
-            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm text-yellow-400 mb-6">
-                <i class="fas fa-clock mr-2"></i>
-                <span>Time remaining: </span>
-                <span class="font-bold" x-text="formatTime(timeRemaining)"></span>
-            </div>
-            
-            <div class="flex gap-3">
-                <button @click="modal = null" class="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg transition">
-                    Cancel
-                </button>
-                <button @click="submitPayment()" class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg transition font-semibold">
-                    <i class="fas fa-check mr-2"></i>Submit
-                </button>
+                
+                <div class="mb-4">
+                    <label class="block text-xs md:text-sm font-medium text-slate-300 mb-2">Upload Screenshot</label>
+                    <input type="file" accept="image/*" @change="uploadScreenshot($event)" 
+                           class="w-full px-3 md:px-4 py-2 md:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm md:text-base">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-xs md:text-sm font-medium text-slate-300 mb-2">Transaction ID</label>
+                    <input type="text" x-model="paymentData.transactionId" placeholder="Enter transaction/UTR ID" required
+                           class="w-full px-3 md:px-4 py-2 md:py-3 bg-slate-800 border border-
+slate-700 rounded-lg text-white text-sm md:text-base">
+                </div>
+                
+                <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 md:p-4 text-xs md:text-sm text-yellow-400 mb-6">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span>Time remaining: </span>
+                    <span class="font-bold" x-text="formatTime(timeRemaining)"></span>
+                </div>
+                
+                <!-- Action Buttons - FIXED FOR MOBILE -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button @click="modal = null" 
+                            class="bg-slate-700 hover:bg-slate-600 px-4 py-3 md:py-4 rounded-xl transition font-semibold text-sm md:text-base">
+                        Cancel
+                    </button>
+                    <button @click="submitPayment()" 
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-3 md:py-4 rounded-xl transition font-semibold text-sm md:text-base">
+                        <i class="fas fa-check mr-2"></i>Submit
+                    </button>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Deployment Details Modal -->
-    <div x-show="modal === 'details'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" @click.self="modal = null">
-        <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-slate-900 z-10">
-                <h2 class="text-2xl font-bold">Deployment Details</h2>
-                <button @click="modal = null" class="text-slate-400 hover:text-white">
+    <!-- Deployment Details Modal - Optimized for Mobile -->
+    <div x-show="modal === 'details'" x-cloak 
+         class="fixed inset-0 bg-black/90 z-50 flex items-end md:items-center justify-center p-0 md:p-4 safe-area-bottom" 
+         @click.self="modal = null"
+         x-transition>
+        <div class="bg-slate-900 rounded-t-3xl md:rounded-2xl border-t md:border border-slate-800 w-full md:max-w-4xl max-h-[90vh] overflow-y-auto mobile-scroll"
+             @click.stop>
+            <div class="sticky top-0 bg-slate-900 p-4 md:p-6 border-b border-slate-800 flex items-center justify-between z-10">
+                <h2 class="text-xl md:text-2xl font-bold">Deployment Details</h2>
+                <button @click="modal = null" class="text-slate-400 hover:text-white p-2 -mr-2">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
-            <div class="p-6" x-show="selectedDeploy">
-                <div class="flex gap-2 mb-6 border-b border-slate-800">
+            <div class="p-4 md:p-6" x-show="selectedDeploy">
+                <div class="flex gap-2 mb-6 border-b border-slate-800 overflow-x-auto mobile-scroll">
                     <button @click="detailsTab = 'info'" 
                         :class="detailsTab === 'info' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
-                        class="px-4 py-2 border-b-2 transition">Info</button>
+                        class="px-3 md:px-4 py-2 border-b-2 transition whitespace-nowrap text-sm md:text-base">Info</button>
                     <button @click="detailsTab = 'env'" 
                         :class="detailsTab === 'env' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
-                        class="px-4 py-2 border-b-2 transition">Environment</button>
+                        class="px-3 md:px-4 py-2 border-b-2 transition whitespace-nowrap text-sm md:text-base">Environment</button>
                     <button @click="detailsTab = 'files'" 
                         :class="detailsTab === 'files' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
-                        class="px-4 py-2 border-b-2 transition">Files</button>
+                        class="px-3 md:px-4 py-2 border-b-2 transition whitespace-nowrap text-sm md:text-base">Files</button>
                     <button @click="detailsTab = 'backup'" 
                         :class="detailsTab === 'backup' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
-                        class="px-4 py-2 border-b-2 transition">Backup</button>
+                        class="px-3 md:px-4 py-2 border-b-2 transition whitespace-nowrap text-sm md:text-base">Backup</button>
                     <button @click="detailsTab = 'console'"
                         :class="detailsTab === 'console' ? 'border-blue-500 text-white' : 'border-transparent text-slate-400'"
-                        class="px-4 py-2 border-b-2 transition">Console</button>
+                        class="px-3 md:px-4 py-2 border-b-2 transition whitespace-nowrap text-sm md:text-base">Console</button>
                 </div>
                 
                 <div x-show="detailsTab === 'info'" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-slate-800/50 rounded-lg p-4">
-                            <div class="text-sm text-slate-400 mb-1">Deployment ID</div>
-                            <div class="font-mono" x-text="selectedDeploy.id"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                        <div class="bg-slate-800/50 rounded-lg p-3 md:p-4">
+                            <div class="text-xs md:text-sm text-slate-400 mb-1">Deployment ID</div>
+                            <div class="font-mono text-sm md:text-base" x-text="selectedDeploy.id"></div>
                         </div>
-                        <div class="bg-slate-800/50 rounded-lg p-4">
-                            <div class="text-sm text-slate-400 mb-1">Port</div>
-                            <div class="font-mono" x-text="selectedDeploy.port"></div>
+                        <div class="bg-slate-800/50 rounded-lg p-3 md:p-4">
+                            <div class="text-xs md:text-sm text-slate-400 mb-1">Port</div>
+                            <div class="font-mono text-sm md:text-base" x-text="selectedDeploy.port"></div>
                         </div>
-                        <div class="bg-slate-800/50 rounded-lg p-4">
-                            <div class="text-sm text-slate-400 mb-1">Status</div>
-                            <div class="font-mono" x-text="selectedDeploy.status"></div>
+                        <div class="bg-slate-800/50 rounded-lg p-3 md:p-4">
+                            <div class="text-xs md:text-sm text-slate-400 mb-1">Status</div>
+                            <div class="font-mono text-sm md:text-base" x-text="selectedDeploy.status"></div>
                         </div>
-                        <div class="bg-slate-800/50 rounded-lg p-4">
-                            <div class="text-sm text-slate-400 mb-1">Type</div>
-                            <div class="font-mono" x-text="selectedDeploy.type"></div>
+                        <div class="bg-slate-800/50 rounded-lg p-3 md:p-4">
+                            <div class="text-xs md:text-sm text-slate-400 mb-1">Type</div>
+                            <div class="font-mono text-sm md:text-base" x-text="selectedDeploy.type"></div>
                         </div>
                     </div>
                     
                     <div x-show="selectedDeploy.dependencies && selectedDeploy.dependencies.length > 0">
-                        <div class="text-sm font-semibold text-slate-300 mb-2">AI Installed Dependencies</div>
-                        <div class="bg-slate-800/50 rounded-lg p-4">
+                        <div class="text-xs md:text-sm font-semibold text-slate-300 mb-2">AI Installed Dependencies</div>
+                        <div class="bg-slate-800/50 rounded-lg p-3 md:p-4">
                             <template x-for="dep in selectedDeploy.dependencies" :key="dep">
-                                <span class="inline-block bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs mr-2 mb-2" x-text="dep"></span>
+                                <span class="inline-block bg-blue-500/20 text-blue-300 px-2 md:px-3 py-1 rounded-full text-xs mr-2 mb-2" x-text="dep"></span>
                             </template>
                         </div>
                     </div>
@@ -1807,10 +1929,10 @@ DASHBOARD_HTML = """
                     <div class="mb-4">
                         <div class="flex gap-2 mb-4">
                             <input type="text" x-model="newEnv.key" placeholder="KEY" 
-                                class="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                                class="flex-1 px-3 md:px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm md:text-base">
                             <input type="text" x-model="newEnv.value" placeholder="value" 
-                                class="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
-                            <button @click="addEnvVar()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
+                                class="flex-1 px-3 md:px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm md:text-base">
+                            <button @click="addEnvVar()" class="bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded-lg">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -1819,40 +1941,40 @@ DASHBOARD_HTML = """
                     <div class="space-y-2">
                         <template x-for="(value, key) in selectedDeploy.env_vars" :key="key">
                             <div class="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between">
-                                <div class="font-mono text-sm">
+                                <div class="font-mono text-xs md:text-sm min-w-0 flex-1 mr-2 break-all">
                                     <span class="text-blue-400" x-text="key"></span> = <span x-text="value"></span>
                                 </div>
-                                <button @click="deleteEnvVar(key)" class="text-red-400 hover:text-red-300">
+                                <button @click="deleteEnvVar(key)" class="text-red-400 hover:text-red-300 flex-shrink-0 p-2">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </template>
                         <div x-show="!selectedDeploy.env_vars || Object.keys(selectedDeploy.env_vars).length === 0" 
-                            class="text-center py-8 text-slate-400">
+                            class="text-center py-8 text-slate-400 text-sm md:text-base">
                             No environment variables set
                         </div>
                     </div>
                 </div>
                 
                 <div x-show="detailsTab === 'files'">
-                    <button @click="loadFiles()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg mb-4">
+                    <button @click="loadFiles()" class="bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded-lg mb-4 text-sm md:text-base">
                         <i class="fas fa-sync mr-2"></i>Refresh Files
                     </button>
                     
                     <div class="space-y-2">
                         <template x-for="file in deployFiles" :key="file.path">
-                            <div class="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <i class="fas fa-file-code text-slate-400"></i>
-                                    <div>
-                                        <div class="font-mono text-sm" x-text="file.path"></div>
+                            <div class="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                    <i class="fas fa-file-code text-slate-400 flex-shrink-0"></i>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-mono text-xs md:text-sm truncate" x-text="file.path"></div>
                                         <div class="text-xs text-slate-500" x-text="formatBytes(file.size)"></div>
                                     </div>
                                 </div>
-                                <div class="text-xs text-slate-400" x-text="formatDate(file.modified)"></div>
+                                <div class="text-xs text-slate-400 whitespace-nowrap" x-text="formatDate(file.modified)"></div>
                             </div>
                         </template>
-                        <div x-show="deployFiles.length === 0" class="text-center py-8 text-slate-400">
+                        <div x-show="deployFiles.length === 0" class="text-center py-8 text-slate-400 text-sm md:text-base">
                             No files found
                         </div>
                     </div>
@@ -1860,19 +1982,19 @@ DASHBOARD_HTML = """
                 
                 <div x-show="detailsTab === 'backup'">
                     <div class="text-center py-8">
-                        <i class="fas fa-archive text-6xl text-slate-700 mb-4"></i>
-                        <h3 class="text-xl font-bold mb-2">Create Backup</h3>
-                        <p class="text-slate-400 mb-6">Download a complete snapshot of this deployment</p>
-                        <button @click="createBackup()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg">
+                        <i class="fas fa-archive text-5xl md:text-6xl text-slate-700 mb-4"></i>
+                        <h3 class="text-lg md:text-xl font-bold mb-2">Create Backup</h3>
+                        <p class="text-slate-400 mb-4 md:mb-6 text-sm md:text-base">Download a complete snapshot of this deployment</p>
+                        <button @click="createBackup()" class="bg-blue-600 hover:bg-blue-700 px-4 md:px-6 py-2 md:py-3 rounded-lg text-sm md:text-base">
                             <i class="fas fa-download mr-2"></i>Create & Download Backup (0.5 credits)
                         </button>
                     </div>
                 </div>
                 
                 <div x-show="detailsTab === 'console'">
-                    <div class="bg-slate-950 rounded-lg p-4 font-mono text-sm text-green-400 h-96 overflow-y-auto whitespace-pre-wrap" 
+                    <div class="bg-slate-950 rounded-lg p-3 md:p-4 font-mono text-xs md:text-sm text-green-400 h-64 md:h-96 overflow-y-auto whitespace-pre-wrap mobile-scroll" 
                          x-ref="console" x-text="consoleLogs"></div>
-                    <button @click="refreshLogs()" class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
+                    <button @click="refreshLogs()" class="mt-4 bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded-lg text-sm md:text-base">
                         <i class="fas fa-sync mr-2"></i>Refresh Logs
                     </button>
                 </div>
@@ -2234,9 +2356,6 @@ DASHBOARD_HTML = """
             }
         }
     </script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 </body>
 </html>
 """
@@ -2246,32 +2365,38 @@ ADMIN_PANEL_HTML = """
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EliteHost - Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        .mobile-scroll { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    </style>
 </head>
-<body class="bg-slate-950 text-white" x-data="adminApp()">
+<body class="bg-slate-950 text-white mobile-scroll" x-data="adminApp()">
     <div class="min-h-screen">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 shadow-2xl">
+        <div class="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 md:p-6 shadow-2xl">
             <div class="max-w-7xl mx-auto">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <img src="/logo.jpg" alt="Logo" class="w-12 h-12 rounded-xl">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="flex items-center gap-3 md:gap-4">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-crown text-white text-xl md:text-2xl"></i>
+                        </div>
                         <div>
-                            <h1 class="text-3xl font-bold mb-1">
-                                <i class="fas fa-crown mr-2"></i>Admin Control Panel
+                            <h1 class="text-xl md:text-3xl font-bold mb-1">
+                                Admin Control Panel
                             </h1>
-                            <p class="text-blue-100">System Management & Monitoring</p>
+                            <p class="text-blue-100 text-xs md:text-base">System Management & Monitoring</p>
                         </div>
                     </div>
-                    <div class="flex gap-3">
-                        <a href="/dashboard" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
+                    <div class="flex gap-2 md:gap-3">
+                        <a href="/dashboard" class="bg-white/20 hover:bg-white/30 px-3 md:px-4 py-2 rounded-lg transition text-sm md:text-base">
                             <i class="fas fa-arrow-left mr-2"></i>Dashboard
                         </a>
-                        <button @click="location.reload()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
+                        <button @click="location.reload()" class="bg-white/20 hover:bg-white/30 px-3 md:px-4 py-2 rounded-lg transition text-sm md:text-base">
                             <i class="fas fa-sync mr-2"></i>Refresh
                         </button>
                     </div>
@@ -2279,58 +2404,58 @@ ADMIN_PANEL_HTML = """
             </div>
         </div>
         
-        <div class="max-w-7xl mx-auto p-6">
+        <div class="max-w-7xl mx-auto p-4 md:p-6">
             <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-blue-400 text-xl"></i>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+                <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 md:mb-4">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-blue-400 text-lg md:text-xl"></i>
                         </div>
                     </div>
-                    <div class="text-3xl font-bold mb-1">{{ stats.total_users }}</div>
-                    <div class="text-slate-400 text-sm">Total Users</div>
+                    <div class="text-2xl md:text-3xl font-bold mb-1">{{ stats.total_users }}</div>
+                    <div class="text-slate-400 text-xs md:text-sm">Total Users</div>
                 </div>
                 
-                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-rocket text-green-400 text-xl"></i>
+                <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 md:mb-4">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-rocket text-green-400 text-lg md:text-xl"></i>
                         </div>
                     </div>
-                    <div class="text-3xl font-bold mb-1">{{ stats.total_deployments }}</div>
-                    <div class="text-slate-400 text-sm">Deployments</div>
+                    <div class="text-2xl md:text-3xl font-bold mb-1">{{ stats.total_deployments }}</div>
+                    <div class="text-slate-400 text-xs md:text-sm">Deployments</div>
                 </div>
                 
-                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-server text-cyan-400 text-xl"></i>
+                <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 md:mb-4">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-server text-cyan-400 text-lg md:text-xl"></i>
                         </div>
                     </div>
-                    <div class="text-3xl font-bold mb-1">{{ stats.active_processes }}</div>
-                    <div class="text-slate-400 text-sm">Active Now</div>
+                    <div class="text-2xl md:text-3xl font-bold mb-1">{{ stats.active_processes }}</div>
+                    <div class="text-slate-400 text-xs md:text-sm">Active Now</div>
                 </div>
                 
-                <div class="bg-slate-900 rounded-xl p-6 border border-slate-800">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-dollar-sign text-yellow-400 text-xl"></i>
+                <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+                    <div class="flex items-center justify-between mb-3 md:mb-4">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-dollar-sign text-yellow-400 text-lg md:text-xl"></i>
                         </div>
                     </div>
-                    <div class="text-3xl font-bold mb-1">{{ stats.pending_payments }}</div>
-                    <div class="text-slate-400 text-sm">Pending Payments</div>
+                    <div class="text-2xl md:text-3xl font-bold mb-1">{{ stats.pending_payments }}</div>
+                    <div class="text-slate-400 text-xs md:text-sm">Pending Payments</div>
                 </div>
             </div>
             
             <!-- System Metrics -->
-            <div class="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-8">
-                <h2 class="text-xl font-bold mb-4">System Resources</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800 mb-6 md:mb-8">
+                <h2 class="text-lg md:text-xl font-bold mb-4">System Resources</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm text-slate-400">CPU Usage</span>
-                            <span class="text-sm font-semibold" x-text="metrics.cpu + '%'"></span>
+                            <span class="text-xs md:text-sm text-slate-400">CPU Usage</span>
+                            <span class="text-xs md:text-sm font-semibold" x-text="metrics.cpu + '%'"></span>
                         </div>
                         <div class="w-full bg-slate-800 rounded-full h-2">
                             <div class="bg-blue-500 h-2 rounded-full transition-all" :style="`width: ${metrics.cpu}%`"></div>
@@ -2339,8 +2464,8 @@ ADMIN_PANEL_HTML = """
                     
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm text-slate-400">Memory</span>
-                            <span class="text-sm font-semibold" x-text="metrics.memory_percent + '%'"></span>
+                            <span class="text-xs md:text-sm text-slate-400">Memory</span>
+                            <span class="text-xs md:text-sm font-semibold" x-text="metrics.memory_percent + '%'"></span>
                         </div>
                         <div class="w-full bg-slate-800 rounded-full h-2">
                             <div class="bg-green-500 h-2 rounded-full transition-all" :style="`width: ${metrics.memory_percent}%`"></div>
@@ -2349,8 +2474,8 @@ ADMIN_PANEL_HTML = """
                     
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm text-slate-400">Disk</span>
-                            <span class="text-sm font-semibold" x-text="metrics.disk_percent + '%'"></span>
+                            <span class="text-xs md:text-sm text-slate-400">Disk</span>
+                            <span class="text-xs md:text-sm font-semibold" x-text="metrics.disk_percent + '%'"></span>
                         </div>
                         <div class="w-full bg-slate-800 rounded-full h-2">
                             <div class="bg-cyan-500 h-2 rounded-full transition-all" :style="`width: ${metrics.disk_percent}%`"></div>
@@ -2360,50 +2485,50 @@ ADMIN_PANEL_HTML = """
             </div>
             
             <!-- Users Table -->
-            <div class="bg-slate-900 rounded-xl border border-slate-800 mb-8">
-                <div class="p-6 border-b border-slate-800">
-                    <h2 class="text-xl font-bold">All Users</h2>
+            <div class="bg-slate-900 rounded-xl border border-slate-800 mb-6 md:mb-8 overflow-hidden">
+                <div class="p-4 md:p-6 border-b border-slate-800">
+                    <h2 class="text-lg md:text-xl font-bold">All Users</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto mobile-scroll">
                     <table class="w-full">
                         <thead class="bg-slate-800/50">
                             <tr>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Email</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Credits</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Deployments</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Joined</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Status</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Actions</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Email</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Credits</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Deployments</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Joined</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Status</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for user in users %}
                             <tr class="border-b border-slate-800 hover:bg-slate-800/30">
-                                <td class="p-4 text-sm">{{ user.email }}</td>
-                                <td class="p-4 text-sm font-mono">{{ user.credits }}</td>
-                                <td class="p-4 text-sm">{{ user.deployments|length }}</td>
-                                <td class="p-4 text-sm text-slate-400">{{ user.created_at[:10] }}</td>
-                                <td class="p-4">
+                                <td class="p-3 md:p-4 text-xs md:text-sm">{{ user.email }}</td>
+                                <td class="p-3 md:p-4 text-xs md:text-sm font-mono">{{ user.credits }}</td>
+                                <td class="p-3 md:p-4 text-xs md:text-sm">{{ user.deployments|length }}</td>
+                                <td class="p-3 md:p-4 text-xs md:text-sm text-slate-400">{{ user.created_at[:10] }}</td>
+                                <td class="p-3 md:p-4">
                                     {% if user.is_banned %}
-                                    <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-semibold">Banned</span>
+                                    <span class="px-2 md:px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-semibold">Banned</span>
                                     {% else %}
-                                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">Active</span>
+                                    <span class="px-2 md:px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">Active</span>
                                     {% endif %}
                                 </td>
-                                <td class="p-4">
+                                <td class="p-3 md:p-4">
                                     <div class="flex gap-2">
                                         <button onclick="addCreditsPrompt('{{ user.id }}')" 
-                                            class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs transition">
+                                            class="bg-green-600 hover:bg-green-700 px-2 md:px-3 py-1 rounded text-xs transition whitespace-nowrap">
                                             <i class="fas fa-plus mr-1"></i>Credits
                                         </button>
                                         {% if not user.is_banned %}
                                         <button onclick="banUser('{{ user.id }}')" 
-                                            class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs transition">
+                                            class="bg-red-600 hover:bg-red-700 px-2 md:px-3 py-1 rounded text-xs transition whitespace-nowrap">
                                             <i class="fas fa-ban mr-1"></i>Ban
                                         </button>
                                         {% else %}
                                         <button onclick="unbanUser('{{ user.id }}')" 
-                                            class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs transition">
+                                            class="bg-green-600 hover:bg-green-700 px-2 md:px-3 py-1 rounded text-xs transition whitespace-nowrap">
                                             <i class="fas fa-check mr-1"></i>Unban
                                         </button>
                                         {% endif %}
@@ -2417,31 +2542,31 @@ ADMIN_PANEL_HTML = """
             </div>
             
             <!-- Payments Table -->
-            <div class="bg-slate-900 rounded-xl border border-slate-800">
-                <div class="p-6 border-b border-slate-800">
-                    <h2 class="text-xl font-bold">Payment Requests</h2>
+            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                <div class="p-4 md:p-6 border-b border-slate-800">
+                    <h2 class="text-lg md:text-xl font-bold">Payment Requests</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto mobile-scroll">
                     <table class="w-full">
                         <thead class="bg-slate-800/50">
                             <tr>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">User</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Amount</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Transaction ID</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Date</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Status</th>
-                                <th class="text-left p-4 text-sm font-semibold text-slate-300">Actions</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">User</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Amount</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Transaction ID</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Date</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Status</th>
+                                <th class="text-left p-3 md:p-4 text-xs md:text-sm font-semibold text-slate-300">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for payment in payments %}
                             <tr class="border-b border-slate-800 hover:bg-slate-800/30">
-                                <td class="p-4 text-sm">{{ payment.user_email }}</td>
-                                <td class="p-4 text-sm font-mono">{{ payment.credits }} credits (₹{{ payment.price }})</td>
-                                <td class="p-4 text-sm font-mono text-blue-400">{{ payment.transaction_id or 'N/A' }}</td>
-                                <td class="p-4 text-sm text-slate-400">{{ payment.created_at[:16] }}</td>
-                                <td class="p-4">
-                                    <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                <td class="p-3 md:p-4 text-xs md:text-sm">{{ payment.user_email }}</td>
+                                <td class="p-3 md:p-4 text-xs md:text-sm font-mono">{{ payment.credits }} credits (₹{{ payment.price }})</td>
+                                <td class="p-3 md:p-4 text-xs md:text-sm font-mono text-blue-400">{{ payment.transaction_id or 'N/A' }}</td>
+                                <td class="p-3 md:p-4 text-xs md:text-sm text-slate-400">{{ payment.created_at[:16] }}</td>
+                                <td class="p-3 md:p-4">
+                                    <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap
                                         {% if payment.status == 'approved' %}bg-green-500/20 text-green-400
                                         {% elif payment.status == 'submitted' %}bg-blue-500/20 text-blue-400
                                         {% elif payment.status == 'pending' %}bg-yellow-500/20 text-yellow-400
@@ -2450,14 +2575,12 @@ ADMIN_PANEL_HTML = """
                                         {{ payment.status }}
                                     </span>
                                 </td>
-                                <td class="p-4">
+                                <td class="p-3 md:p-4">
                                     {% if payment.status == 'submitted' %}
-                                    <div class="flex gap-2">
-                                        <button onclick="viewScreenshot('{{ payment.id }}')" 
-                                            class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs transition">
-                                            <i class="fas fa-image mr-1"></i>View
-                                        </button>
-                                    </div>
+                                    <button onclick="viewScreenshot('{{ payment.id }}')" 
+                                        class="bg-blue-600 hover:bg-blue-700 px-2 md:px-3 py-1 rounded text-xs transition whitespace-nowrap">
+                                        <i class="fas fa-image mr-1"></i>View
+                                    </button>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -2543,1095 +2666,3 @@ ADMIN_PANEL_HTML = """
 </body>
 </html>
 """
-
-# ==================== FLASK ROUTES (COMPLETE) ====================
-
-@app.before_request
-def before_request():
-    fingerprint = get_device_fingerprint(request)
-    if is_device_banned(fingerprint):
-        return jsonify({'error': 'Access denied'}), 403
-
-@app.after_request
-def after_request(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    return response
-
-# ==================== AUTH ROUTES ====================
-
-@app.route('/')
-def index():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    user_id = verify_session(session_token, fingerprint)
-    
-    if user_id:
-        return redirect('/dashboard')
-    
-    return redirect('/login')
-
-@app.route('/register', methods=['GET', 'POST'])
-@limiter.limit("10 per hour")
-def register():
-    if request.method == 'GET':
-        error = request.args.get('error', '')
-        success = request.args.get('success', '')
-        
-        return render_template_string(LOGIN_PAGE,
-            title='Register',
-            subtitle='Create your EliteHost account',
-            action='/register',
-            button_text='Create Account',
-            icon='user-plus',
-            toggle_text='Already have an account?',
-            toggle_link='/login',
-            toggle_action='Login',
-            error=error,
-            success=success
-        )
-    
-    try:
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        fingerprint = get_device_fingerprint(request)
-        ip = request.remote_addr
-        
-        # Validation
-        if not email or not password:
-            return redirect('/register?error=Email and password required')
-        
-        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-            return redirect('/register?error=Invalid email format')
-        
-        if len(password) < 6:
-            return redirect('/register?error=Password must be at least 6 characters')
-        
-        # Check for existing account on this device
-        existing_user_id = check_existing_account(fingerprint)
-        if existing_user_id:
-            return redirect('/register?error=Device already has an account. Use /login')
-        
-        # Check if email exists
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
-            if cursor.fetchone():
-                return redirect('/register?error=Email already registered')
-        
-        # Create user
-        user_id = create_user(email, password, fingerprint, ip)
-        
-        if not user_id:
-            return redirect('/register?error=Registration failed. Try again.')
-        
-        # Create session
-        session_token = create_session(user_id, fingerprint)
-        
-        response = make_response(redirect('/dashboard'))
-        response.set_cookie('session_token', session_token, 
-                          max_age=SESSION_TIMEOUT_DAYS*86400,
-                          httponly=True, samesite='Lax')
-        
-        return response
-    
-    except Exception as e:
-        log_error(str(e), "register")
-        return redirect('/register?error=An error occurred')
-
-@app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("20 per hour")
-def login():
-    if request.method == 'GET':
-        error = request.args.get('error', '')
-        success = request.args.get('success', '')
-        
-        return render_template_string(LOGIN_PAGE,
-            title='Login',
-            subtitle='Sign in to your account',
-            action='/login',
-            button_text='Sign In',
-            icon='sign-in-alt',
-            toggle_text="Don't have an account?",
-            toggle_link='/register',
-            toggle_action='Register',
-            error=error,
-            success=success
-        )
-    
-    try:
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        fingerprint = get_device_fingerprint(request)
-        ip = request.remote_addr
-        
-        # Check rate limiting
-        if check_login_attempts(ip):
-            return redirect(f'/login?error=Too many failed attempts. Try again in {LOGIN_ATTEMPT_WINDOW//60} minutes')
-        
-        # Authenticate
-        user_id = authenticate_user(email, password)
-        
-        if not user_id:
-            record_login_attempt(ip)
-            return redirect('/login?error=Invalid email or password')
-        
-        user = get_user(user_id)
-        
-        # Check if banned
-        if user.get('is_banned'):
-            return redirect('/login?error=Account banned. Contact support')
-        
-        # Check device fingerprint
-        if user['device_fingerprint'] != fingerprint:
-            return redirect('/login?error=Security error. Please use your original device')
-        
-        # Update last login
-        update_user(user_id, last_login=datetime.now().isoformat())
-        log_activity(user_id, 'USER_LOGIN', f'Login from {ip}', ip)
-        
-        # Create session
-        session_token = create_session(user_id, fingerprint)
-        
-        response = make_response(redirect('/dashboard'))
-        response.set_cookie('session_token', session_token,
-                          max_age=SESSION_TIMEOUT_DAYS*86400,
-                          httponly=True, samesite='Lax')
-        
-        return response
-    
-    except Exception as e:
-        log_error(str(e), "login")
-        return redirect('/login?error=An error occurred')
-
-@app.route('/logout')
-def logout():
-    session_token = request.cookies.get('session_token')
-    
-    if session_token:
-        try:
-            with get_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM sessions WHERE token = ?', (session_token,))
-        except Exception as e:
-            log_error(str(e), "logout")
-    
-    response = make_response(redirect('/login?success=Logged out successfully'))
-    response.set_cookie('session_token', '', expires=0)
-    
-    return response
-
-@app.route('/dashboard')
-def dashboard():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    
-    user_id = verify_session(session_token, fingerprint)
-    if not user_id:
-        return redirect('/login?error=Please login first')
-    
-    user = get_user(user_id)
-    if not user or user.get('is_banned'):
-        return redirect('/login?error=Access denied')
-    
-    is_admin = (str(user_id) == str(OWNER_ID) or 
-                str(user_id) == str(ADMIN_ID) or 
-                user['email'] == ADMIN_EMAIL)
-    
-    credits_display = '∞' if user['credits'] == float('inf') else user['credits']
-    
-    return render_template_string(DASHBOARD_HTML,
-        credits=credits_display,
-        is_admin=is_admin,
-        telegram_link=TELEGRAM_LINK,
-        username=YOUR_USERNAME
-    )
-
-@app.route('/admin')
-def admin_panel():
-    session_token = request.cookies.get('session_token')
-    fingerprint = get_device_fingerprint(request)
-    
-    user_id = verify_session(session_token, fingerprint)
-    if not user_id:
-        return redirect('/login?error=Please login first')
-    
-    user = get_user(user_id)
-    is_admin = (str(user_id) == str(OWNER_ID) or 
-                str(user_id) == str(ADMIN_ID) or 
-                user['email'] == ADMIN_EMAIL)
-    
-    if not is_admin:
-        return redirect('/dashboard?error=Admin access denied')
-    
-    try:
-        # Get statistics
-        with get_db() as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute('SELECT COUNT(*) as count FROM users')
-            total_users = cursor.fetchone()['count']
-            
-            cursor.execute('SELECT COUNT(*) as count FROM deployments')
-            total_deployments = cursor.fetchone()['count']
-            
-            cursor.execute('''
-                SELECT COUNT(*) as count FROM payments 
-                WHERE status = 'submitted'
-            ''')
-            pending_payments = cursor.fetchone()['count']
-        
-        stats = {
-            'total_users': total_users,
-            'total_deployments': total_deployments,
-            'active_processes': len(active_processes),
-            'pending_payments': pending_payments
-        }
-        
-        # Get all users
-        users = []
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, email, credits, created_at, is_banned
-                FROM users
-                ORDER BY created_at DESC
-            ''')
-            
-            for row in cursor.fetchall():
-                user_data = dict(row)
-                
-                # Get deployment count
-                cursor.execute('''
-                    SELECT COUNT(*) as count FROM deployments 
-                    WHERE user_id = ?
-                ''', (user_data['id'],))
-                user_data['deployments'] = [None] * cursor.fetchone()['count']
-                
-                users.append(user_data)
-        
-        # Get payments
-        payments = []
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT * FROM payments
-                ORDER BY 
-                    CASE status
-                        WHEN 'submitted' THEN 1
-                        WHEN 'pending' THEN 2
-                        WHEN 'approved' THEN 3
-                        WHEN 'rejected' THEN 4
-                        ELSE 5
-                    END,
-                    created_at DESC
-                LIMIT 100
-            ''')
-            
-            payments = [dict(row) for row in cursor.fetchall()]
-        
-        return render_template_string(ADMIN_PANEL_HTML,
-            stats=stats,
-            users=users,
-            payments=payments
-        )
-    
-    except Exception as e:
-        log_error(str(e), "admin_panel")
-        return redirect('/dashboard?error=Error loading admin panel')
-
-# ==================== STATIC FILES ====================
-
-@app.route('/logo.jpg')
-def serve_logo():
-    logo_path = os.path.join(STATIC_DIR, 'logo.jpg')
-    if os.path.exists(logo_path):
-        return send_file(logo_path, mimetype='image/jpeg')
-    return '', 404
-
-@app.route('/qr.jpg')
-def serve_qr():
-    qr_path = os.path.join(STATIC_DIR, 'qr.jpg')
-    if os.path.exists(qr_path):
-        return send_file(qr_path, mimetype='image/jpeg')
-    return '', 404
-
-# ==================== API ROUTES ====================
-
-@app.route('/api/credits')
-@limiter.limit("60 per minute")
-def api_credits():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        credits = get_credits(user_id)
-        
-        return jsonify({
-            'success': True,
-            'credits': credits
-        })
-    
-    except Exception as e:
-        log_error(str(e), "api_credits")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployments')
-@limiter.limit("60 per minute")
-def api_deployments():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT * FROM deployments 
-                WHERE user_id = ?
-                ORDER BY created_at DESC
-            ''', (user_id,))
-            
-            deployments = []
-            for row in cursor.fetchall():
-                deploy = dict(row)
-                deploy['dependencies'] = json.loads(deploy['dependencies'] or '[]')
-                deploy['env_vars'] = json.loads(deploy['env_vars'] or '{}')
-                deployments.append(deploy)
-        
-        return jsonify({
-            'success': True,
-            'deployments': deployments
-        })
-    
-    except Exception as e:
-        log_error(str(e), "api_deployments")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deploy/upload', methods=['POST'])
-@limiter.limit("10 per hour")
-def api_deploy_upload():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'error': 'No file uploaded'})
-        
-        file = request.files['file']
-        
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No file selected'})
-        
-        
-        filename = secure_filename(file.filename)
-        file_ext = os.path.splitext(filename)[1].lower()
-        
-        if file_ext not in ALLOWED_EXTENSIONS:
-            return jsonify({'success': False, 'error': f'File type not allowed. Allowed: {", ".join(ALLOWED_EXTENSIONS)}'})
-        
-        
-        upload_path = os.path.join(UPLOADS_DIR, f"{user_id}_{int(time.time())}_{filename}")
-        file.save(upload_path)
-        
-        
-        file_size = os.path.getsize(upload_path)
-        if file_size > MAX_FILE_SIZE:
-            os.remove(upload_path)
-            return jsonify({'success': False, 'error': f'File too large (max {MAX_FILE_SIZE/1024/1024}MB)'})
-        
-        
-        deploy_id, message = deploy_from_file(user_id, upload_path, filename)
-        
-        
-        try:
-            os.remove(upload_path)
-        except:
-            pass
-        
-        if deploy_id:
-            return jsonify({
-                'success': True,
-                'deploy_id': deploy_id,
-                'message': message
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': message
-            })
-    
-    except Exception as e:
-        log_error(str(e), "api_deploy_upload")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deploy/github', methods=['POST'])
-@limiter.limit("5 per hour")
-def api_deploy_github():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        data = request.get_json()
-        
-        repo_url = data.get('url', '').strip()
-        branch = data.get('branch', 'main').strip()
-        build_cmd = data.get('build_command', '').strip()
-        start_cmd = data.get('start_command', '').strip()
-        
-        if not repo_url:
-            return jsonify({'success': False, 'error': 'Repository URL required'})
-        
-        deploy_id, message = deploy_from_github(user_id, repo_url, branch, build_cmd, start_cmd)
-        
-        if deploy_id:
-            return jsonify({
-                'success': True,
-                'deploy_id': deploy_id,
-                'message': message
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': message
-            })
-    
-    except Exception as e:
-        log_error(str(e), "api_deploy_github")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>/stop', methods=['POST'])
-@limiter.limit("30 per minute")
-def api_stop_deployment(deploy_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        # Verify ownership
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        success, message = stop_deployment(deploy_id)
-        
-        return jsonify({
-            'success': success,
-            'message': message
-        })
-    
-    except Exception as e:
-        log_error(str(e), f"api_stop_deployment {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>', methods=['DELETE'])
-@limiter.limit("30 per minute")
-def api_delete_deployment(deploy_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        # Verify ownership
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        success, message = delete_deployment(deploy_id)
-        
-        return jsonify({
-            'success': success,
-            'message': message
-        })
-    
-    except Exception as e:
-        log_error(str(e), f"api_delete_deployment {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>/logs')
-@limiter.limit("60 per minute")
-def api_deployment_logs(deploy_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        return jsonify({
-            'success': True,
-            'logs': deployment.get('logs', '')
-        })
-    
-    except Exception as e:
-        log_error(str(e), f"api_deployment_logs {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>/files')
-@limiter.limit("60 per minute")
-def api_deployment_files(deploy_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        files = get_deployment_files(deploy_id)
-        
-        return jsonify({
-            'success': True,
-            'files': files
-        })
-    
-    except Exception as e:
-        log_error(str(e), f"api_deployment_files {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>/env', methods=['POST'])
-@limiter.limit("30 per minute")
-def api_add_env_var(deploy_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        data = request.get_json()
-        key = data.get('key', '').strip()
-        value = data.get('value', '').strip()
-        
-        if not key:
-            return jsonify({'success': False, 'error': 'Key required'})
-        
-        env_vars = deployment.get('env_vars', {})
-        env_vars[key] = value
-        
-        update_deployment(deploy_id, env_vars=env_vars)
-        
-        return jsonify({
-            'success': True,
-            'env_vars': env_vars
-        })
-    
-    except Exception as e:
-        log_error(str(e), f"api_add_env_var {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>/env/<key>', methods=['DELETE'])
-@limiter.limit("30 per minute")
-def api_delete_env_var(deploy_id, key):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        env_vars = deployment.get('env_vars', {})
-        env_vars.pop(key, None)
-        
-        update_deployment(deploy_id, env_vars=env_vars)
-        
-        return jsonify({
-            'success': True,
-            'env_vars': env_vars
-        })
-    
-    except Exception as e:
-        log_error(str(e), f"api_delete_env_var {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>/backup', methods=['POST'])
-@limiter.limit("10 per hour")
-def api_create_backup(deploy_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        backup_path, backup_name = create_backup(deploy_id)
-        
-        if backup_path:
-            return jsonify({
-                'success': True,
-                'backup_name': backup_name
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': backup_name
-            })
-    
-    except Exception as e:
-        log_error(str(e), f"api_create_backup {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/deployment/<deploy_id>/backup/download')
-def api_download_backup(deploy_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        deployment = get_deployment(deploy_id)
-        if not deployment:
-            return jsonify({'success': False, 'error': 'Deployment not found'})
-        
-        if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        # Find latest backup for this deployment
-        backup_files = [f for f in os.listdir(BACKUPS_DIR) if f.startswith(f"{deployment['name']}_{deploy_id}")]
-        
-        if not backup_files:
-            return jsonify({'success': False, 'error': 'No backup found'})
-        
-        # Get most recent
-        backup_files.sort(reverse=True)
-        backup_path = os.path.join(BACKUPS_DIR, backup_files[0])
-        
-        return send_file(backup_path, as_attachment=True, download_name=backup_files[0])
-    
-    except Exception as e:
-        log_error(str(e), f"api_download_backup {deploy_id}")
-        return jsonify({'success': False, 'error': str(e)})
-
-# ==================== PAYMENT API ROUTES ====================
-
-@app.route('/api/payment/create', methods=['POST'])
-@limiter.limit("10 per hour")
-def api_create_payment():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        data = request.get_json()
-        package_type = data.get('package_type')
-        custom_amount = data.get('custom_amount')
-        
-        payment_id, payment_data = create_payment_request(user_id, package_type, custom_amount)
-        
-        if payment_id:
-            return jsonify({'success': True, 'payment': payment_data})
-        else:
-            return jsonify({'success': False, 'error': payment_data})
-    
-    except Exception as e:
-        log_error(str(e), "api_create_payment")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/payment/submit', methods=['POST'])
-@limiter.limit("10 per hour")
-def api_submit_payment():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        data = request.get_json()
-        payment_id = data.get('payment_id')
-        screenshot = data.get('screenshot')
-        transaction_id = data.get('transaction_id')
-        
-        success, message = submit_payment_proof(payment_id, screenshot, transaction_id)
-        
-        return jsonify({'success': success, 'message': message})
-    
-    except Exception as e:
-        log_error(str(e), "api_submit_payment")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/payment/<payment_id>/screenshot')
-def api_payment_screenshot(payment_id):
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return 'Not authenticated', 403
-        
-        user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
-        
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM payments WHERE id = ?', (payment_id,))
-            row = cursor.fetchone()
-            
-            if not row:
-                return 'Not found', 404
-            
-            payment = dict(row)
-        
-        # Only admin or payment owner can view
-        if not is_admin and payment['user_id'] != user_id:
-            return 'Access denied', 403
-        
-        screenshot_path = payment.get('screenshot_path')
-        
-        if screenshot_path and os.path.exists(screenshot_path):
-            return send_file(screenshot_path, mimetype='image/jpeg')
-        
-        return 'Screenshot not found', 404
-    
-    except Exception as e:
-        log_error(str(e), f"api_payment_screenshot {payment_id}")
-        return str(e), 500
-
-# ==================== ADMIN API ROUTES ====================
-
-@app.route('/api/admin/metrics')
-@limiter.limit("60 per minute")
-def api_admin_metrics():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
-        
-        if not is_admin:
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        metrics = get_system_metrics()
-        
-        return jsonify({
-            'success': True,
-            'metrics': metrics
-        })
-    
-    except Exception as e:
-        log_error(str(e), "api_admin_metrics")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/admin/add-credits', methods=['POST'])
-@limiter.limit("30 per minute")
-def api_admin_add_credits():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
-        
-        if not is_admin:
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        data = request.get_json()
-        target_user_id = data.get('user_id')
-        amount = float(data.get('amount', 0))
-        
-        if amount <= 0:
-            return jsonify({'success': False, 'error': 'Invalid amount'})
-        
-        success = add_credits(target_user_id, amount, f"Admin credit by {user['email']}")
-        
-        if success:
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': 'Failed to add credits'})
-    
-    except Exception as e:
-        log_error(str(e), "api_admin_add_credits")
-        return jsonify({'success': False, 'error': str(e)})
-
-@app.route('/api/admin/ban-user', methods=['POST'])
-@limiter.limit("30 per minute")
-def api_admin_ban_user():
-    try:
-        session_token = request.cookies.get('session_token')
-        fingerprint = get_device_fingerprint(request)
-        user_id = verify_session(session_token, fingerprint)
-        
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Not authenticated'})
-        
-        user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
-        
-        if not is_admin:
-            return jsonify({'success': False, 'error': 'Access denied'})
-        
-        data = request.get_json()
-        target_user_id = data.get('user_id')
-        ban = data.get('ban', True)
-        
-        update_user(target_user_id, is_banned=1 if ban else 0)
-        
-        return jsonify({'success': True})
-    
-    except Exception as e:
-        log_error(str(e), "api_admin_ban_user")
-        return jsonify({'success': False, 'error': str(e)})
-
-# ==================== ERROR HANDLERS ====================
-
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({'error': 'Not found'}), 404
-
-@app.errorhandler(500)
-def internal_error(e):
-    log_error(str(e), "internal_error")
-    return jsonify({'error': 'Internal server error'}), 500
-
-@app.errorhandler(429)
-def ratelimit_handler(e):
-    return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
-
-# ==================== BACKGROUND TASKS ====================
-
-def cleanup_expired_sessions():
-    while True:
-        try:
-            time.sleep(3600)  # Every hour
-            
-            with get_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    DELETE FROM sessions 
-                    WHERE expires_at < ?
-                ''', (datetime.now().isoformat(),))
-                
-                deleted = cursor.rowcount
-                if deleted > 0:
-                    logger.info(f"Cleaned up {deleted} expired sessions")
-        
-        except Exception as e:
-            log_error(str(e), "cleanup_expired_sessions")
-
-def monitor_deployments():
-    while True:
-        try:
-            time.sleep(30)  # Every 30 seconds
-            
-            with PROCESS_LOCK:
-                for deploy_id, process in list(active_processes.items()):
-                    # Check if process is still running
-                    if process.poll() is not None:
-                        # Process died
-                        return_code = process.returncode
-                        
-                        deployment = get_deployment(deploy_id)
-                        if deployment and deployment['status'] == 'running':
-                            update_deployment(
-                                deploy_id,
-                                status='crashed',
-                                logs=f"Process exited with code {return_code}"
-                            )
-                            
-                            logger.warning(f"Deployment {deploy_id} crashed (exit code: {return_code})")
-                            
-                            # Remove from active processes
-                            del active_processes[deploy_id]
-        
-        except Exception as e:
-            log_error(str(e), "monitor_deployments")
-
-# ==================== STARTUP & SHUTDOWN ====================
-
-def run_flask():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
-
-def keep_alive():
-
-    flask_thread = Thread(target=run_flask, daemon=True)
-    flask_thread.start()
-    
-    port = os.environ.get('PORT', 8080)
-    logger.info(f"{Fore.GREEN}✅ Web App: http://localhost:{port}")
-
-def run_bot():
-    try:
-        logger.info(f"{Fore.GREEN}🤖 Starting Telegram Bot...")
-        bot.infinity_polling(timeout=10, long_polling_timeout=5)
-    except Exception as e:
-        log_error(str(e), "Telegram bot")
-
-def cleanup_on_exit():
-    logger.warning(f"{Fore.YELLOW}🛑 Shutting down EliteHost...")
-    
-    
-    with PROCESS_LOCK:
-        for deploy_id, process in list(active_processes.items()):
-            try:
-                process.terminate()
-                try:
-                    process.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait(timeout=2)
-            except Exception as e:
-                log_error(str(e), f"cleanup deployment {deploy_id}")
-    
-    
-    for payment_id, timer in list(payment_timers.items()):
-        try:
-            timer.cancel()
-        except:
-            pass
-    
-    logger.warning(f"{Fore.GREEN}✅ Cleanup complete")
-
-atexit.register(cleanup_on_exit)
-
-def signal_handler(sig, frame):
-    cleanup_on_exit()
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
-
-
-
-if __name__ == '__main__':
-    print("\n" + "=" * 90)
-    print(f"{Fore.CYAN}{'🚀 ELITEHOST v13.0 - COMPLETE PROFESSIONAL EDITION':^90}")
-    print("=" * 90)
-    print(f"{Fore.GREEN}✨ FEATURES:")
-    print(f"{Fore.CYAN}   🗄️  SQLite Database (Production Ready)")
-    print(f"{Fore.CYAN}   🔒 Advanced Security (Rate Limiting, Device Fingerprinting)")
-    print(f"{Fore.CYAN}   💳 Complete Payment System with QR Codes")
-    print(f"{Fore.CYAN}   🤖 AI Auto-Deploy & Dependency Detection")
-    print(f"{Fore.CYAN}   📊 Real-time Monitoring & Health Checks")
-    print(f"{Fore.CYAN}   💾 Automated Backups & Recovery")
-    print(f"{Fore.CYAN}   📱 Telegram Bot Integration")
-    print(f"{Fore.CYAN}   🎨 Modern Blue UI Design (Complete)")
-    print(f"{Fore.CYAN}   📝 Enhanced Logging & Error Tracking")
-    print(f"{Fore.CYAN}   🚀 File & GitHub Deployments")
-    print(f"{Fore.CYAN}   👑 Admin Panel with Full Control")
-    print("=" * 90)
-    
-    
-    for img_name in ['logo.jpg', 'qr.jpg']:
-        img_path = os.path.join(STATIC_DIR, img_name)
-        if not os.path.exists(img_path):
-            print(f"{Fore.YELLOW}⚠️  {img_name} not found. Add to: {img_path}")
-    
-    
-    Thread(target=cleanup_expired_sessions, daemon=True).start()
-    Thread(target=monitor_deployments, daemon=True).start()
-    
-    
-    keep_alive()
-    
-    
-    bot_thread = Thread(target=run_bot, daemon=True)
-    bot_thread.start()
-    
-    port = os.environ.get('PORT', 8080)
-    print(f"\n{Fore.GREEN}🌐 Web App: http://localhost:{port}")
-    print(f"{Fore.YELLOW}📱 Register: http://localhost:{port}/register")
-    print(f"{Fore.YELLOW}🔑 Login: http://localhost:{port}/login")
-    print(f"{Fore.MAGENTA}👑 Admin: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
-    print(f"{Fore.CYAN}💳 Payment System: Active")
-    print(f"{Fore.CYAN}📞 Support: {TELEGRAM_LINK}")
-    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v13.0 READY - COMPLETE SYSTEM':^90}")
-    print("=" * 90 + "\n")
-    
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print(f"\n{Fore.YELLOW}Shutting down...")
-        cleanup_on_exit()
