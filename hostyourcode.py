@@ -3535,7 +3535,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
 
 def keep_alive():
-    """Start Flask in separate thread"""
+
     flask_thread = Thread(target=run_flask, daemon=True)
     flask_thread.start()
     
@@ -3552,7 +3552,7 @@ def run_bot():
 def cleanup_on_exit():
     logger.warning(f"{Fore.YELLOW}🛑 Shutting down EliteHost...")
     
-    # Stop all deployments
+    
     with PROCESS_LOCK:
         for deploy_id, process in list(active_processes.items()):
             try:
@@ -3565,7 +3565,7 @@ def cleanup_on_exit():
             except Exception as e:
                 log_error(str(e), f"cleanup deployment {deploy_id}")
     
-    # Cancel payment timers
+    
     for payment_id, timer in list(payment_timers.items()):
         try:
             timer.cancel()
@@ -3583,7 +3583,7 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-# ==================== MAIN ====================
+
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
@@ -3603,20 +3603,20 @@ if __name__ == '__main__':
     print(f"{Fore.CYAN}   👑 Admin Panel with Full Control")
     print("=" * 90)
     
-    # Create placeholder images if needed
+    
     for img_name in ['logo.jpg', 'qr.jpg']:
         img_path = os.path.join(STATIC_DIR, img_name)
         if not os.path.exists(img_path):
             print(f"{Fore.YELLOW}⚠️  {img_name} not found. Add to: {img_path}")
     
-    # Start background tasks
+    
     Thread(target=cleanup_expired_sessions, daemon=True).start()
     Thread(target=monitor_deployments, daemon=True).start()
     
-    # Start Flask
+    
     keep_alive()
     
-    # Start Telegram bot
+    
     bot_thread = Thread(target=run_bot, daemon=True)
     bot_thread.start()
     
