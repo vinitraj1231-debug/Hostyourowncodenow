@@ -3529,7 +3529,6 @@ def cleanup_expired_sessions():
             log_error(str(e), "cleanup_expired_sessions")
 
 def monitor_deployments():
-    """Monitor deployment health"""
     while True:
         try:
             time.sleep(30)  # Every 30 seconds
@@ -3560,7 +3559,6 @@ def monitor_deployments():
 # ==================== STARTUP & SHUTDOWN ====================
 
 def run_flask():
-    """Run Flask app"""
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
 
@@ -3573,7 +3571,6 @@ def keep_alive():
     logger.info(f"{Fore.GREEN}✅ Web App: http://localhost:{port}")
 
 def run_bot():
-    """Run Telegram bot polling"""
     try:
         logger.info(f"{Fore.GREEN}🤖 Starting Telegram Bot...")
         bot.infinity_polling(timeout=10, long_polling_timeout=5)
@@ -3581,7 +3578,6 @@ def run_bot():
         log_error(str(e), "Telegram bot")
 
 def cleanup_on_exit():
-    """Cleanup on shutdown"""
     logger.warning(f"{Fore.YELLOW}🛑 Shutting down EliteHost...")
     
     # Stop all deployments
