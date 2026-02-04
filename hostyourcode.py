@@ -2468,7 +2468,7 @@ ADMIN_PANEL_HTML = """
             </div>
         </div>
     </div>
-    
+    """
     <script>
         function adminApp() {
             return {
