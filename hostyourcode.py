@@ -2468,7 +2468,7 @@ ADMIN_PANEL_HTML = """
             </div>
         </div>
     </div>
-    """
+    
     <script>
         function adminApp() {
             return {
@@ -2542,7 +2542,7 @@ ADMIN_PANEL_HTML = """
     </script>
 </body>
 </html>
-
+"""
 
 # ==================== FLASK ROUTES (COMPLETE) ====================
 
