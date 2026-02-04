@@ -3611,12 +3611,12 @@ def monitor_deployments():
 
 # ==================== STARTUP & SHUTDOWN ====================
 
+
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
 
 def keep_alive():
-
     flask_thread = Thread(target=run_flask, daemon=True)
     flask_thread.start()
     
@@ -3633,7 +3633,7 @@ def run_bot():
 def cleanup_on_exit():
     logger.warning(f"{Fore.YELLOW}🛑 Shutting down EliteHost...")
     
-    
+    # Stop all active processes
     with PROCESS_LOCK:
         for deploy_id, process in list(active_processes.items()):
             try:
@@ -3646,7 +3646,7 @@ def cleanup_on_exit():
             except Exception as e:
                 log_error(str(e), f"cleanup deployment {deploy_id}")
     
-    
+    # Cancel payment timers
     for payment_id, timer in list(payment_timers.items()):
         try:
             timer.cancel()
@@ -3664,8 +3664,83 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
+# ==================== ADMIN USER AUTO-CREATION ====================
+def ensure_admin_exists():
+    """Ensure admin user exists in database with proper setup"""
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            
+            # Check if admin email already exists
+            cursor.execute('SELECT id, email, device_fingerprint FROM users WHERE email = ?', (ADMIN_EMAIL,))
+            existing = cursor.fetchone()
+            
+            if existing:
+                print(f"{Fore.GREEN}✅ Admin user exists: {ADMIN_EMAIL}")
+                
+                # Update admin credentials and unlock device restriction
+                admin_fingerprint = hashlib.sha256(f"admin-{ADMIN_EMAIL}".encode()).hexdigest()
+                
+                cursor.execute('''
+                    UPDATE users 
+                    SET credits = 999999, 
+                        is_banned = 0,
+                        password = ?,
+                        device_fingerprint = ?,
+                        telegram_id = ?
+                    WHERE email = ?
+                ''', (
+                    hash_password(ADMIN_PASSWORD),
+                    admin_fingerprint,
+                    str(OWNER_ID),
+                    ADMIN_EMAIL
+                ))
+                conn.commit()
+                
+                print(f"{Fore.YELLOW}🔑 Admin password updated & ready")
+                print(f"{Fore.CYAN}🌐 Login at: http://localhost:{os.environ.get('PORT', 8080)}/login")
+                return
+            
+            # Create new admin user
+            admin_user_id = str(uuid.uuid4())
+            admin_fingerprint = hashlib.sha256(f"admin-{ADMIN_EMAIL}".encode()).hexdigest()
+            
+            cursor.execute('''
+                INSERT INTO users (
+                    id, email, password, device_fingerprint, credits,
+                    total_earned, total_spent, created_at, last_login, 
+                    ip_address, is_banned, telegram_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                admin_user_id,
+                ADMIN_EMAIL,
+                hash_password(ADMIN_PASSWORD),
+                admin_fingerprint,
+                999999,
+                0,
+                0,
+                datetime.now().isoformat(),
+                datetime.now().isoformat(),
+                '127.0.0.1',
+                0,
+                str(OWNER_ID)
+            ))
+            
+            conn.commit()
+            
+            print(f"\n{Fore.GREEN}{'='*90}")
+            print(f"{Fore.GREEN}🎉 ADMIN USER CREATED!")
+            print(f"{Fore.GREEN}{'='*90}")
+            print(f"{Fore.YELLOW}📧 Email: {ADMIN_EMAIL}")
+            print(f"{Fore.YELLOW}🔑 Password: {ADMIN_PASSWORD}")
+            print(f"{Fore.CYAN}🌐 Login: http://localhost:{os.environ.get('PORT', 8080)}/login")
+            print(f"{Fore.GREEN}{'='*90}\n")
+            
+    except Exception as e:
+        print(f"{Fore.RED}❌ Admin creation error: {e}")
+        log_error(str(e), "ensure_admin_exists")
 
-
+# ==================== MAIN EXECUTION ====================
 if __name__ == '__main__':
     print("\n" + "=" * 90)
     print(f"{Fore.CYAN}{'🚀 ELITEHOST v13.0 - COMPLETE PROFESSIONAL EDITION':^90}")
@@ -3684,19 +3759,42 @@ if __name__ == '__main__':
     print(f"{Fore.CYAN}   👑 Admin Panel with Full Control")
     print("=" * 90)
     
-    
+    # Check for static files
     for img_name in ['logo.jpg', 'qr.jpg']:
         img_path = os.path.join(STATIC_DIR, img_name)
         if not os.path.exists(img_path):
             print(f"{Fore.YELLOW}⚠️  {img_name} not found. Add to: {img_path}")
     
+    # ✅ CREATE/UPDATE ADMIN USER (NEW LINE)
+    ensure_admin_exists()
     
+    # Start background threads
     Thread(target=cleanup_expired_sessions, daemon=True).start()
     Thread(target=monitor_deployments, daemon=True).start()
     
-    
+    # Start web app
     keep_alive()
     
+    # Start bot
+    bot_thread = Thread(target=run_bot, daemon=True)
+    bot_thread.start()
+    
+    port = os.environ.get('PORT', 8080)
+    print(f"\n{Fore.GREEN}🌐 Web App: http://localhost:{port}")
+    print(f"{Fore.YELLOW}📱 Register: http://localhost:{port}/register")
+    print(f"{Fore.YELLOW}🔑 Login: http://localhost:{port}/login")
+    print(f"{Fore.MAGENTA}👑 Admin: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
+    print(f"{Fore.CYAN}💳 Payment System: Active")
+    print(f"{Fore.CYAN}📞 Support: {TELEGRAM_LINK}")
+    print(f"\n{Fore.GREEN}{'✅ ELITEHOST v13.0 READY - COMPLETE SYSTEM':^90}")
+    print("=" * 90 + "\n")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"\n{Fore.YELLOW}Shutting down...")
+        cleanup_on_exit()
     
     bot_thread = Thread(target=run_bot, daemon=True)
     bot_thread.start()
