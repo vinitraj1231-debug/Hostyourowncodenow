@@ -2765,7 +2765,7 @@ def login():
         if user.get('is_banned'):
             return redirect('/login?error=Account banned. Contact support')
         
-        if user['email'] != ADMIN_EMAIL and user['device_fingerprint'] != fingerprint:
+        if user['device_fingerprint'] != fingerprint:
     return redirect('/login?error=Security error. Please use your original device')
         # Update last login
         update_user(user_id, last_login=datetime.now().isoformat())
