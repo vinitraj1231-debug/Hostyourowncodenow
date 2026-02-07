@@ -2826,13 +2826,107 @@ def login():
         # Check if banned
         if user.get('is_banned'):
             return redirect('/login?error=Account banned. Contact support')
+@app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("20 per hour")
+def login():
+    if request.method == 'GET':
+        error = request.args.get('error', '')
+        success = request.args.get('success', '')
         
-        # Check if user is admin by email or ID (bypass fingerprint check)
-        # Check if user is admin by email or ID (bypass fingerprint check)
+        return render_template_string(LOGIN_PAGE,
+            title='Login',
+            subtitle='Sign in to your account',
+            action='/login',
+            button_text='Sign In',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register',
+            error=error,
+            success=success
+        )
+    
+    try:
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        fingerprint = get_device_fingerprint(request)
+        ip = request.remote_addr
+        
+        # Basic validation
+        if not email or not password:
+            return redirect('/login?error=Email and password required')
+        
+        # ✅ ADMIN LOGIN CHECK - EXACT MATCH
+        is_admin_login = (
+            email.lower() == ADMIN_EMAIL.lower().strip() and 
+            password == ADMIN_PASSWORD
+        )
+        
+        # Debug log (remove after testing)
+        logger.info(f"Login attempt - Email: {email}, Is Admin: {is_admin_login}")
+        
+        # ✅ DIRECT ADMIN LOGIN - NO DATABASE CHECK
+        if is_admin_login:
+            # Find or create admin account
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, is_banned FROM users WHERE email = ?', (email,))
+                row = cursor.fetchone()
+                
+                if row:
+                    user_id = row['id']
+                    if row['is_banned']:
+                        return redirect('/login?error=Account banned')
+                    
+                    # Update device fingerprint for admin (allow any device)
+                    update_user(user_id, 
+                              device_fingerprint=fingerprint,
+                              last_login=datetime.now().isoformat())
+                else:
+                    # Create admin account if doesn't exist
+                    user_id = create_user(email, password, fingerprint, ip)
+                    if not user_id:
+                        return redirect('/login?error=Failed to create admin account')
+                
+                log_activity(user_id, 'ADMIN_LOGIN', f'Admin login from {ip}', ip)
+                
+                # Create session
+                session_token = create_session(user_id, fingerprint)
+                
+                logger.info(f"✅ Admin logged in successfully - Redirecting to /admin")
+                
+                response = make_response(redirect('/admin'))
+                response.set_cookie('session_token', session_token,
+                                  max_age=SESSION_TIMEOUT_DAYS*86400,
+                                  httponly=True, samesite='Lax')
+                
+                return response
+        
+        # Check rate limiting for normal users
+        if check_login_attempts(ip):
+            return redirect(f'/login?error=Too many failed attempts. Try again in {LOGIN_ATTEMPT_WINDOW//60} minutes')
+        
+        # Normal user authentication
+        user_id = authenticate_user(email, password)
+        
+        if not user_id:
+            record_login_attempt(ip)
+            return redirect('/login?error=Invalid email or password')
+        
+        user = get_user(user_id)
+        
+        # Check if banned
+        if user.get('is_banned'):
+            return redirect('/login?error=Account banned. Contact support')
+        
+        # ✅ CHECK IF USER IS ADMIN BY EMAIL (case-insensitive)
+        is_admin_by_email = (user['email'].lower().strip() == ADMIN_EMAIL.lower().strip())
+        
+        # Check if user is admin by ID or email
         is_admin_user = (
             str(user_id) == str(OWNER_ID) or 
             str(user_id) == str(ADMIN_ID) or 
-            user['email'].lower() == ADMIN_EMAIL.lower()
+            is_admin_by_email
         )
         
         if is_admin_user:
@@ -2841,6 +2935,8 @@ def login():
                        device_fingerprint=fingerprint,
                        last_login=datetime.now().isoformat())
             log_activity(user_id, 'ADMIN_LOGIN', f'Admin login from {ip}', ip)
+            
+            logger.info(f"✅ Admin user logged in - Redirecting to /admin")
             
             # Create session
             session_token = create_session(user_id, fingerprint)
@@ -2872,8 +2968,8 @@ def login():
     
     except Exception as e:
         log_error(str(e), "login")
+        logger.error(f"Login error: {str(e)}")
         return redirect('/login?error=An error occurred. Please try again.')
-
 
 @app.route('/logout')
 @limiter.exempt  # No rate limiting on logout
@@ -2908,9 +3004,12 @@ def dashboard():
     if not user or user.get('is_banned'):
         return redirect('/login?error=Access denied')
     
-    is_admin = (str(user_id) == str(OWNER_ID) or 
-                str(user_id) == str(ADMIN_ID) or 
-                user['email'] == ADMIN_EMAIL)
+    # ✅ ADMIN CHECK - Case Insensitive
+    is_admin = (
+        str(user_id) == str(OWNER_ID) or 
+        str(user_id) == str(ADMIN_ID) or 
+        user['email'].lower().strip() == ADMIN_EMAIL.lower().strip()
+    )
     
     credits_display = '∞' if user['credits'] == float('inf') else user['credits']
     
@@ -2931,12 +3030,24 @@ def admin_panel():
         return redirect('/login?error=Please login first')
     
     user = get_user(user_id)
-    is_admin = (str(user_id) == str(OWNER_ID) or 
-                str(user_id) == str(ADMIN_ID) or 
-                user['email'] == ADMIN_EMAIL)
+    if not user:
+        return redirect('/login?error=User not found')
+    
+    # ✅ ADMIN CHECK - Case Insensitive Email
+    is_admin = (
+        str(user_id) == str(OWNER_ID) or 
+        str(user_id) == str(ADMIN_ID) or 
+        user['email'].lower().strip() == ADMIN_EMAIL.lower().strip()
+    )
+    
+    # Debug log
+    logger.info(f"Admin panel access - User: {user['email']}, Is Admin: {is_admin}")
     
     if not is_admin:
+        logger.warning(f"❌ Admin access denied for {user['email']}")
         return redirect('/dashboard?error=Admin access denied')
+    
+    logger.info(f"✅ Admin panel accessed by {user['email']}")
     
     try:
         # Get statistics
@@ -3012,6 +3123,7 @@ def admin_panel():
     
     except Exception as e:
         log_error(str(e), "admin_panel")
+        logger.error(f"Admin panel error: {str(e)}")
         return redirect('/dashboard?error=Error loading admin panel')
 
 # ==================== STATIC FILES ====================
