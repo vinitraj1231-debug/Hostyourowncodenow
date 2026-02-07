@@ -2828,10 +2828,11 @@ def login():
             return redirect('/login?error=Account banned. Contact support')
         
         # Check if user is admin by email or ID (bypass fingerprint check)
+        # Check if user is admin by email or ID (bypass fingerprint check)
         is_admin_user = (
             str(user_id) == str(OWNER_ID) or 
             str(user_id) == str(ADMIN_ID) or 
-            user['email'] == ADMIN_EMAIL.lower()
+            user['email'].lower() == ADMIN_EMAIL.lower()
         )
         
         if is_admin_user:
