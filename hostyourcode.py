@@ -2868,6 +2868,7 @@ def login():
 
 
 @app.route('/logout')
+@limiter.exempt  # No rate limiting on logout
 def logout():
     session_token = request.cookies.get('session_token')
     
@@ -2876,11 +2877,13 @@ def logout():
             with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM sessions WHERE token = ?', (session_token,))
+                logger.info("User logged out successfully")
         except Exception as e:
             log_error(str(e), "logout")
     
+    # Clear session cookie and redirect to login
     response = make_response(redirect('/login?success=Logged out successfully'))
-    response.set_cookie('session_token', '', expires=0)
+    response.set_cookie('session_token', '', expires=0, httponly=True, samesite='Lax')
     
     return response
 
