@@ -2765,9 +2765,16 @@ def login():
         if not email or not password:
             return redirect('/login?error=Email and password required')
         
-        # Check if admin credentials
-        is_admin_login = (email == ADMIN_EMAIL.lower() and password == ADMIN_PASSWORD)
+        # ✅ Check if admin credentials (case-insensitive email)
+        is_admin_login = (
+            email.lower() == ADMIN_EMAIL.lower() and 
+            password == ADMIN_PASSWORD
+        )
         
+        # ✅ Debug logging (optional - remove after testing)
+        if email.lower() == ADMIN_EMAIL.lower():
+            logger.info(f"Admin email detected: {email}")
+            logger.info(f"Password match: {password == ADMIN_PASSWORD}")
         # Check rate limiting
         if not is_admin_login and check_login_attempts(ip):
             return redirect(f'/login?error=Too many failed attempts. Try again in {LOGIN_ATTEMPT_WINDOW//60} minutes')
