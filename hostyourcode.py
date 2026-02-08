@@ -2396,8 +2396,7 @@ uploadScreenshot(event) {
 </html>
 """
 
-
-                ADMIN_PANEL_HTML = """
+ ADMIN_PANEL_HTML = """
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
