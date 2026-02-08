@@ -2852,6 +2852,7 @@ def login():
             success=success
         )
     
+    # POST request handling
     try:
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
@@ -2864,16 +2865,15 @@ def login():
         
         # ✅ ADMIN LOGIN CHECK - EXACT MATCH
         is_admin_login = (
-            email.lower() == ADMIN_EMAIL.lower().strip() and 
+            email.lower().strip() == ADMIN_EMAIL.lower().strip() and 
             password == ADMIN_PASSWORD
         )
         
-        # Debug log (remove after testing)
+        # Debug log (optional - remove after testing)
         logger.info(f"Login attempt - Email: {email}, Is Admin: {is_admin_login}")
         
-        # ✅ DIRECT ADMIN LOGIN - NO DATABASE CHECK
+        # ✅ DIRECT ADMIN LOGIN
         if is_admin_login:
-            # Find or create admin account
             with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT id, is_banned FROM users WHERE email = ?', (email,))
@@ -2883,6 +2883,108 @@ def login():
                     user_id = row['id']
                     if row['is_banned']:
                         return redirect('/login?error=Account banned')
+                    
+                    # Update device fingerprint for admin (allow any device)
+                    update_user(user_id, 
+                              device_fingerprint=fingerprint,
+                              last_login=datetime.now().isoformat())
+                else:
+                    # Create admin account if doesn't exist
+                    user_id = create_user(email, password, fingerprint, ip)
+                    if not user_id:
+                        return redirect('/login?error=Failed to create admin account')
+                
+                # Log admin activity
+                log_activity(user_id, 'ADMIN_LOGIN', f'Admin login from {ip}', ip)
+                
+                # Create session
+                session_token = create_session(user_id, fingerprint)
+                
+                logger.info(f"✅ Admin logged in successfully - Redirecting to /admin")
+                
+                # Set cookie and redirect
+                response = make_response(redirect('/admin'))
+                response.set_cookie('session_token', session_token,
+                                  max_age=SESSION_TIMEOUT_DAYS*86400,
+                                  httponly=True, samesite='Lax')
+                
+                return response
+        
+        # ✅ NORMAL USER LOGIN
+        # Check rate limiting
+        if check_login_attempts(ip):
+            return redirect(f'/login?error=Too many failed attempts. Try again in {LOGIN_ATTEMPT_WINDOW//60} minutes')
+        
+        # Authenticate user
+        user_id = authenticate_user(email, password)
+        
+        if not user_id:
+            record_login_attempt(ip)
+            return redirect('/login?error=Invalid email or password')
+        
+        # Get user data
+        user = get_user(user_id)
+        
+        if not user:
+            return redirect('/login?error=User not found')
+        
+        # Check if banned
+        if user.get('is_banned'):
+            return redirect('/login?error=Account banned. Contact support')
+        
+        # ✅ CHECK IF USER IS ADMIN BY EMAIL (case-insensitive)
+        is_admin_by_email = (user['email'].lower().strip() == ADMIN_EMAIL.lower().strip())
+        
+        # Check if user is admin by ID or email
+        is_admin_user = (
+            str(user_id) == str(OWNER_ID) or 
+            str(user_id) == str(ADMIN_ID) or 
+            is_admin_by_email
+        )
+        
+        if is_admin_user:
+            # Admin can login from any device - update fingerprint
+            update_user(user_id, 
+                       device_fingerprint=fingerprint,
+                       last_login=datetime.now().isoformat())
+            log_activity(user_id, 'ADMIN_LOGIN', f'Admin login from {ip}', ip)
+            
+            logger.info(f"✅ Admin user logged in - Redirecting to /admin")
+            
+            # Create session
+            session_token = create_session(user_id, fingerprint)
+            
+            response = make_response(redirect('/admin'))
+            response.set_cookie('session_token', session_token,
+                              max_age=SESSION_TIMEOUT_DAYS*86400,
+                              httponly=True, samesite='Lax')
+            
+            return response
+        else:
+            # ✅ REGULAR USER - CHECK DEVICE FINGERPRINT
+            if user['device_fingerprint'] != fingerprint:
+                return redirect('/login?error=Please use your registered device to login')
+            
+            # Update last login
+            update_user(user_id, last_login=datetime.now().isoformat())
+            log_activity(user_id, 'USER_LOGIN', f'Login from {ip}', ip)
+            
+            logger.info(f"✅ Regular user logged in - Redirecting to /dashboard")
+            
+            # Create session
+            session_token = create_session(user_id, fingerprint)
+            
+            response = make_response(redirect('/dashboard'))
+            response.set_cookie('session_token', session_token,
+                              max_age=SESSION_TIMEOUT_DAYS*86400,
+                              httponly=True, samesite='Lax')
+            
+            return response
+    
+    except Exception as e:
+        log_error(str(e), "login")
+        logger.error(f"Login error: {str(e)}")
+        return redirect('/login?error=An error occurred. Please try again.')
                     
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per hour")
