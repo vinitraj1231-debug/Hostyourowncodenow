@@ -1,5 +1,5 @@
 """
-🚀 ELITEHOST v13.0 - COMPLETE PROFESSIONAL EDITION
+🚀 ELITEHOST v13.0 - COMPLETE PROFESSIONAL EDITION (FIXED)
 Enterprise-Grade Cloud Deployment Platform
 Full Website Design + Backend + Payment System
 """
@@ -172,7 +172,7 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
+PART 2 follows:
 # ==================== DATABASE FUNCTIONS ====================
 
 def get_db_connection():
@@ -322,6 +322,15 @@ def check_existing_account(fingerprint):
         cursor.execute('SELECT id FROM users WHERE device_fingerprint = ?', (fingerprint,))
         row = cursor.fetchone()
         return row['id'] if row else None
+
+# ✅ MISSING FUNCTION - ADDED HERE
+def is_admin_user(user_id, email):
+    """Check if user is admin by ID or email"""
+    return (
+        str(user_id) == str(OWNER_ID) or 
+        str(user_id) == str(ADMIN_ID) or 
+        email.lower().strip() == ADMIN_EMAIL.lower().strip()
+    )
 
 def hash_password(password):
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -702,6 +711,7 @@ def handle_payment_action(call):
         log_error(str(e), "handle_payment_action")
         bot.answer_callback_query(call.id, f"Error: {str(e)}")
 
+
 # ==================== AI DEPENDENCY DETECTION ====================
 
 def extract_imports_from_code(code_content):
@@ -779,10 +789,12 @@ def detect_and_install_deps(project_path):
                 stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'random', 'datetime'}
                 third_party = all_imports - stdlib
                 
+                install_log.append("\n🔍 AUTO-DETECTED DEPENDENCIES")
                 for imp in third_party:
                     pkg = get_package_name(imp)
                     try:
                         __import__(imp)
+                        install_log.append(f"  ✓ {pkg} (already installed)")
                     except ImportError:
                         try:
                             subprocess.run(
@@ -794,7 +806,7 @@ def detect_and_install_deps(project_path):
                             install_log.append(f"  ✅ {pkg} (auto-detected)")
                             installed.append(pkg)
                         except:
-                            pass
+                            install_log.append(f"  ⚠️  {pkg} (failed)")
         
         install_log.append("\n" + "=" * 60)
         install_log.append(f"📦 Total Packages Installed: {len(set(installed))}")
@@ -1096,6 +1108,8 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
             add_credits(user_id, cost, "Refund")
         return None, str(e)
 
+
+
 def stop_deployment(deploy_id):
     try:
         if deploy_id in active_processes:
@@ -1209,6 +1223,7 @@ def get_system_metrics():
             'disk_total': 0
         }
 
+# ==================== HTML TEMPLATES ====================
 
 LOGIN_PAGE = """
 <!DOCTYPE html>
@@ -1315,7 +1330,6 @@ LOGIN_PAGE = """
     </div>
     
     <script>
-        // Form validation and UX improvements
         const form = document.getElementById('authForm');
         const submitBtn = document.getElementById('submitBtn');
         const btnText = document.getElementById('btnText');
@@ -1323,7 +1337,6 @@ LOGIN_PAGE = """
         const passwordInput = document.getElementById('password');
         
         form.addEventListener('submit', function(e) {
-            // Basic validation
             const email = emailInput.value.trim();
             const password = passwordInput.value;
             
@@ -1333,7 +1346,6 @@ LOGIN_PAGE = """
                 return false;
             }
             
-            // Email format validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 e.preventDefault();
@@ -1342,7 +1354,6 @@ LOGIN_PAGE = """
                 return false;
             }
             
-            // Password length check
             if (password.length < 6) {
                 e.preventDefault();
                 alert('Password must be at least 6 characters');
@@ -1350,18 +1361,15 @@ LOGIN_PAGE = """
                 return false;
             }
             
-            // Show loading state
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
             btnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
         });
         
-        // Auto-focus email field
         window.addEventListener('load', function() {
             emailInput.focus();
         });
         
-        // Enable Enter key to submit
         emailInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 passwordInput.focus();
@@ -1394,6 +1402,9 @@ DASHBOARD_HTML = """
             }
         }
     </script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body class="bg-slate-950 text-white" x-data="dashboardApp()">
     <!-- Sidebar -->
@@ -1608,7 +1619,10 @@ DASHBOARD_HTML = """
                     </button>
                 </div>
             </div>
-            
+
+
+
+
             <!-- New Deploy Page -->
             <div x-show="currentPage === 'new-deploy'" x-transition>
                 <h1 class="text-3xl font-bold mb-8">New Deployment</h1>
@@ -1770,70 +1784,68 @@ DASHBOARD_HTML = """
     </div>
     
     <!-- Payment Modal -->
-   <!-- Payment Modal - MOBILE FIXED VERSION -->
-<div x-show="modal === 'payment'" x-cloak 
-     class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto"
-     @click.self="modal = null">
-    <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-md w-full p-4 sm:p-6 my-4">
-        <div class="text-center mb-4 sm:mb-6">
-            <h2 class="text-xl sm:text-2xl font-bold mb-2">Complete Payment</h2>
-            <p class="text-slate-400 text-xs sm:text-sm">Scan QR code and submit proof</p>
-        </div>
-        
-        <div class="bg-slate-800/50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 text-sm">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-slate-400">Package:</span>
-                <span class="font-semibold" x-text="paymentData.package"></span>
+    <div x-show="modal === 'payment'" x-cloak 
+         class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto"
+         @click.self="modal = null">
+        <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-md w-full p-4 sm:p-6 my-4">
+            <div class="text-center mb-4 sm:mb-6">
+                <h2 class="text-xl sm:text-2xl font-bold mb-2">Complete Payment</h2>
+                <p class="text-slate-400 text-xs sm:text-sm">Scan QR code and submit proof</p>
             </div>
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-slate-400">Credits:</span>
-                <span class="font-semibold text-blue-400" x-text="paymentData.credits"></span>
+            
+            <div class="bg-slate-800/50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 text-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-slate-400">Package:</span>
+                    <span class="font-semibold" x-text="paymentData.package"></span>
+                </div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-slate-400">Credits:</span>
+                    <span class="font-semibold text-blue-400" x-text="paymentData.credits"></span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Amount:</span>
+                    <span class="text-xl sm:text-2xl font-bold text-green-400">₹<span x-text="paymentData.price"></span></span>
+                </div>
             </div>
-            <div class="flex items-center justify-between">
-                <span class="text-slate-400">Amount:</span>
-                <span class="text-xl sm:text-2xl font-bold text-green-400">₹<span x-text="paymentData.price"></span></span>
+            
+            <div class="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 text-center">
+                <img src="/qr.jpg" alt="Payment QR Code" class="w-48 h-48 sm:w-64 sm:h-64 mx-auto object-contain">
+                <p class="text-slate-900 font-semibold mt-2 text-sm sm:text-base">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
             </div>
-        </div>
-        
-        <div class="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 text-center">
-            <img src="/qr.jpg" alt="Payment QR Code" class="w-48 h-48 sm:w-64 sm:h-64 mx-auto object-contain">
-            <p class="text-slate-900 font-semibold mt-2 text-sm sm:text-base">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
-        </div>
-        
-        <div class="mb-3 sm:mb-4">
-            <label class="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Upload Screenshot</label>
-            <input type="file" accept="image/*" @change="uploadScreenshot($event)" 
-                   class="w-full px-3 py-2 sm:px-4 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
-        </div>
-        
-        <div class="mb-4 sm:mb-6">
-            <label class="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Transaction ID</label>
-            <input type="text" x-model="paymentData.transactionId" placeholder="Enter transaction/UTR ID" required
-                   class="w-full px-3 py-2 sm:px-4 sm:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
-        </div>
-        
-        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-yellow-400 mb-4 sm:mb-6">
-            <i class="fas fa-clock mr-2"></i>
-            <span>Time remaining: </span>
-            <span class="font-bold" x-text="formatTime(timeRemaining)"></span>
-        </div>
-        
-        <!-- FIXED BUTTONS FOR MOBILE -->
-        <div class="flex gap-2 sm:gap-3">
-            <button @click="modal = null" 
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition text-sm sm:text-base">
-                Cancel
-            </button>
-            <button @click="submitPayment()" 
-                    class="flex-1 bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition font-semibold text-sm sm:text-base">
-                <i class="fas fa-check mr-1 sm:mr-2"></i>Submit
-            </button>
+            
+            <div class="mb-3 sm:mb-4">
+                <label class="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Upload Screenshot</label>
+                <input type="file" accept="image/*" @change="uploadScreenshot($event)" 
+                       class="w-full px-3 py-2 sm:px-4 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
+            </div>
+            
+            <div class="mb-4 sm:mb-6">
+                <label class="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Transaction ID</label>
+                <input type="text" x-model="paymentData.transactionId" placeholder="Enter transaction/UTR ID" required
+                       class="w-full px-3 py-2 sm:px-4 sm:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
+            </div>
+            
+            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-yellow-400 mb-4 sm:mb-6">
+                <i class="fas fa-clock mr-2"></i>
+                <span>Time remaining: </span>
+                <span class="font-bold" x-text="formatTime(timeRemaining)"></span>
+            </div>
+            
+            <div class="flex gap-2 sm:gap-3">
+                <button @click="modal = null" 
+                        class="flex-1 bg-slate-700 hover:bg-slate-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition text-sm sm:text-base">
+                    Cancel
+                </button>
+                <button @click="submitPayment()" 
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition font-semibold text-sm sm:text-base">
+                    <i class="fas fa-check mr-1 sm:mr-2"></i>Submit
+                </button>
+            </div>
         </div>
     </div>
-</div>
-    
+
     <!-- Deployment Details Modal -->
-    <div x-show="modal === 'details'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" @click.self="modal = null">
+    <div x-show="modal === 'details'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto" @click.self="modal = null">
         <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-slate-900 z-10">
                 <h2 class="text-2xl font-bold">Deployment Details</h2>
@@ -2013,20 +2025,28 @@ DASHBOARD_HTML = """
                 },
                 
                 async loadDeployments() {
-                    const res = await fetch('/api/deployments');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.deployments = data.deployments;
-                        this.stats.total = data.deployments.length;
-                        this.stats.running = data.deployments.filter(d => d.status === 'running').length;
+                    try {
+                        const res = await fetch('/api/deployments');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.deployments = data.deployments;
+                            this.stats.total = data.deployments.length;
+                            this.stats.running = data.deployments.filter(d => d.status === 'running').length;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load deployments:', e);
                     }
                 },
                 
                 async updateCredits() {
-                    const res = await fetch('/api/credits');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.credits = data.credits === Infinity ? '∞' : data.credits.toFixed(1);
+                    try {
+                        const res = await fetch('/api/credits');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.credits = data.credits === Infinity ? '∞' : data.credits.toFixed(1);
+                        }
+                    } catch (e) {
+                        console.error('Failed to update credits:', e);
                     }
                 },
                 
@@ -2039,20 +2059,26 @@ DASHBOARD_HTML = """
                     
                     this.showNotification('🤖 Uploading and deploying...', 'info');
                     
-                    const res = await fetch('/api/deploy/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.showNotification('✅ Deployment successful!', 'success');
-                        this.loadDeployments();
-                        this.updateCredits();
-                        this.currentPage = 'deployments';
-                    } else {
-                        this.showNotification('❌ ' + data.error, 'error');
+                    try {
+                        const res = await fetch('/api/deploy/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            this.showNotification('✅ Deployment successful!', 'success');
+                            this.loadDeployments();
+                            this.updateCredits();
+                            this.currentPage = 'deployments';
+                        } else {
+                            this.showNotification('❌ ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Upload failed', 'error');
                     }
+                    
+                    event.target.value = '';
                 },
                 
                 async deployGithub() {
@@ -2060,44 +2086,52 @@ DASHBOARD_HTML = """
                     
                     this.showNotification('🤖 Cloning and deploying...', 'info');
                     
-                    const res = await fetch('/api/deploy/github', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            url: this.githubForm.url,
-                            branch: this.githubForm.branch || 'main',
-                            build_command: this.githubForm.buildCmd,
-                            start_command: this.githubForm.startCmd
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.showNotification('✅ GitHub deployment successful!', 'success');
-                        this.loadDeployments();
-                        this.updateCredits();
-                        this.currentPage = 'deployments';
-                        this.githubForm = { url: '', branch: 'main', buildCmd: '', startCmd: '' };
-                    } else {
-                        this.showNotification('❌ ' + data.error, 'error');
+                    try {
+                        const res = await fetch('/api/deploy/github', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                url: this.githubForm.url,
+                                branch: this.githubForm.branch || 'main',
+                                build_command: this.githubForm.buildCmd,
+                                start_command: this.githubForm.startCmd
+                            })
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            this.showNotification('✅ GitHub deployment successful!', 'success');
+                            this.loadDeployments();
+                            this.updateCredits();
+                            this.currentPage = 'deployments';
+                            this.githubForm = { url: '', branch: 'main', buildCmd: '', startCmd: '' };
+                        } else {
+                            this.showNotification('❌ ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Deployment failed', 'error');
                     }
                 },
                 
                 async selectPackage(packageType) {
-                    const res = await fetch('/api/payment/create', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ package_type: packageType })
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.paymentData = data.payment;
-                        this.paymentData.package = packageType.replace('_', ' ').toUpperCase();
-                        this.modal = 'payment';
-                        this.startTimer();
-                    } else {
-                        this.showNotification('❌ ' + data.error, 'error');
+                    try {
+                        const res = await fetch('/api/payment/create', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ package_type: packageType })
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            this.paymentData = data.payment;
+                            this.paymentData.package = packageType.replace('_', ' ').toUpperCase();
+                            this.modal = 'payment';
+                            this.startTimer();
+                        } else {
+                            this.showNotification('❌ ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Failed to create payment', 'error');
                     }
                 },
                 
@@ -2107,27 +2141,31 @@ DASHBOARD_HTML = """
                         return;
                     }
                     
-                    const res = await fetch('/api/payment/create', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ 
-                            package_type: 'custom',
-                            custom_amount: parseInt(this.customAmount)
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.paymentData = data.payment;
-                        this.paymentData.package = 'CUSTOM';
-                        this.modal = 'payment';
-                        this.startTimer();
-                    } else {
-                        this.showNotification('❌ ' + data.error, 'error');
+                    try {
+                        const res = await fetch('/api/payment/create', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ 
+                                package_type: 'custom',
+                                custom_amount: parseInt(this.customAmount)
+                            })
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            this.paymentData = data.payment;
+                            this.paymentData.package = 'CUSTOM';
+                            this.modal = 'payment';
+                            this.startTimer();
+                        } else {
+                            this.showNotification('❌ ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Failed to create payment', 'error');
                     }
                 },
-                
-                uploadScreenshot(event) {
+
+uploadScreenshot(event) {
                     const file = event.target.files[0];
                     if (!file) return;
                     
@@ -2149,23 +2187,27 @@ DASHBOARD_HTML = """
                         return;
                     }
                     
-                    const res = await fetch('/api/payment/submit', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            payment_id: this.paymentData.id,
-                            screenshot: this.paymentData.screenshot,
-                            transaction_id: this.paymentData.transactionId
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.stopTimer();
-                        this.modal = null;
-                        this.showNotification('✅ Payment submitted! Waiting for approval...', 'success');
-                    } else {
-                        this.showNotification('❌ ' + data.error, 'error');
+                    try {
+                        const res = await fetch('/api/payment/submit', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                payment_id: this.paymentData.id,
+                                screenshot: this.paymentData.screenshot,
+                                transaction_id: this.paymentData.transactionId
+                            })
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            this.stopTimer();
+                            this.modal = null;
+                            this.showNotification('✅ Payment submitted! Waiting for approval...', 'success');
+                        } else {
+                            this.showNotification('❌ ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Submission failed', 'error');
                     }
                 },
                 
@@ -2209,93 +2251,121 @@ DASHBOARD_HTML = """
                 
                 async refreshLogs() {
                     if (!this.selectedDeploy) return;
-                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/logs`);
-                    const data = await res.json();
-                    this.consoleLogs = data.logs || 'No logs available';
-                    this.$nextTick(() => {
-                        if (this.$refs.console) {
-                            this.$refs.console.scrollTop = this.$refs.console.scrollHeight;
-                        }
-                    });
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/logs`);
+                        const data = await res.json();
+                        this.consoleLogs = data.logs || 'No logs available';
+                        this.$nextTick(() => {
+                            if (this.$refs.console) {
+                                this.$refs.console.scrollTop = this.$refs.console.scrollHeight;
+                            }
+                        });
+                    } catch (e) {
+                        this.consoleLogs = 'Failed to load logs';
+                    }
                 },
                 
                 async loadFiles() {
                     if (!this.selectedDeploy) return;
-                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/files`);
-                    const data = await res.json();
-                    this.deployFiles = data.files || [];
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/files`);
+                        const data = await res.json();
+                        this.deployFiles = data.files || [];
+                    } catch (e) {
+                        this.deployFiles = [];
+                    }
                 },
                 
                 async addEnvVar() {
                     if (!this.newEnv.key || !this.newEnv.value) return;
                     
-                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            key: this.newEnv.key,
-                            value: this.newEnv.value
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.selectedDeploy.env_vars = data.env_vars;
-                        this.newEnv = { key: '', value: '' };
-                        this.showNotification('✅ Environment variable added', 'success');
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                key: this.newEnv.key,
+                                value: this.newEnv.value
+                            })
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            this.selectedDeploy.env_vars = data.env_vars;
+                            this.newEnv = { key: '', value: '' };
+                            this.showNotification('✅ Environment variable added', 'success');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Failed to add variable', 'error');
                     }
                 },
                 
                 async deleteEnvVar(key) {
                     if (!confirm(`Delete ${key}?`)) return;
                     
-                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env/${key}`, {
-                        method: 'DELETE'
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        this.selectedDeploy.env_vars = data.env_vars;
-                        this.showNotification('✅ Environment variable deleted', 'success');
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/env/${key}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            this.selectedDeploy.env_vars = data.env_vars;
+                            this.showNotification('✅ Environment variable deleted', 'success');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Failed to delete variable', 'error');
                     }
                 },
                 
                 async createBackup() {
                     if (!confirm('Create backup for 0.5 credits?')) return;
                     
-                    const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/backup`, {
-                        method: 'POST'
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) {
-                        window.location.href = `/api/deployment/${this.selectedDeploy.id}/backup/download`;
-                        this.showNotification('✅ Backup created!', 'success');
-                        this.updateCredits();
-                    } else {
-                        this.showNotification('❌ ' + data.error, 'error');
+                    try {
+                        const res = await fetch(`/api/deployment/${this.selectedDeploy.id}/backup`, {
+                            method: 'POST'
+                        });
+                        
+                        const data = await res.json();
+                        if (data.success) {
+                            window.location.href = `/api/deployment/${this.selectedDeploy.id}/backup/download`;
+                            this.showNotification('✅ Backup created!', 'success');
+                            this.updateCredits();
+                        } else {
+                            this.showNotification('❌ ' + data.error, 'error');
+                        }
+                    } catch (e) {
+                        this.showNotification('❌ Backup failed', 'error');
                     }
                 },
                 
                 async stopDeploy(id) {
                     if (!confirm('Stop this deployment?')) return;
                     
-                    const res = await fetch(`/api/deployment/${id}/stop`, { method: 'POST' });
-                    const data = await res.json();
-                    
-                    this.showNotification(data.success ? '✅ Stopped' : '❌ Failed', data.success ? 'success' : 'error');
-                    this.loadDeployments();
+                    try {
+                        const res = await fetch(`/api/deployment/${id}/stop`, { method: 'POST' });
+                        const data = await res.json();
+                        
+                        this.showNotification(data.success ? '✅ Stopped' : '❌ Failed', data.success ? 'success' : 'error');
+                        this.loadDeployments();
+                    } catch (e) {
+                        this.showNotification('❌ Failed to stop', 'error');
+                    }
                 },
                 
                 async deleteDeploy(id) {
                     if (!confirm('Delete this deployment permanently?')) return;
                     
-                    const res = await fetch(`/api/deployment/${id}`, { method: 'DELETE' });
-                    const data = await res.json();
-                    
-                    this.showNotification(data.success ? '✅ Deleted' : '❌ Failed', data.success ? 'success' : 'error');
-                    this.loadDeployments();
-                    this.modal = null;
+                    try {
+                        const res = await fetch(`/api/deployment/${id}`, { method: 'DELETE' });
+                        const data = await res.json();
+                        
+                        this.showNotification(data.success ? '✅ Deleted' : '❌ Failed', data.success ? 'success' : 'error');
+                        this.loadDeployments();
+                        this.modal = null;
+                    } catch (e) {
+                        this.showNotification('❌ Failed to delete', 'error');
+                    }
                 },
                 
                 logout() {
@@ -2322,14 +2392,12 @@ DASHBOARD_HTML = """
             }
         }
     </script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 </body>
 </html>
 """
 
-ADMIN_PANEL_HTML = """
+
+                ADMIN_PANEL_HTML = """
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -2446,7 +2514,7 @@ ADMIN_PANEL_HTML = """
                     </div>
                 </div>
             </div>
-            
+
             <!-- Users Table -->
             <div class="bg-slate-900 rounded-xl border border-slate-800 mb-8">
                 <div class="p-6 border-b border-slate-800">
@@ -2572,10 +2640,14 @@ ADMIN_PANEL_HTML = """
                 },
                 
                 async loadMetrics() {
-                    const res = await fetch('/api/admin/metrics');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.metrics = data.metrics;
+                    try {
+                        const res = await fetch('/api/admin/metrics');
+                        const data = await res.json();
+                        if (data.success) {
+                            this.metrics = data.metrics;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load metrics:', e);
                     }
                 }
             }
@@ -2585,43 +2657,55 @@ ADMIN_PANEL_HTML = """
             const amount = prompt('Enter amount of credits to add:');
             if (!amount || isNaN(amount)) return;
             
-            const res = await fetch('/api/admin/add-credits', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: userId, amount: parseFloat(amount)})
-            });
-            
-            const data = await res.json();
-            alert(data.success ? '✅ Credits added!' : '❌ ' + data.error);
-            location.reload();
+            try {
+                const res = await fetch('/api/admin/add-credits', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, amount: parseFloat(amount)})
+                });
+                
+                const data = await res.json();
+                alert(data.success ? '✅ Credits added!' : '❌ ' + data.error);
+                location.reload();
+            } catch (e) {
+                alert('❌ Failed to add credits');
+            }
         }
         
         async function banUser(userId) {
             if (!confirm('Ban this user?')) return;
             
-            const res = await fetch('/api/admin/ban-user', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: userId, ban: true})
-            });
-            
-            const data = await res.json();
-            alert(data.success ? '✅ User banned' : '❌ ' + data.error);
-            location.reload();
+            try {
+                const res = await fetch('/api/admin/ban-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, ban: true})
+                });
+                
+                const data = await res.json();
+                alert(data.success ? '✅ User banned' : '❌ ' + data.error);
+                location.reload();
+            } catch (e) {
+                alert('❌ Failed to ban user');
+            }
         }
         
         async function unbanUser(userId) {
             if (!confirm('Unban this user?')) return;
             
-            const res = await fetch('/api/admin/ban-user', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: userId, ban: false})
-            });
-            
-            const data = await res.json();
-            alert(data.success ? '✅ User unbanned' : '❌ ' + data.error);
-            location.reload();
+            try {
+                const res = await fetch('/api/admin/ban-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, ban: false})
+                });
+                
+                const data = await res.json();
+                alert(data.success ? '✅ User unbanned' : '❌ ' + data.error);
+                location.reload();
+            } catch (e) {
+                alert('❌ Failed to unban user');
+            }
         }
         
         function viewScreenshot(paymentId) {
@@ -2631,8 +2715,7 @@ ADMIN_PANEL_HTML = """
 </body>
 </html>
 """
-
-# ==================== FLASK ROUTES (COMPLETE) ====================
+# ==================== FLASK ROUTES ====================
 
 @app.before_request
 def before_request():
@@ -2701,11 +2784,7 @@ def register():
         existing_user_id = check_existing_account(fingerprint)
         if existing_user_id:
             existing_user = get_user(existing_user_id)
-            is_existing_admin = (
-                str(existing_user_id) == str(OWNER_ID) or 
-                str(existing_user_id) == str(ADMIN_ID) or 
-                existing_user['email'] == ADMIN_EMAIL.lower()
-            )
+            is_existing_admin = is_admin_user(existing_user_id, existing_user['email'])
             if not is_existing_admin:
                 return redirect('/register?error=This device already has an account. Please login.')
         
@@ -2732,7 +2811,6 @@ def register():
     except Exception as e:
         log_error(str(e), "register")
         return redirect('/register?error=An error occurred. Please try again.')
-
 
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per hour")
@@ -2763,7 +2841,7 @@ def login():
         if not email or not password:
             return redirect('/login?error=Email and password required')
         
-        # ✅ DIRECT ADMIN LOGIN - HIGHEST PRIORITY
+        # DIRECT ADMIN LOGIN
         is_admin_login = (
             email.lower().strip() == ADMIN_EMAIL.lower().strip() and 
             password == ADMIN_PASSWORD
@@ -2792,7 +2870,7 @@ def login():
                 response.set_cookie('session_token', session_token, max_age=SESSION_TIMEOUT_DAYS*86400, httponly=True, samesite='Lax')
                 return response
         
-        # Rate limiting for regular users
+        # Rate limiting
         if check_login_attempts(ip):
             return redirect(f'/login?error=Too many attempts. Wait {LOGIN_ATTEMPT_WINDOW//60} minutes')
         
@@ -2808,7 +2886,7 @@ def login():
         if user.get('is_banned'):
             return redirect('/login?error=Account banned')
         
-        # Check if admin by email
+        # Check admin
         is_admin = is_admin_user(user_id, user['email'])
         
         if is_admin:
@@ -2834,11 +2912,10 @@ def login():
     except Exception as e:
         log_error(str(e), "login")
         return redirect('/login?error=An error occurred')
-        
-        
+
 
 @app.route('/logout')
-@limiter.exempt  # No rate limiting on logout
+@limiter.exempt
 def logout():
     session_token = request.cookies.get('session_token')
     
@@ -2851,7 +2928,6 @@ def logout():
         except Exception as e:
             log_error(str(e), "logout")
     
-    # Clear session cookie and redirect to login
     response = make_response(redirect('/login?success=Logged out successfully'))
     response.set_cookie('session_token', '', expires=0, httponly=True, samesite='Lax')
     
@@ -2870,7 +2946,6 @@ def dashboard():
     if not user or user.get('is_banned'):
         return redirect('/login?error=Access denied')
     
-    # ✅ CHECK IF ADMIN
     is_admin = is_admin_user(user_id, user['email'])
     
     credits_display = '∞' if user['credits'] == float('inf') else user['credits']
@@ -2897,12 +2972,7 @@ def admin_panel():
         logger.warning("❌ Admin access: User not found")
         return redirect('/login?error=User not found')
     
-    # ✅ FIXED ADMIN CHECK
-    is_admin = (
-        str(user_id) == str(OWNER_ID) or 
-        str(user_id) == str(ADMIN_ID) or 
-        user['email'].lower().strip() == ADMIN_EMAIL.lower().strip()
-    )
+    is_admin = is_admin_user(user_id, user['email'])
     
     if not is_admin:
         logger.warning(f"❌ Admin access denied for {user['email']}")
@@ -2914,7 +2984,6 @@ def admin_panel():
         with get_db() as conn:
             cursor = conn.cursor()
             
-            # Stats
             cursor.execute('SELECT COUNT(*) as count FROM users')
             total_users = cursor.fetchone()['count']
             
@@ -2931,7 +3000,6 @@ def admin_panel():
             'pending_payments': pending_payments
         }
         
-        # Get users
         users = []
         with get_db() as conn:
             cursor = conn.cursor()
@@ -2943,7 +3011,6 @@ def admin_panel():
                 user_data['deployments'] = [None] * cursor.fetchone()['count']
                 users.append(user_data)
         
-        # Get payments
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -2966,6 +3033,7 @@ def admin_panel():
         log_error(str(e), "admin_panel")
         logger.error(f"Admin panel error: {str(e)}")
         return redirect('/dashboard?error=Error loading admin panel')
+
 # ==================== STATIC FILES ====================
 
 @app.route('/logo.jpg')
@@ -3060,26 +3128,21 @@ def api_deploy_upload():
         if file.filename == '':
             return jsonify({'success': False, 'error': 'No file selected'})
         
-        
         filename = secure_filename(file.filename)
         file_ext = os.path.splitext(filename)[1].lower()
         
         if file_ext not in ALLOWED_EXTENSIONS:
             return jsonify({'success': False, 'error': f'File type not allowed. Allowed: {", ".join(ALLOWED_EXTENSIONS)}'})
         
-        
         upload_path = os.path.join(UPLOADS_DIR, f"{user_id}_{int(time.time())}_{filename}")
         file.save(upload_path)
-        
         
         file_size = os.path.getsize(upload_path)
         if file_size > MAX_FILE_SIZE:
             os.remove(upload_path)
             return jsonify({'success': False, 'error': f'File too large (max {MAX_FILE_SIZE/1024/1024}MB)'})
         
-        
         deploy_id, message = deploy_from_file(user_id, upload_path, filename)
-        
         
         try:
             os.remove(upload_path)
@@ -3152,7 +3215,6 @@ def api_stop_deployment(deploy_id):
         if not user_id:
             return jsonify({'success': False, 'error': 'Not authenticated'})
         
-        # Verify ownership
         deployment = get_deployment(deploy_id)
         if not deployment:
             return jsonify({'success': False, 'error': 'Deployment not found'})
@@ -3182,7 +3244,6 @@ def api_delete_deployment(deploy_id):
         if not user_id:
             return jsonify({'success': False, 'error': 'Not authenticated'})
         
-        # Verify ownership
         deployment = get_deployment(deploy_id)
         if not deployment:
             return jsonify({'success': False, 'error': 'Deployment not found'})
@@ -3200,6 +3261,7 @@ def api_delete_deployment(deploy_id):
     except Exception as e:
         log_error(str(e), f"api_delete_deployment {deploy_id}")
         return jsonify({'success': False, 'error': str(e)})
+
 
 @app.route('/api/deployment/<deploy_id>/logs')
 @limiter.limit("60 per minute")
@@ -3380,13 +3442,11 @@ def api_download_backup(deploy_id):
         if deployment['user_id'] != user_id and str(user_id) != str(OWNER_ID):
             return jsonify({'success': False, 'error': 'Access denied'})
         
-        # Find latest backup for this deployment
         backup_files = [f for f in os.listdir(BACKUPS_DIR) if f.startswith(f"{deployment['name']}_{deploy_id}")]
         
         if not backup_files:
             return jsonify({'success': False, 'error': 'No backup found'})
         
-        # Get most recent
         backup_files.sort(reverse=True)
         backup_path = os.path.join(BACKUPS_DIR, backup_files[0])
         
@@ -3459,9 +3519,7 @@ def api_payment_screenshot(payment_id):
             return 'Not authenticated', 403
         
         user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
+        is_admin = is_admin_user(user_id, user['email'])
         
         with get_db() as conn:
             cursor = conn.cursor()
@@ -3473,7 +3531,6 @@ def api_payment_screenshot(payment_id):
             
             payment = dict(row)
         
-        # Only admin or payment owner can view
         if not is_admin and payment['user_id'] != user_id:
             return 'Access denied', 403
         
@@ -3502,9 +3559,7 @@ def api_admin_metrics():
             return jsonify({'success': False, 'error': 'Not authenticated'})
         
         user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
+        is_admin = is_admin_user(user_id, user['email'])
         
         if not is_admin:
             return jsonify({'success': False, 'error': 'Access denied'})
@@ -3532,9 +3587,7 @@ def api_admin_add_credits():
             return jsonify({'success': False, 'error': 'Not authenticated'})
         
         user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
+        is_admin = is_admin_user(user_id, user['email'])
         
         if not is_admin:
             return jsonify({'success': False, 'error': 'Access denied'})
@@ -3569,9 +3622,7 @@ def api_admin_ban_user():
             return jsonify({'success': False, 'error': 'Not authenticated'})
         
         user = get_user(user_id)
-        is_admin = (str(user_id) == str(OWNER_ID) or 
-                   str(user_id) == str(ADMIN_ID) or 
-                   user['email'] == ADMIN_EMAIL)
+        is_admin = is_admin_user(user_id, user['email'])
         
         if not is_admin:
             return jsonify({'success': False, 'error': 'Access denied'})
@@ -3603,12 +3654,14 @@ def internal_error(e):
 def ratelimit_handler(e):
     return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
 
+
+
 # ==================== BACKGROUND TASKS ====================
 
 def cleanup_expired_sessions():
     while True:
         try:
-            time.sleep(3600)  # Every hour
+            time.sleep(3600)
             
             with get_db() as conn:
                 cursor = conn.cursor()
@@ -3627,13 +3680,11 @@ def cleanup_expired_sessions():
 def monitor_deployments():
     while True:
         try:
-            time.sleep(30)  # Every 30 seconds
+            time.sleep(30)
             
             with PROCESS_LOCK:
                 for deploy_id, process in list(active_processes.items()):
-                    # Check if process is still running
                     if process.poll() is not None:
-                        # Process died
                         return_code = process.returncode
                         
                         deployment = get_deployment(deploy_id)
@@ -3646,19 +3697,18 @@ def monitor_deployments():
                             
                             logger.warning(f"Deployment {deploy_id} crashed (exit code: {return_code})")
                             
-                            # Remove from active processes
                             del active_processes[deploy_id]
         
         except Exception as e:
             log_error(str(e), "monitor_deployments")
 
 # ==================== STARTUP & SHUTDOWN ====================
+
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
 
 def keep_alive():
-
     flask_thread = Thread(target=run_flask, daemon=True)
     flask_thread.start()
     
@@ -3675,7 +3725,6 @@ def run_bot():
 def cleanup_on_exit():
     logger.warning(f"{Fore.YELLOW}🛑 Shutting down EliteHost...")
     
-    
     with PROCESS_LOCK:
         for deploy_id, process in list(active_processes.items()):
             try:
@@ -3687,7 +3736,6 @@ def cleanup_on_exit():
                     process.wait(timeout=2)
             except Exception as e:
                 log_error(str(e), f"cleanup deployment {deploy_id}")
-    
     
     for payment_id, timer in list(payment_timers.items()):
         try:
@@ -3706,7 +3754,7 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-
+# ==================== MAIN ====================
 
 if __name__ == '__main__':
     print("\n" + "=" * 90)
@@ -3726,19 +3774,15 @@ if __name__ == '__main__':
     print(f"{Fore.CYAN}   👑 Admin Panel with Full Control")
     print("=" * 90)
     
-    
     for img_name in ['logo.jpg', 'qr.jpg']:
         img_path = os.path.join(STATIC_DIR, img_name)
         if not os.path.exists(img_path):
             print(f"{Fore.YELLOW}⚠️  {img_name} not found. Add to: {img_path}")
     
-    
     Thread(target=cleanup_expired_sessions, daemon=True).start()
     Thread(target=monitor_deployments, daemon=True).start()
     
-    
     keep_alive()
-    
     
     bot_thread = Thread(target=run_bot, daemon=True)
     bot_thread.start()
