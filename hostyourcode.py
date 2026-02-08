@@ -1770,61 +1770,67 @@ DASHBOARD_HTML = """
     </div>
     
     <!-- Payment Modal -->
-    <div x-show="modal === 'payment'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" @click.self="modal = null">
-        <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-md w-full p-6">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold mb-2">Complete Payment</h2>
-                <p class="text-slate-400 text-sm">Scan QR code and submit proof</p>
+   <!-- Payment Modal - MOBILE FIXED VERSION -->
+<div x-show="modal === 'payment'" x-cloak 
+     class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto"
+     @click.self="modal = null">
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 max-w-md w-full p-4 sm:p-6 my-4">
+        <div class="text-center mb-4 sm:mb-6">
+            <h2 class="text-xl sm:text-2xl font-bold mb-2">Complete Payment</h2>
+            <p class="text-slate-400 text-xs sm:text-sm">Scan QR code and submit proof</p>
+        </div>
+        
+        <div class="bg-slate-800/50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 text-sm">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-slate-400">Package:</span>
+                <span class="font-semibold" x-text="paymentData.package"></span>
             </div>
-            
-            <div class="bg-slate-800/50 rounded-lg p-4 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400">Package:</span>
-                    <span class="font-semibold" x-text="paymentData.package"></span>
-                </div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-slate-400">Credits:</span>
-                    <span class="font-semibold text-blue-400" x-text="paymentData.credits"></span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-slate-400">Amount:</span>
-                    <span class="text-2xl font-bold text-green-400">₹<span x-text="paymentData.price"></span></span>
-                </div>
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-slate-400">Credits:</span>
+                <span class="font-semibold text-blue-400" x-text="paymentData.credits"></span>
             </div>
-            
-            <div class="bg-white rounded-lg p-4 mb-6 text-center">
-                <img src="/qr.jpg" alt="Payment QR Code" class="w-64 h-64 mx-auto">
-                <p class="text-slate-900 font-semibold mt-2">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-300 mb-2">Upload Screenshot</label>
-                <input type="file" accept="image/*" @change="uploadScreenshot($event)" 
-                       class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-slate-300 mb-2">Transaction ID</label>
-                <input type="text" x-model="paymentData.transactionId" placeholder="Enter transaction/UTR ID" required
-                       class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white">
-            </div>
-            
-            <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-sm text-yellow-400 mb-6">
-                <i class="fas fa-clock mr-2"></i>
-                <span>Time remaining: </span>
-                <span class="font-bold" x-text="formatTime(timeRemaining)"></span>
-            </div>
-            
-            <div class="flex gap-3">
-                <button @click="modal = null" class="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-lg transition">
-                    Cancel
-                </button>
-                <button @click="submitPayment()" class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg transition font-semibold">
-                    <i class="fas fa-check mr-2"></i>Submit
-                </button>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-400">Amount:</span>
+                <span class="text-xl sm:text-2xl font-bold text-green-400">₹<span x-text="paymentData.price"></span></span>
             </div>
         </div>
+        
+        <div class="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 text-center">
+            <img src="/qr.jpg" alt="Payment QR Code" class="w-48 h-48 sm:w-64 sm:h-64 mx-auto object-contain">
+            <p class="text-slate-900 font-semibold mt-2 text-sm sm:text-base">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
+        </div>
+        
+        <div class="mb-3 sm:mb-4">
+            <label class="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Upload Screenshot</label>
+            <input type="file" accept="image/*" @change="uploadScreenshot($event)" 
+                   class="w-full px-3 py-2 sm:px-4 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
+        </div>
+        
+        <div class="mb-4 sm:mb-6">
+            <label class="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Transaction ID</label>
+            <input type="text" x-model="paymentData.transactionId" placeholder="Enter transaction/UTR ID" required
+                   class="w-full px-3 py-2 sm:px-4 sm:py-3 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm">
+        </div>
+        
+        <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-yellow-400 mb-4 sm:mb-6">
+            <i class="fas fa-clock mr-2"></i>
+            <span>Time remaining: </span>
+            <span class="font-bold" x-text="formatTime(timeRemaining)"></span>
+        </div>
+        
+        <!-- FIXED BUTTONS FOR MOBILE -->
+        <div class="flex gap-2 sm:gap-3">
+            <button @click="modal = null" 
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition text-sm sm:text-base">
+                Cancel
+            </button>
+            <button @click="submitPayment()" 
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 px-3 py-2 sm:px-4 sm:py-3 rounded-lg transition font-semibold text-sm sm:text-base">
+                <i class="fas fa-check mr-1 sm:mr-2"></i>Submit
+            </button>
+        </div>
     </div>
+</div>
     
     <!-- Deployment Details Modal -->
     <div x-show="modal === 'details'" x-cloak class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" @click.self="modal = null">
