@@ -2884,6 +2884,58 @@ def login():
                     if row['is_banned']:
                         return redirect('/login?error=Account banned')
                     
+@app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("20 per hour")
+def login():
+    if request.method == 'GET':
+        error = request.args.get('error', '')
+        success = request.args.get('success', '')
+        
+        return render_template_string(LOGIN_PAGE,
+            title='Login',
+            subtitle='Sign in to your account',
+            action='/login',
+            button_text='Sign In',
+            icon='sign-in-alt',
+            toggle_text="Don't have an account?",
+            toggle_link='/register',
+            toggle_action='Register',
+            error=error,
+            success=success
+        )
+    
+    try:
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        fingerprint = get_device_fingerprint(request)
+        ip = request.remote_addr
+        
+        # Basic validation
+        if not email or not password:
+            return redirect('/login?error=Email and password required')
+        
+        # ✅ ADMIN LOGIN CHECK - EXACT MATCH
+        is_admin_login = (
+            email.lower().strip() == ADMIN_EMAIL.lower().strip() and 
+            password == ADMIN_PASSWORD
+        )
+        
+        # Debug log (remove after testing)
+        logger.info(f"Login attempt - Email: {email}, Is Admin: {is_admin_login}")
+        
+        # ✅ DIRECT ADMIN LOGIN - NO DATABASE CHECK
+        if is_admin_login:
+            # Find or create admin account
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, is_banned FROM users WHERE email = ?', (email,))
+                row = cursor.fetchone()
+                
+                if row:
+                    user_id = row['id']
+                    if row['is_banned']:
+                        return redirect('/login?error=Account banned')
+                    
                     # Update device fingerprint for admin (allow any device)
                     update_user(user_id, 
                               device_fingerprint=fingerprint,
@@ -2954,6 +3006,28 @@ def login():
             
             return response
         else:
+            # Regular user - check device fingerprint
+            if user['device_fingerprint'] != fingerprint:
+                return redirect('/login?error=Please use your registered device to login')
+            
+            # Update last login
+            update_user(user_id, last_login=datetime.now().isoformat())
+            log_activity(user_id, 'USER_LOGIN', f'Login from {ip}', ip)
+            
+            # Create session
+            session_token = create_session(user_id, fingerprint)
+            
+            response = make_response(redirect('/dashboard'))
+            response.set_cookie('session_token', session_token,
+                              max_age=SESSION_TIMEOUT_DAYS*86400,
+                              httponly=True, samesite='Lax')
+            
+            return response
+    
+    except Exception as e:
+        log_error(str(e), "login")
+        logger.error(f"Login error: {str(e)}")
+        return redirect('/login?error=An error occurred. Please try again.')
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per hour")
 def login():
