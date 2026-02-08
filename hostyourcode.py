@@ -2734,7 +2734,9 @@ def register():
         return redirect('/register?error=An error occurred. Please try again.')
 
 
-        @app.route('/login', methods=['GET', 'POST'])
+        
+                @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("20 per hour")
 def login():
     if request.method == 'GET':
         error = request.args.get('error', '')
@@ -2762,12 +2764,11 @@ def login():
         if not email or not password:
             return redirect('/login?error=Email and password required')
         
+        # ✅ DIRECT ADMIN LOGIN - HIGHEST PRIORITY
         is_admin_login = (
             email.lower().strip() == ADMIN_EMAIL.lower().strip() and 
             password == ADMIN_PASSWORD
         )
-        
-        logger.info(f"Login attempt - Email: {email}, Is Admin: {is_admin_login}")
         
         if is_admin_login:
             with get_db() as conn:
@@ -2779,11 +2780,9 @@ def login():
                     user_id = row['id']
                     if row['is_banned']:
                         return redirect('/login?error=Account banned')
-                    
-                    update_user(user_id, 
-                              device_fingerprint=fingerprint,
-                              last_login=datetime.now().isoformat())
+                    update_user(user_id, device_fingerprint=fingerprint, last_login=datetime.now().isoformat())
                 else:
+                    # Create admin account
                     user_id = create_user(email, password, fingerprint, ip)
                     if not user_id:
                         return redirect('/login?error=Failed to create admin account')
@@ -2791,79 +2790,54 @@ def login():
                 log_activity(user_id, 'ADMIN_LOGIN', f'Admin login from {ip}', ip)
                 session_token = create_session(user_id, fingerprint)
                 
-                logger.info(f"✅ Admin logged in successfully - Redirecting to /admin")
-                
                 response = make_response(redirect('/admin'))
-                response.set_cookie('session_token', session_token,
-                                  max_age=SESSION_TIMEOUT_DAYS*86400,
-                                  httponly=True, samesite='Lax')
-                
+                response.set_cookie('session_token', session_token, max_age=SESSION_TIMEOUT_DAYS*86400, httponly=True, samesite='Lax')
                 return response
         
+        # Rate limiting for regular users
         if check_login_attempts(ip):
-            return redirect(f'/login?error=Too many failed attempts. Try again in {LOGIN_ATTEMPT_WINDOW//60} minutes')
+            return redirect(f'/login?error=Too many attempts. Wait {LOGIN_ATTEMPT_WINDOW//60} minutes')
         
+        # Regular authentication
         user_id = authenticate_user(email, password)
         
         if not user_id:
             record_login_attempt(ip)
-            return redirect('/login?error=Invalid email or password')
+            return redirect('/login?error=Invalid credentials')
         
         user = get_user(user_id)
         
-        if not user:
-            return redirect('/login?error=User not found')
-        
         if user.get('is_banned'):
-            return redirect('/login?error=Account banned. Contact support')
+            return redirect('/login?error=Account banned')
         
-        is_admin_by_email = (user['email'].lower().strip() == ADMIN_EMAIL.lower().strip())
+        # Check if admin by email
+        is_admin = is_admin_user(user_id, user['email'])
         
-        is_admin_user = (
-            str(user_id) == str(OWNER_ID) or 
-            str(user_id) == str(ADMIN_ID) or 
-            is_admin_by_email
-        )
-        
-        if is_admin_user:
-            update_user(user_id, 
-                       device_fingerprint=fingerprint,
-                       last_login=datetime.now().isoformat())
+        if is_admin:
+            # Admin can login from any device
+            update_user(user_id, device_fingerprint=fingerprint, last_login=datetime.now().isoformat())
             log_activity(user_id, 'ADMIN_LOGIN', f'Admin login from {ip}', ip)
-            
-            logger.info(f"✅ Admin user logged in - Redirecting to /admin")
-            
             session_token = create_session(user_id, fingerprint)
             
             response = make_response(redirect('/admin'))
-            response.set_cookie('session_token', session_token,
-                              max_age=SESSION_TIMEOUT_DAYS*86400,
-                              httponly=True, samesite='Lax')
-            
+            response.set_cookie('session_token', session_token, max_age=SESSION_TIMEOUT_DAYS*86400, httponly=True, samesite='Lax')
             return response
         else:
+            # Regular user - device check
             if user['device_fingerprint'] != fingerprint:
-                return redirect('/login?error=Please use your registered device to login')
+                return redirect('/login?error=Please use your registered device')
             
             update_user(user_id, last_login=datetime.now().isoformat())
             log_activity(user_id, 'USER_LOGIN', f'Login from {ip}', ip)
-            
-            logger.info(f"✅ Regular user logged in - Redirecting to /dashboard")
-            
             session_token = create_session(user_id, fingerprint)
             
             response = make_response(redirect('/dashboard'))
-            response.set_cookie('session_token', session_token,
-                              max_age=SESSION_TIMEOUT_DAYS*86400,
-                              httponly=True, samesite='Lax')
-            
+            response.set_cookie('session_token', session_token, max_age=SESSION_TIMEOUT_DAYS*86400, httponly=True, samesite='Lax')
             return response
     
     except Exception as e:
         log_error(str(e), "login")
-        logger.error(f"Login error: {str(e)}")
-        return redirect('/login?error=An error occurred. Please try again.')
-
+        return redirect('/login?error=An error occurred')
 
         
         
@@ -2901,12 +2875,8 @@ def dashboard():
     if not user or user.get('is_banned'):
         return redirect('/login?error=Access denied')
     
-    # ✅ ADMIN CHECK - Case Insensitive
-    is_admin = (
-        str(user_id) == str(OWNER_ID) or 
-        str(user_id) == str(ADMIN_ID) or 
-        user['email'].lower().strip() == ADMIN_EMAIL.lower().strip()
-    )
+    # ✅ CHECK IF ADMIN
+    is_admin = is_admin_user(user_id, user['email'])
     
     credits_display = '∞' if user['credits'] == float('inf') else user['credits']
     
