@@ -2734,8 +2734,7 @@ def register():
         return redirect('/register?error=An error occurred. Please try again.')
 
 
-        
-                @app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("20 per hour")
 def login():
     if request.method == 'GET':
@@ -2782,7 +2781,6 @@ def login():
                         return redirect('/login?error=Account banned')
                     update_user(user_id, device_fingerprint=fingerprint, last_login=datetime.now().isoformat())
                 else:
-                    # Create admin account
                     user_id = create_user(email, password, fingerprint, ip)
                     if not user_id:
                         return redirect('/login?error=Failed to create admin account')
@@ -2814,7 +2812,6 @@ def login():
         is_admin = is_admin_user(user_id, user['email'])
         
         if is_admin:
-            # Admin can login from any device
             update_user(user_id, device_fingerprint=fingerprint, last_login=datetime.now().isoformat())
             log_activity(user_id, 'ADMIN_LOGIN', f'Admin login from {ip}', ip)
             session_token = create_session(user_id, fingerprint)
@@ -2823,7 +2820,6 @@ def login():
             response.set_cookie('session_token', session_token, max_age=SESSION_TIMEOUT_DAYS*86400, httponly=True, samesite='Lax')
             return response
         else:
-            # Regular user - device check
             if user['device_fingerprint'] != fingerprint:
                 return redirect('/login?error=Please use your registered device')
             
@@ -2838,7 +2834,6 @@ def login():
     except Exception as e:
         log_error(str(e), "login")
         return redirect('/login?error=An error occurred')
-
         
         
 
