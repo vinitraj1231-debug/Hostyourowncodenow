@@ -172,7 +172,7 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-PART 2 follows:
+
 # ==================== DATABASE FUNCTIONS ====================
 
 def get_db_connection():
