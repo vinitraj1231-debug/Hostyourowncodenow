@@ -2719,14 +2719,66 @@ def register():
             cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
             if cursor.fetchone():
                 return redirect('/register?error=Email already registered')
+@app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
+def register():
+    if request.method == 'GET':
+        error = request.args.get('error', '')
+        success = request.args.get('success', '')
         
-        # Create user
+        return render_template_string(LOGIN_PAGE,
+            title='Register',
+            subtitle='Create your EliteHost account',
+            action='/register',
+            button_text='Create Account',
+            icon='user-plus',
+            toggle_text='Already have an account?',
+            toggle_link='/login',
+            toggle_action='Login',
+            error=error,
+            success=success
+        )
+    
+    try:
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        fingerprint = get_device_fingerprint(request)
+        ip = request.remote_addr
+        
+        if not email or not password:
+            return redirect('/register?error=Email and password required')
+        
+        if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+            return redirect('/register?error=Invalid email format')
+        
+        if len(password) < 6:
+            return redirect('/register?error=Password must be at least 6 characters')
+        
+        if email == ADMIN_EMAIL.lower():
+            return redirect('/register?error=This email is reserved. Use login instead.')
+        
+        existing_user_id = check_existing_account(fingerprint)
+        if existing_user_id:
+            existing_user = get_user(existing_user_id)
+            is_existing_admin = (
+                str(existing_user_id) == str(OWNER_ID) or 
+                str(existing_user_id) == str(ADMIN_ID) or 
+                existing_user['email'] == ADMIN_EMAIL.lower()
+            )
+            if not is_existing_admin:
+                return redirect('/register?error=This device already has an account. Please login.')
+        
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
+            if cursor.fetchone():
+                return redirect('/register?error=Email already registered')
+        
         user_id = create_user(email, password, fingerprint, ip)
         
         if not user_id:
             return redirect('/register?error=Registration failed. Please try again.')
         
-        # Create session
         session_token = create_session(user_id, fingerprint)
         
         response = make_response(redirect('/dashboard'))
