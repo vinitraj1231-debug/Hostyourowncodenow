@@ -3033,43 +3033,39 @@ def admin_panel():
     
     user_id = verify_session(session_token, fingerprint)
     if not user_id:
+        logger.warning("❌ Admin access: No valid session")
         return redirect('/login?error=Please login first')
     
     user = get_user(user_id)
     if not user:
+        logger.warning("❌ Admin access: User not found")
         return redirect('/login?error=User not found')
     
-    # ✅ ADMIN CHECK - Case Insensitive Email
+    # ✅ FIXED ADMIN CHECK
     is_admin = (
         str(user_id) == str(OWNER_ID) or 
         str(user_id) == str(ADMIN_ID) or 
         user['email'].lower().strip() == ADMIN_EMAIL.lower().strip()
     )
     
-    # Debug log
-    logger.info(f"Admin panel access - User: {user['email']}, Is Admin: {is_admin}")
-    
     if not is_admin:
         logger.warning(f"❌ Admin access denied for {user['email']}")
-        return redirect('/dashboard?error=Admin access denied')
+        return redirect('/dashboard')
     
     logger.info(f"✅ Admin panel accessed by {user['email']}")
     
     try:
-        # Get statistics
         with get_db() as conn:
             cursor = conn.cursor()
             
+            # Stats
             cursor.execute('SELECT COUNT(*) as count FROM users')
             total_users = cursor.fetchone()['count']
             
             cursor.execute('SELECT COUNT(*) as count FROM deployments')
             total_deployments = cursor.fetchone()['count']
             
-            cursor.execute('''
-                SELECT COUNT(*) as count FROM payments 
-                WHERE status = 'submitted'
-            ''')
+            cursor.execute("SELECT COUNT(*) as count FROM payments WHERE status = 'submitted'")
             pending_payments = cursor.fetchone()['count']
         
         stats = {
@@ -3079,30 +3075,19 @@ def admin_panel():
             'pending_payments': pending_payments
         }
         
-        # Get all users
+        # Get users
         users = []
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, email, credits, created_at, is_banned
-                FROM users
-                ORDER BY created_at DESC
-            ''')
+            cursor.execute('SELECT id, email, credits, created_at, is_banned FROM users ORDER BY created_at DESC')
             
             for row in cursor.fetchall():
                 user_data = dict(row)
-                
-                # Get deployment count
-                cursor.execute('''
-                    SELECT COUNT(*) as count FROM deployments 
-                    WHERE user_id = ?
-                ''', (user_data['id'],))
+                cursor.execute('SELECT COUNT(*) as count FROM deployments WHERE user_id = ?', (user_data['id'],))
                 user_data['deployments'] = [None] * cursor.fetchone()['count']
-                
                 users.append(user_data)
         
         # Get payments
-        payments = []
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -3112,26 +3097,19 @@ def admin_panel():
                         WHEN 'submitted' THEN 1
                         WHEN 'pending' THEN 2
                         WHEN 'approved' THEN 3
-                        WHEN 'rejected' THEN 4
-                        ELSE 5
+                        ELSE 4
                     END,
                     created_at DESC
                 LIMIT 100
             ''')
-            
             payments = [dict(row) for row in cursor.fetchall()]
         
-        return render_template_string(ADMIN_PANEL_HTML,
-            stats=stats,
-            users=users,
-            payments=payments
-        )
+        return render_template_string(ADMIN_PANEL_HTML, stats=stats, users=users, payments=payments)
     
     except Exception as e:
         log_error(str(e), "admin_panel")
         logger.error(f"Admin panel error: {str(e)}")
         return redirect('/dashboard?error=Error loading admin panel')
-
 # ==================== STATIC FILES ====================
 
 @app.route('/logo.jpg')
