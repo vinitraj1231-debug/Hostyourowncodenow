@@ -2735,7 +2735,6 @@ def register():
 
 
         @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("20 per hour")
 def login():
     if request.method == 'GET':
         error = request.args.get('error', '')
