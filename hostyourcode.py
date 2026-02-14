@@ -1809,7 +1809,7 @@ DASHBOARD_HTML = """
             </div>
             
             <div class="bg-white rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 text-center">
-                <img src="/qr.jpg" alt="Payment QR Code" class="w-48 h-48 sm:w-64 sm:h-64 mx-auto object-contain">
+                <img src="qr.jpg" alt="Payment QR Code" class="w-48 h-48 sm:w-64 sm:h-64 mx-auto object-contain">
                 <p class="text-slate-900 font-semibold mt-2 text-sm sm:text-base">Scan to Pay ₹<span x-text="paymentData.price"></span></p>
             </div>
             
