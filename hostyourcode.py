@@ -193,14 +193,14 @@ CORS(app, supports_credentials=True)
 # ✅ KEY FIX: Dramatically increased limits + per-user keying
 limiter = Limiter(
     app=app,
-    key_func=get_rate_limit_key,          # ← per-user, not per-IP
+    key_func=get_rate_limit_key,
     default_limits=[
-        "10000 per day",                  # ← was 200/day
-        "2000 per hour",                  # ← was 50/hour
-        "200 per minute"                  # ← new: per-minute burst limit
+        "10000 per day",
+        "2000 per hour",
+        "200 per minute"
     ],
     storage_uri="memory://",
-    strategy="fixed-window-elastic-expiry"  # ← smoother than fixed-window
+    strategy="fixed-window"  # ← FIXED
 )
 
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
