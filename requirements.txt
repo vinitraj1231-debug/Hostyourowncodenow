@@ -10,3 +10,4 @@ cryptography
 GitPython
 Werkzeug
 PyYAML
+Flask-Limiter
