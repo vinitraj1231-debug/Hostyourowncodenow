@@ -189,7 +189,7 @@ def main():
     print("EliteHost Advanced Execution Engine Starting...")
     print(f"Executing task: {prompt}")
     for i in range(5):
-        print(f"Processing step {i+1}/5...")
+        print(f"Processing step {{i+1}}/5...")
         time.sleep(1)
     print("Task completed successfully!")
 
