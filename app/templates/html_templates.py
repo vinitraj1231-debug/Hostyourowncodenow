@@ -105,6 +105,471 @@ LOGIN_PAGE = """<!DOCTYPE html>
 </body>
 </html>"""
 
+LANDING_PAGE_HTML = """<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteHost — High-Performance Cloud Deployment for Modern Apps</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #3b82f6; --accent-glow: rgba(59, 130, 246, 0.5); }
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        h1, h2, h3, h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-nav { background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .hero-gradient { background: radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15) 0%, rgba(2, 6, 23, 1) 70%); }
+        .feature-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .feature-card:hover { background: rgba(30, 41, 59, 0.6); border-color: rgba(59, 130, 246, 0.3); transform: translateY(-4px); }
+        .btn-premium { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 4px 20px -4px rgba(59, 130, 246, 0.5); transition: all 0.3s ease; }
+        .btn-premium:hover { box-shadow: 0 8px 30px -4px rgba(59, 130, 246, 0.6); transform: translateY(-1px); }
+        .text-gradient { background: linear-gradient(to bottom right, #ffffff 30%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .floating { animation: floating 6s ease-in-out infinite; }
+        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .dots-pattern { background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px); background-size: 24px 24px; }
+        .stagger-1 { transition-delay: 100ms; } .stagger-2 { transition-delay: 200ms; } .stagger-3 { transition-delay: 300ms; }
+    </style>
+</head>
+<body x-data="{ mobileMenu: false, scrolled: false }" @scroll.window="scrolled = (window.pageYOffset > 20)">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 transition-all duration-300" :class="scrolled ? 'glass-nav py-3' : 'bg-transparent py-5'">
+        <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fas fa-rocket text-white text-sm"></i>
+                </div>
+                <span class="text-xl font-extrabold tracking-tight text-white">EliteHost</span>
+            </div>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
+                <a href="#features" class="hover:text-white transition">Features</a>
+                <a href="#process" class="hover:text-white transition">Process</a>
+                <a href="#pricing" class="hover:text-white transition">Pricing</a>
+                <a href="#faq" class="hover:text-white transition">FAQ</a>
+            </div>
+
+            <div class="hidden md:flex items-center gap-4">
+                <a href="/login" class="text-sm font-semibold text-white hover:text-blue-400 transition">Sign in</a>
+                <a href="/register" class="btn-premium px-5 py-2.5 rounded-full text-sm font-bold text-white">Get Started</a>
+            </div>
+
+            <!-- Mobile Toggle -->
+            <button class="md:hidden text-white" @click="mobileMenu = !mobileMenu">
+                <i class="fas" :class="mobileMenu ? 'fa-times' : 'fa-bars-staggered'"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenu" x-cloak x-transition class="md:hidden absolute top-full left-0 w-full bg-slate-900 border-b border-slate-800 p-6 space-y-4 shadow-2xl">
+            <a href="#features" @click="mobileMenu = false" class="block text-slate-300">Features</a>
+            <a href="#process" @click="mobileMenu = false" class="block text-slate-300">Process</a>
+            <a href="#pricing" @click="mobileMenu = false" class="block text-slate-300">Pricing</a>
+            <div class="pt-4 flex flex-col gap-3">
+                <a href="/login" class="text-center py-3 text-slate-300 font-semibold">Sign in</a>
+                <a href="/register" class="btn-premium text-center py-3 rounded-xl font-bold text-white">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden hero-gradient">
+        <div class="absolute inset-0 dots-pattern opacity-30 pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="max-w-3xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold tracking-wider uppercase mb-6">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    Next-Gen Deployment Engine
+                </div>
+                <h1 class="text-5xl md:text-7xl font-black mb-6 leading-[1.1] text-gradient">
+                    Deploy your apps <br><span class="text-blue-500">in seconds</span>, not hours.
+                </h1>
+                <p class="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-2xl">
+                    EliteHost provides a production-grade environment for your Python and Node.js applications with automated scaling, AI-driven configuration, and rock-solid security.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="/register" class="btn-premium px-8 py-4 rounded-full font-bold text-lg text-center flex items-center justify-center gap-2">
+                        Start Deploying Free <i class="fas fa-arrow-right text-sm"></i>
+                    </a>
+                    <a href="#features" class="px-8 py-4 rounded-full font-bold text-lg text-center border border-slate-700 hover:bg-slate-800 transition">
+                        Explore Platform
+                    </a>
+                </div>
+
+                <div class="mt-16 flex items-center gap-6">
+                    <div class="flex -space-x-3">
+                        <template x-for="i in [1,2,3,4]">
+                            <div class="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center overflow-hidden">
+                                <img :src="'https://i.pravatar.cc/100?u=' + i" alt="User">
+                            </div>
+                        </template>
+                    </div>
+                    <div class="text-sm">
+                        <div class="font-bold text-white">5,000+ developers</div>
+                        <div class="text-slate-500">trust EliteHost for their production apps</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abstract Visual -->
+        <div class="hidden lg:block absolute top-1/4 -right-20 w-[600px] h-[600px] floating">
+            <div class="relative w-full h-full">
+                <div class="absolute inset-0 bg-blue-500/20 rounded-full blur-[120px]"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-slate-800 rounded-3xl border border-slate-700 rotate-12 shadow-2xl overflow-hidden p-6">
+                    <div class="flex gap-1.5 mb-4">
+                        <div class="w-2.5 h-2.5 rounded-full bg-red-500/50"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
+                    </div>
+                    <div class="space-y-3 font-mono text-[10px] text-blue-400">
+                        <div class="flex gap-2"><span class="text-slate-600">$</span><span>elitehost deploy --project-id=v14</span></div>
+                        <div class="text-slate-500">>> Analysing environment...</div>
+                        <div class="text-green-400">>> Python 3.10 detected</div>
+                        <div class="text-slate-500">>> Installing dependencies...</div>
+                        <div class="flex gap-2"><span>[####------]</span><span>40%</span></div>
+                        <div class="text-white">>> Successfully deployed to port 8080!</div>
+                    </div>
+                </div>
+                <div class="absolute top-1/3 left-0 w-64 h-24 bg-slate-900/80 backdrop-blur rounded-2xl border border-blue-500/20 -rotate-6 shadow-xl p-4 flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <i class="fas fa-check text-green-500"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500">System Status</div>
+                        <div class="text-sm font-bold">100% Uptime</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Section -->
+    <section class="py-12 border-y border-slate-800 bg-slate-900/30">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div>
+                    <div class="text-3xl md:text-4xl font-black text-white mb-1">99.9%</div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">SLA Uptime</div>
+                </div>
+                <div>
+                    <div class="text-3xl md:text-4xl font-black text-white mb-1">0.2s</div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Avg. Latency</div>
+                </div>
+                <div>
+                    <div class="text-3xl md:text-4xl font-black text-white mb-1">5M+</div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Requests/Day</div>
+                </div>
+                <div>
+                    <div class="text-3xl md:text-4xl font-black text-white mb-1">150+</div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Global Nodes</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 md:py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-20">
+                <h2 class="text-3xl md:text-5xl font-black mb-6">Engineered for performance</h2>
+                <p class="text-slate-400">Everything you need to ship production-ready applications without the infrastructure headache.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card rounded-3xl p-8">
+                    <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i class="fas fa-bolt-lightning text-blue-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Instant Deployment</h3>
+                    <p class="text-slate-400 leading-relaxed">Push your code and see it live in seconds. Our optimized build pipeline handles the rest.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="feature-card rounded-3xl p-8">
+                    <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i class="fas fa-robot text-purple-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">AI Code Generation</h3>
+                    <p class="text-slate-400 leading-relaxed">Describe your idea, and our AI will generate, test, and deploy the full application code for you.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="feature-card rounded-3xl p-8">
+                    <div class="w-14 h-14 bg-cyan-500/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i class="fas fa-shield-halved text-cyan-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Fortified Security</h3>
+                    <p class="text-slate-400 leading-relaxed">Enterprise-grade protection with device fingerprinting, Telegram 2FA, and isolated environments.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="feature-card rounded-3xl p-8">
+                    <div class="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i class="fas fa-chart-line text-green-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Real-time Metrics</h3>
+                    <p class="text-slate-400 leading-relaxed">Monitor CPU, Memory, and Network usage with low-latency streaming dashboards.</p>
+                </div>
+                <!-- Feature 5 -->
+                <div class="feature-card rounded-3xl p-8">
+                    <div class="w-14 h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i class="fab fa-github text-orange-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">GitHub Integration</h3>
+                    <p class="text-slate-400 leading-relaxed">Connect your repositories and enjoy automated deployments every time you push to main.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div class="feature-card rounded-3xl p-8">
+                    <div class="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mb-8">
+                        <i class="fas fa-box-archive text-red-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">Smart Backups</h3>
+                    <p class="text-slate-400 leading-relaxed">Never lose a byte. One-click snapshots and automated daily backups for all your projects.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Section -->
+    <section id="process" class="py-24 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <div class="flex-1">
+                    <h2 class="text-3xl md:text-5xl font-black mb-8">Ship in three simple steps</h2>
+                    <div class="space-y-10">
+                        <div class="flex gap-6">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">1</div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-2 text-white">Connect your source</h4>
+                                <p class="text-slate-400">Upload a file, paste raw code, or connect your GitHub repository in seconds.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-6">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">2</div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-2 text-white">Configure & Build</h4>
+                                <p class="text-slate-400">Our engine automatically detects dependencies and sets up the environment variables.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-6">
+                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">3</div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-2 text-white">Go Live</h4>
+                                <p class="text-slate-400">Your app is deployed to our high-performance cluster with a dedicated port and SSL.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 w-full max-w-lg">
+                    <div class="relative bg-slate-800 rounded-3xl p-2 shadow-2xl border border-slate-700">
+                        <img src="https://images.unsplash.com/photo-1614332287897-cdc485fa562d?auto=format&fit=crop&q=80&w=1000" alt="Dashboard Preview" class="rounded-2xl">
+                        <div class="absolute -bottom-6 -left-6 bg-blue-600 p-6 rounded-2xl shadow-xl hidden md:block">
+                            <div class="text-white font-bold text-lg">90% faster</div>
+                            <div class="text-blue-100 text-xs">deployment cycles</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-24 md:py-32">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-20">
+                <h2 class="text-3xl md:text-5xl font-black mb-6">Transparent credit pricing</h2>
+                <p class="text-slate-400">Pay only for what you use. No hidden monthly fees, no credit cards required for trial.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 items-stretch">
+                <!-- Starter -->
+                <div class="feature-card rounded-3xl p-8 flex flex-col">
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-slate-400 mb-4 uppercase tracking-widest">Starter</h3>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-black text-white">₹50</span>
+                            <span class="text-slate-500">/ 10 cr</span>
+                        </div>
+                    </div>
+                    <ul class="space-y-4 mb-10 flex-1">
+                        <li class="flex items-center gap-3 text-slate-300 text-sm">
+                            <i class="fas fa-check text-blue-500"></i> 20 File Deployments
+                        </li>
+                        <li class="flex items-center gap-3 text-slate-300 text-sm">
+                            <i class="fas fa-check text-blue-500"></i> 10 GitHub Deploys
+                        </li>
+                        <li class="flex items-center gap-3 text-slate-300 text-sm">
+                            <i class="fas fa-check text-blue-500"></i> Community Support
+                        </li>
+                    </ul>
+                    <a href="/register" class="w-full py-4 rounded-xl border border-slate-700 font-bold text-center hover:bg-slate-800 transition">Select Plan</a>
+                </div>
+
+                <!-- Pro -->
+                <div class="relative bg-gradient-to-b from-blue-900/30 to-slate-900 border-2 border-blue-500 rounded-3xl p-8 flex flex-col shadow-2xl shadow-blue-500/10">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-tighter">Recommended</div>
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-blue-400 mb-4 uppercase tracking-widest">Pro Pack</h3>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-black text-white">₹399</span>
+                            <span class="text-slate-500">/ 99 cr</span>
+                        </div>
+                        <div class="text-xs text-green-400 mt-2 font-bold italic">Best Value — Save ₹96</div>
+                    </div>
+                    <ul class="space-y-4 mb-10 flex-1">
+                        <li class="flex items-center gap-3 text-slate-300 text-sm font-semibold">
+                            <i class="fas fa-check text-blue-500"></i> 198 File Deployments
+                        </li>
+                        <li class="flex items-center gap-3 text-slate-300 text-sm font-semibold">
+                            <i class="fas fa-check text-blue-500"></i> 99 GitHub Deploys
+                        </li>
+                        <li class="flex items-center gap-3 text-slate-300 text-sm font-semibold">
+                            <i class="fas fa-check text-blue-500"></i> Priority Support
+                        </li>
+                        <li class="flex items-center gap-3 text-slate-300 text-sm font-semibold">
+                            <i class="fas fa-check text-blue-500"></i> Early Access Features
+                        </li>
+                    </ul>
+                    <a href="/register" class="w-full btn-premium py-4 rounded-xl font-bold text-center text-white">Get Started</a>
+                </div>
+
+                <!-- Custom -->
+                <div class="feature-card rounded-3xl p-8 flex flex-col">
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-slate-400 mb-4 uppercase tracking-widest">Custom</h3>
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-black text-white">Flexible</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-10">Need a larger amount of credits for a custom enterprise project or high-volume usage?</p>
+                    <ul class="space-y-4 mb-10 flex-1">
+                        <li class="flex items-center gap-3 text-slate-300 text-sm">
+                            <i class="fas fa-check text-blue-500"></i> Volume Discount
+                        </li>
+                        <li class="flex items-center gap-3 text-slate-300 text-sm">
+                            <i class="fas fa-check text-blue-500"></i> Dedicated Manager
+                        </li>
+                    </ul>
+                    <a href="https://t.me/zolvid" class="w-full py-4 rounded-xl border border-slate-700 font-bold text-center hover:bg-slate-800 transition">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="py-24 bg-slate-900/30">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-2xl md:text-4xl font-black text-center mb-16">Trusted by innovators</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <template x-for="t in [
+                    {name: 'Rahul Sharma', role: 'Full-stack Dev', text: 'The AI coder feature is actually insane. I described a bot and it was running in 30 seconds. Unbelievable flow.'},
+                    {name: 'Anish Kapur', role: 'Freelancer', text: 'Finally a hosting provider that doesn\'t overcomplicate things. Credit-based system is perfect for my clients.'},
+                    {name: 'Sarah Chen', role: 'Startup Founder', text: 'Uptime and performance have been rock solid. We moved our production API here and haven\'t looked back.'}
+                ]">
+                    <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-8">
+                        <div class="flex gap-1 text-yellow-500 mb-4">
+                            <i class="fas fa-star text-xs"></i><i class="fas fa-star text-xs"></i><i class="fas fa-star text-xs"></i><i class="fas fa-star text-xs"></i><i class="fas fa-star text-xs"></i>
+                        </div>
+                        <p class="text-slate-300 italic mb-6 leading-relaxed" x-text="'\"' + t.text + '\"'"></p>
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center font-bold text-blue-400" x-text="t.name[0]"></div>
+                            <div>
+                                <div class="font-bold text-white text-sm" x-text="t.name"></div>
+                                <div class="text-xs text-slate-500" x-text="t.role"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-24 md:py-32">
+        <div class="max-w-3xl mx-auto px-6">
+            <h2 class="text-3xl md:text-5xl font-black text-center mb-16">Common questions</h2>
+            <div class="space-y-4" x-data="{ active: 0 }">
+                <template x-for="(q, index) in [
+                    {q: 'What languages do you support?', a: 'We currently offer first-class support for Python (Flask, Django, FastAPI) and Node.js (Express, Next.js, etc.). We are expanding to support more runtimes soon.'},
+                    {q: 'How do credits work?', a: 'Credits are our platform currency. You only pay for deployments and specific actions like backups. 1 credit can typically handle multiple small deployments.'},
+                    {q: 'Is my data secure?', a: 'Yes. Every deployment runs in an isolated containerized environment. We use enterprise-grade encryption and device-locked sessions for all accounts.'},
+                    {q: 'Can I connect a custom domain?', a: 'Currently, we provide dedicated ports on our high-speed domain. Custom domain support is in our v15 roadmap.'}
+                ]">
+                    <div class="border border-slate-800 rounded-2xl overflow-hidden transition-all duration-300" :class="active === index ? 'bg-slate-800/40' : ''">
+                        <button @click="active = index" class="w-full flex items-center justify-between p-6 text-left">
+                            <span class="font-bold text-white" x-text="q.q"></span>
+                            <i class="fas fa-chevron-down text-slate-500 transition-transform" :class="active === index ? 'rotate-180' : ''"></i>
+                        </button>
+                        <div x-show="active === index" x-collapse>
+                            <div class="px-6 pb-6 text-slate-400 text-sm leading-relaxed" x-text="q.a"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-900 pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-12 mb-20">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center gap-2.5 mb-6">
+                        <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-rocket text-white text-xs"></i>
+                        </div>
+                        <span class="text-xl font-black text-white">EliteHost</span>
+                    </div>
+                    <p class="text-slate-500 max-w-sm mb-6">
+                        The ultimate deployment platform for modern developers. Fast, secure, and powered by advanced AI.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="text-slate-500 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                        <a href="https://t.me/zolvid" class="text-slate-500 hover:text-white transition"><i class="fab fa-telegram"></i></a>
+                        <a href="#" class="text-slate-500 hover:text-white transition"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h5 class="text-white font-bold mb-6">Platform</h5>
+                    <ul class="space-y-4 text-sm text-slate-500">
+                        <li><a href="#features" class="hover:text-blue-400 transition">Features</a></li>
+                        <li><a href="#pricing" class="hover:text-blue-400 transition">Pricing</a></li>
+                        <li><a href="/login" class="hover:text-blue-400 transition">Sign In</a></li>
+                        <li><a href="/register" class="hover:text-blue-400 transition">Create Account</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="text-white font-bold mb-6">Company</h5>
+                    <ul class="space-y-4 text-sm text-slate-500">
+                        <li><a href="https://t.me/zolvid" class="hover:text-blue-400 transition">Support</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Terms of Service</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">API Documentation</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-10 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="text-xs text-slate-600 font-medium">
+                    © 2024 EliteHost v14. Engineered with precision.
+                </div>
+                <div class="flex items-center gap-2 text-[10px] text-slate-700 uppercase tracking-[0.2em] font-bold">
+                    <span class="w-1.5 h-1.5 bg-green-500/30 rounded-full"></span>
+                    Global Network Status: Operational
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>"""
+
 DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>

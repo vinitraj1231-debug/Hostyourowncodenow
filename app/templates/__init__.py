@@ -1,1 +1,1 @@
-from .html_templates import LOGIN_PAGE, DASHBOARD_HTML, ADMIN_PANEL_HTML
+from .html_templates import LOGIN_PAGE, DASHBOARD_HTML, ADMIN_PANEL_HTML, LANDING_PAGE_HTML
