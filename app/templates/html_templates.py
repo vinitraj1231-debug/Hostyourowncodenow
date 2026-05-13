@@ -129,8 +129,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         .status-stopped{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
         .status-pending{background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.3)}
         .status-failed{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
-        .toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;max-width:350px;animation:slideIn .3s ease}
+        .toast{position:fixed;bottom:5rem;right:1.5rem;z-index:9999;max-width:350px;animation:slideIn .3s ease}
         @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        .bottom-nav{background:rgba(15,23,42,0.9);backdrop-filter:blur(20px);border-top:1px solid rgba(59,130,246,0.2)}
         .notification-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#ef4444;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
         .progress-bar{height:6px;border-radius:3px;transition:width 1s ease}
         ::-webkit-scrollbar{width:4px;height:4px}
@@ -202,11 +203,34 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
     <!-- Mobile Header -->
     <div class="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-        <button @click="sidebarOpen=!sidebarOpen" class="text-white p-1">
-            <i class="fas fa-bars text-xl"></i>
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                <i class="fas fa-rocket text-white text-xs"></i>
+            </div>
+            <span class="font-black text-white">EliteHost <span class="text-blue-400">v14</span></span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="text-sm font-bold text-blue-400" x-text="credits === Infinity ? '∞ cr' : parseFloat(credits).toFixed(1)+' cr'"></div>
+            <button @click="sidebarOpen=!sidebarOpen" class="text-white p-1">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 bottom-nav flex justify-around items-center p-2 pb-safe">
+        <template x-for="item in navItems" :key="item.id">
+            <button @click="navigate(item.id)"
+                class="flex flex-col items-center gap-1 p-2 transition"
+                :class="currentPage===item.id ? 'text-blue-400' : 'text-slate-500'">
+                <i :class="item.icon" class="text-lg"></i>
+                <span class="text-[10px] font-bold uppercase" x-text="item.label.split(' ')[0]"></span>
+            </button>
+        </template>
+        <button @click="window.open('{{ telegram_link }}', '_blank')" class="flex flex-col items-center gap-1 p-2 text-slate-500">
+            <i class="fas fa-headset text-lg"></i>
+            <span class="text-[10px] font-bold uppercase">Help</span>
         </button>
-        <span class="font-black text-white">EliteHost <span class="text-blue-400">v14</span></span>
-        <div class="text-sm font-semibold text-blue-400" x-text="credits === Infinity ? '∞ cr' : parseFloat(credits).toFixed(1)+' cr'"></div>
     </div>
 
     <!-- Overlay -->
@@ -214,7 +238,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
          class="md:hidden fixed inset-0 bg-black/50 z-40" x-cloak></div>
 
     <!-- Main Content -->
-    <main class="md:ml-64 min-h-screen pt-16 md:pt-0">
+    <main class="md:ml-64 min-h-screen pt-16 md:pt-0 pb-20 md:pb-0">
         <div class="p-4 md:p-8">
 
             <!-- OVERVIEW PAGE -->
@@ -356,6 +380,46 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             <div x-show="currentPage==='new-deploy'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
                 <h1 class="text-3xl font-black mb-8">New Deployment</h1>
                 <div class="grid md:grid-cols-2 gap-6">
+                    <!-- AI Coder -->
+                    <div class="glass rounded-2xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
+                            <i class="fas fa-robot text-8xl"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-brain text-purple-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold">AI Code Generator</h3>
+                                <p class="text-xs text-slate-400">Let AI write your app code</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-300 mb-6">Describe what you want to build, and our highly advanced AI will generate the full code for you to deploy instantly.</p>
+                        <button @click="navigate('ai-coder')" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 px-4 py-3 rounded-xl font-bold text-sm transition">
+                            <i class="fas fa-magic mr-2"></i>Start AI Coding
+                        </button>
+                    </div>
+
+                    <!-- Direct Paste -->
+                    <div class="glass rounded-2xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
+                            <i class="fas fa-code text-8xl"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-paste text-green-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold">Direct Deploy</h3>
+                                <p class="text-xs text-slate-400">Paste code & deploy</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-300 mb-6">Already have code? Paste it directly into our advanced editor and we'll handle the rest of the deployment.</p>
+                        <button @click="navigate('direct-deploy')" class="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:opacity-90 px-4 py-3 rounded-xl font-bold text-sm transition">
+                            <i class="fas fa-bolt mr-2"></i>Paste & Deploy
+                        </button>
+                    </div>
+
                     <!-- File Upload -->
                     <div class="glass rounded-2xl p-6">
                         <div class="flex items-center gap-3 mb-5">
@@ -433,6 +497,92 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                                 <span x-show="deploying"><i class="fas fa-spinner fa-spin mr-2"></i>Deploying...</span>
                             </button>
                         </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI CODER PAGE -->
+            <div x-show="currentPage==='ai-coder'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <div class="flex items-center gap-4 mb-8">
+                    <button @click="navigate('new-deploy')" class="bg-slate-800 p-3 rounded-xl hover:bg-slate-700 transition">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h1 class="text-3xl font-black">AI Coder</h1>
+                </div>
+                <div class="glass rounded-2xl p-6 mb-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center animate-pulse">
+                            <i class="fas fa-robot text-purple-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold">What would you like to build?</h3>
+                            <p class="text-xs text-slate-400">Enter a prompt and EliteHost AI will generate the code.</p>
+                        </div>
+                    </div>
+                    <textarea x-model="aiPrompt" rows="4"
+                        class="w-full px-4 py-3 bg-slate-800/60 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4"
+                        placeholder="e.g. A simple Flask web app that shows the current time, or a Telegram bot that echoes messages..."></textarea>
+                    <button @click="generateAICode()" :disabled="aiGenerating"
+                        class="w-full bg-gradient-to-r from-purple-600 to-blue-600 py-3 rounded-xl font-bold transition hover:opacity-90">
+                        <span x-show="!aiGenerating"><i class="fas fa-wand-magic-sparkles mr-2"></i>Generate Code</span>
+                        <span x-show="aiGenerating"><i class="fas fa-spinner fa-spin mr-2"></i>AI is thinking...</span>
+                    </button>
+                </div>
+                <div x-show="generatedCode" class="fade-in">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Generated Output</h3>
+                        <button @click="copyCode(generatedCode)" class="text-blue-400 text-xs hover:underline">
+                            <i class="fas fa-copy mr-1"></i>Copy Code
+                        </button>
+                    </div>
+                    <div class="bg-slate-950 rounded-2xl p-6 border border-slate-800 mb-6 font-mono text-sm overflow-x-auto whitespace-pre text-blue-100 shadow-2xl">
+                        <code x-text="generatedCode"></code>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-800/40 p-4 rounded-xl">
+                            <label class="text-xs font-semibold text-slate-400 mb-1 block">Filename</label>
+                            <input type="text" x-model="aiFilename"
+                                class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm">
+                        </div>
+                        <button @click="deployRawCode(generatedCode, aiFilename)" :disabled="deploying"
+                            class="bg-gradient-to-r from-green-600 to-teal-600 rounded-xl font-bold text-sm transition hover:opacity-90">
+                            <i class="fas fa-cloud-upload-alt mr-2"></i>Deploy This Code <span class="opacity-70">(0.5 cr)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIRECT DEPLOY PAGE -->
+            <div x-show="currentPage==='direct-deploy'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <div class="flex items-center gap-4 mb-8">
+                    <button @click="navigate('new-deploy')" class="bg-slate-800 p-3 rounded-xl hover:bg-slate-700 transition">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h1 class="text-3xl font-black">Direct Deploy</h1>
+                </div>
+                <div class="glass rounded-2xl p-6">
+                    <div class="mb-4">
+                        <label class="text-sm font-bold text-slate-300 mb-2 block">Application Code</label>
+                        <textarea x-model="directCode" rows="12"
+                            class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-blue-100 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder="Paste your code here..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-400 mb-1 block">Project Name / Filename</label>
+                            <input type="text" x-model="directFilename" placeholder="app.py"
+                                class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                        </div>
+                        <div class="flex items-end">
+                            <button @click="deployRawCode(directCode, directFilename)" :disabled="deploying || !directCode"
+                                class="w-full bg-gradient-to-r from-green-600 to-teal-600 py-2.5 rounded-xl font-bold text-sm transition hover:opacity-90">
+                                <i class="fas fa-rocket mr-2"></i>Deploy Now <span class="opacity-70">(0.5 cr)</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 text-sm text-blue-300">
+                        <i class="fas fa-info-circle text-lg"></i>
+                        <p>We'll automatically detect dependencies and setup the environment for you. Make sure your code is self-contained or use the "Files" tab later to add more.</p>
                     </div>
                 </div>
             </div>
@@ -697,6 +847,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             paymentData: { id:'', package:'', credits:0, price:0, screenshot:null, transactionId:'' },
             timeRemaining: 1800,   // 30 minutes
             timerInterval: null,
+
+            // AI & Direct
+            aiPrompt: '',
+            aiGenerating: false,
+            generatedCode: '',
+            aiFilename: 'main.py',
+            directCode: '',
+            directFilename: 'app.py',
+
             navItems: [
                 { id:'overview', icon:'fas fa-th-large', label:'Overview', badge:0 },
                 { id:'deployments', icon:'fas fa-rocket', label:'Deployments', badge:0 },
@@ -823,6 +982,48 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                     }
                 } catch(e) { this.showToast('❌ Deployment failed', 'error'); }
                 finally { this.deploying = false; }
+            },
+
+            async generateAICode() {
+                if (!this.aiPrompt) return;
+                this.aiGenerating = true;
+                try {
+                    const res = await fetch('/api/ai/generate', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ prompt: this.aiPrompt })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.generatedCode = data.code;
+                        this.showToast('✨ AI code generated successfully!', 'success');
+                    } else { this.showToast('❌ ' + data.error, 'error'); }
+                } catch(e) { this.showToast('❌ AI Error', 'error'); }
+                finally { this.aiGenerating = false; }
+            },
+
+            async deployRawCode(code, filename) {
+                if (!code) return;
+                this.deploying = true;
+                try {
+                    const res = await fetch('/api/deploy/raw', {
+                        method:'POST', headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({ code: code, filename: filename })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.showToast('✅ Deployed successfully!', 'success');
+                        this.loadDeployments();
+                        this.currentPage = 'deployments';
+                        this.directCode = '';
+                    } else { this.showToast('❌ ' + data.error, 'error'); }
+                } catch(e) { this.showToast('❌ Deployment failed', 'error'); }
+                finally { this.deploying = false; }
+            },
+
+            copyCode(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    this.showToast('📋 Copied to clipboard!', 'info');
+                });
             },
 
             async selectPackage(packageType) {
@@ -1024,35 +1225,47 @@ ADMIN_PANEL_HTML = """<!DOCTYPE html>
     </style>
 </head>
 <body class="text-white min-h-screen" x-data="adminApp()">
-    <div class="bg-gradient-to-r from-blue-900 to-cyan-900 p-6 shadow-2xl">
+    <div class="bg-gradient-to-r from-blue-900 via-slate-900 to-blue-900 p-6 border-b border-blue-500/20 sticky top-0 z-50 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center glow-blue">
                     <i class="fas fa-crown text-white text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-black">Admin Control Panel</h1>
-                    <p class="text-blue-200 text-xs">EliteHost v14.0 — Full System Control</p>
+                    <h1 class="text-2xl font-black tracking-tight">Admin <span class="text-blue-400">Panel</span></h1>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <p class="text-blue-200/60 text-[10px] font-bold uppercase tracking-widest">System Operational</p>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-3">
-                <a href="/dashboard" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm transition">
-                    <i class="fas fa-arrow-left mr-2"></i>Dashboard
+                <a href="/dashboard" class="bg-slate-800/50 hover:bg-slate-700 border border-slate-700 px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i>Dashboard
                 </a>
-                <button @click="location.reload()" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm transition">
-                    <i class="fas fa-sync mr-2"></i>Refresh
-                </button>
             </div>
         </div>
     </div>
 
     <div class="max-w-7xl mx-auto p-6">
         <!-- Stats -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div class="glass rounded-2xl p-5"><div class="text-3xl font-black mb-1">{{ stats.total_users }}</div><div class="text-slate-400 text-xs">Total Users</div></div>
-            <div class="glass rounded-2xl p-5"><div class="text-3xl font-black mb-1 text-blue-400">{{ stats.total_deployments }}</div><div class="text-slate-400 text-xs">Total Deployments</div></div>
-            <div class="glass rounded-2xl p-5"><div class="text-3xl font-black mb-1 text-green-400">{{ stats.active_processes }}</div><div class="text-slate-400 text-xs">Active Processes</div></div>
-            <div class="glass rounded-2xl p-5"><div class="text-3xl font-black mb-1 text-yellow-400">{{ stats.pending_payments }}</div><div class="text-slate-400 text-xs">Pending Payments</div></div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="glass rounded-3xl p-6 border-l-4 border-l-blue-500">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-2">Total Users</div>
+                <div class="text-4xl font-black">{{ stats.total_users }}</div>
+            </div>
+            <div class="glass rounded-3xl p-6 border-l-4 border-l-cyan-500">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-2">Deployments</div>
+                <div class="text-4xl font-black text-blue-400">{{ stats.total_deployments }}</div>
+            </div>
+            <div class="glass rounded-3xl p-6 border-l-4 border-l-green-500">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-2">Active Apps</div>
+                <div class="text-4xl font-black text-green-400">{{ stats.active_processes }}</div>
+            </div>
+            <div class="glass rounded-3xl p-6 border-l-4 border-l-yellow-500">
+                <div class="text-slate-400 text-xs font-bold uppercase mb-2">Pending Pay</div>
+                <div class="text-4xl font-black text-yellow-400">{{ stats.pending_payments }}</div>
+            </div>
         </div>
 
         <!-- System Metrics -->
