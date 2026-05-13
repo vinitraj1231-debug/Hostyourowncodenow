@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+env/
+elitehost_data/database.sqlite
+elitehost_data/logs/
+elitehost_data/deployments/
+elitehost_data/uploads/
+elitehost_data/backups/
+elitehost_data/payments/
+app_output.log
+errors.log
+.env
