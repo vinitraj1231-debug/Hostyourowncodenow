@@ -76,10 +76,12 @@ def verify_session(session_token, fingerprint):
                 c.execute('DELETE FROM sessions WHERE token = ?', (session_token,))
                 return None
             if row['fingerprint'] != fingerprint:
-                # Security: Fingerprint mismatch might indicate session hijacking
+                # Security: Log fingerprint mismatch but don't invalidate session immediately
+                # to allow switching between mobile/desktop modes or minor browser updates.
                 from app.security.audit import audit_log
-                audit_log("SESSION_HIJACK_ATTEMPT", "CRITICAL", f"Fingerprint mismatch for token {session_token[:10]}...", user_id=row['user_id'])
-                return None
+                audit_log("SESSION_FINGERPRINT_CHANGE", "INFO", f"Fingerprint changed for token {session_token[:10]}...", user_id=row['user_id'])
+                # Update fingerprint to the new one
+                c.execute('UPDATE sessions SET fingerprint = ? WHERE token = ?', (fingerprint, session_token))
 
             # Update last activity
             c.execute('UPDATE sessions SET last_activity = ? WHERE token = ?',

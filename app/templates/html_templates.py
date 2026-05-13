@@ -116,15 +116,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         [x-cloak]{display:none!important}
-        body{background:#060d1a}
-        .glass{background:rgba(15,23,42,0.8);backdrop-filter:blur(16px);border:1px solid rgba(59,130,246,0.1)}
-        .sidebar{background:linear-gradient(180deg,#0d1b2e 0%,#0a1628 100%);border-right:1px solid rgba(59,130,246,0.1)}
-        .active-nav{background:linear-gradient(135deg,rgba(59,130,246,0.2),rgba(34,211,238,0.1));border:1px solid rgba(59,130,246,0.3);color:#fff}
-        .stat-card{background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,58,95,0.3));border:1px solid rgba(59,130,246,0.1)}
-        .glow-blue{box-shadow:0 0 20px rgba(59,130,246,0.3)}
-        .glow-green{box-shadow:0 0 20px rgba(34,197,94,0.3)}
-        .btn-primary{background:linear-gradient(135deg,#2563eb,#0891b2);transition:all .2s}
-        .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+        body{background:#030712; background-image: radial-gradient(at 0% 0%, rgba(17, 24, 39, 1) 0, transparent 50%), radial-gradient(at 50% 0%, rgba(10, 20, 42, 1) 0, transparent 50%), radial-gradient(at 100% 0%, rgba(17, 24, 39, 1) 0, transparent 50%);}
+        .glass{background:rgba(17, 24, 39, 0.7);backdrop-filter:blur(20px);border:1px solid rgba(255, 255, 255, 0.05);box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);}
+        .sidebar{background:#030712;border-right:1px solid rgba(255, 255, 255, 0.05)}
+        .active-nav{background:rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color:#60a5fa}
+        .stat-card{background:rgba(17, 24, 39, 0.4);border:1px solid rgba(255, 255, 255, 0.05);transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;}
+        .stat-card:hover{border-color: rgba(59, 130, 246, 0.3); transform: translateY(-4px); background: rgba(17, 24, 39, 0.6);}
+        .stat-card::after{content:''; position:absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.05), transparent); transform: translateX(-100%); transition: 0.5s;}
+        .stat-card:hover::after{transform: translateX(100%);}
+        .glow-blue{box-shadow:0 0 20px rgba(59,130,246,0.2)}
+        .glow-green{box-shadow:0 0 20px rgba(34,197,94,0.2)}
+        .btn-primary{background:linear-gradient(135deg,#3b82f6,#2563eb);transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);}
+        .btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);}
         .status-running{background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3)}
         .status-stopped{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
         .status-pending{background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.3)}
@@ -134,8 +137,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         .bottom-nav{background:rgba(15,23,42,0.9);backdrop-filter:blur(20px);border-top:1px solid rgba(59,130,246,0.2)}
         .notification-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#ef4444;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center}
         .progress-bar{height:6px;border-radius:3px;transition:width 1s ease}
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.5); border-radius: 3px; }
         ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-track{background:#0d1b2e}
+        ::-webkit-scrollbar-track{background:#030712}
         ::-webkit-scrollbar-thumb{background:#1e40af;border-radius:2px}
     </style>
 </head>
@@ -219,14 +225,24 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
     <!-- Bottom Navigation (Mobile) -->
     <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 bottom-nav flex justify-around items-center p-2 pb-safe">
-        <template x-for="item in navItems" :key="item.id">
-            <button @click="navigate(item.id)"
-                class="flex flex-col items-center gap-1 p-2 transition"
-                :class="currentPage===item.id ? 'text-blue-400' : 'text-slate-500'">
-                <i :class="item.icon" class="text-lg"></i>
-                <span class="text-[10px] font-bold uppercase" x-text="item.label.split(' ')[0]"></span>
-            </button>
-        </template>
+        <button @click="navigate('overview')" class="flex flex-col items-center gap-1 p-2 transition" :class="currentPage==='overview' ? 'text-blue-400' : 'text-slate-500'">
+            <i class="fas fa-th-large text-lg"></i>
+            <span class="text-[10px] font-bold uppercase">Home</span>
+        </button>
+        <button @click="navigate('buy-credits')" class="flex flex-col items-center gap-1 p-2 transition" :class="currentPage==='buy-credits' ? 'text-blue-400' : 'text-slate-500'">
+            <i class="fas fa-gem text-lg"></i>
+            <span class="text-[10px] font-bold uppercase">Credits</span>
+        </button>
+        <button @click="navigate('new-deploy')" class="flex flex-col items-center gap-1 p-2 transition" :class="currentPage==='new-deploy' ? 'text-blue-400' : 'text-slate-500'">
+            <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center -mt-8 border-4 border-[#030712] shadow-lg shadow-blue-500/20">
+                <i class="fas fa-robot text-white text-xl"></i>
+            </div>
+            <span class="text-[10px] font-bold uppercase mt-1">AI Coder</span>
+        </button>
+        <button @click="navigate('deployments')" class="flex flex-col items-center gap-1 p-2 transition" :class="currentPage==='deployments' ? 'text-blue-400' : 'text-slate-500'">
+            <i class="fas fa-rocket text-lg"></i>
+            <span class="text-[10px] font-bold uppercase">Deploys</span>
+        </button>
         <button @click="window.open('{{ telegram_link }}', '_blank')" class="flex flex-col items-center gap-1 p-2 text-slate-500">
             <i class="fas fa-headset text-lg"></i>
             <span class="text-[10px] font-bold uppercase">Help</span>
@@ -535,8 +551,10 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                             <i class="fas fa-copy mr-1"></i>Copy Code
                         </button>
                     </div>
-                    <div class="bg-slate-950 rounded-2xl p-6 border border-slate-800 mb-6 font-mono text-sm overflow-x-auto whitespace-pre text-blue-100 shadow-2xl">
-                        <code x-text="generatedCode"></code>
+                    <div class="bg-slate-950 rounded-2xl p-4 border border-slate-800 mb-6 font-mono text-sm shadow-2xl">
+                        <textarea x-model="generatedCode"
+                            class="w-full h-96 bg-transparent text-blue-100 focus:outline-none resize-none custom-scrollbar"
+                            placeholder="AI generated code will appear here..."></textarea>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-slate-800/40 p-4 rounded-xl">
@@ -858,9 +876,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
             navItems: [
                 { id:'overview', icon:'fas fa-th-large', label:'Overview', badge:0 },
-                { id:'deployments', icon:'fas fa-rocket', label:'Deployments', badge:0 },
-                { id:'new-deploy', icon:'fas fa-plus-circle', label:'New Deploy', badge:0 },
-                { id:'buy-credits', icon:'fas fa-gem', label:'Buy Credits', badge:0 },
+                { id:'buy-credits', icon:'fas fa-gem', label:'Credits', badge:0 },
+                { id:'new-deploy', icon:'fas fa-plus-circle', label:'AI Coder', badge:0 },
+                { id:'deployments', icon:'fas fa-rocket', label:'Deploys', badge:0 },
             ],
             sseConnected: false,
             sseRetries: 0,
