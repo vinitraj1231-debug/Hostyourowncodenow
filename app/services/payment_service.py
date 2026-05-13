@@ -112,17 +112,31 @@ def submit_payment_proof(payment_id, screenshot_data, transaction_id, bot):
                 types.InlineKeyboardButton("✅ Approve", callback_data=f"payment_confirm_{payment_id}"),
                 types.InlineKeyboardButton("❌ Reject", callback_data=f"payment_reject_{payment_id}")
             )
-            bot.send_message(ADMIN_ID,
+
+            # Send to both ADMIN_ID and OWNER_ID if set
+            recipients = set(filter(None, [ADMIN_ID, 0])) # 0 is default from config
+            from app.config import OWNER_ID
+            if OWNER_ID: recipients.add(OWNER_ID)
+
+            message_text = (
                 f"💳 *NEW PAYMENT SUBMISSION*\n\n"
                 f"📧 User: `{user['email']}`\n"
                 f"🆔 Payment ID: `{payment_id}`\n"
                 f"💰 Amount: ₹{payment['price']}\n"
                 f"💎 Credits: {payment['credits']}\n"
                 f"🔢 TxnID: `{transaction_id}`\n"
-                f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-                reply_markup=markup)
-            with open(screenshot_path, 'rb') as photo:
-                bot.send_photo(ADMIN_ID, photo, caption=f"Payment Screenshot - {payment_id}")
+                f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+
+            for rid in recipients:
+                if rid == 0: continue
+                try:
+                    bot.send_message(rid, message_text, reply_markup=markup, parse_mode='Markdown')
+                    with open(screenshot_path, 'rb') as photo:
+                        bot.send_photo(rid, photo, caption=f"Payment Screenshot - {payment_id}")
+                except Exception as e:
+                    logger.error(f"Could not send bot message to {rid}: {e}")
+
         except Exception as e:
             log_error(str(e), "payment notification")
 
