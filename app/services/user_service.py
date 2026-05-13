@@ -107,7 +107,7 @@ def is_admin_user(user_id, email):
     return (
         str(user_id) == str(OWNER_ID) or
         str(user_id) == str(ADMIN_ID) or
-        email.lower().strip() == ADMIN_EMAIL.lower().strip()
+        (ADMIN_EMAIL and email.lower().strip() == ADMIN_EMAIL.lower().strip())
     )
 
 def get_user(user_id):

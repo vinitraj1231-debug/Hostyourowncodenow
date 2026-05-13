@@ -175,7 +175,7 @@ def api_restart_deployment(user_id, deploy_id):
         if not start_cmd:
             return jsonify({'success': False, 'error': 'No start command'})
 
-        process = _launch_process(start_cmd.split(), deploy_dir, port, env_vars)
+        process = _launch_process(start_cmd.split(), deploy_dir, port, env_vars, project_path=deploy_dir, deploy_id=deploy_id)
         with PROCESS_LOCK:
             active_processes[deploy_id] = process
             process_restart_ct[deploy_id] = process_restart_ct.get(deploy_id, 0) + 1

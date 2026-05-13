@@ -641,11 +641,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
 
                 <div x-show="detailsTab==='console'">
-                    <div class="bg-slate-950 rounded-xl p-4 font-mono text-xs text-green-400 h-80 overflow-y-auto whitespace-pre-wrap leading-relaxed border border-slate-800"
+                    <div class="bg-slate-950 rounded-xl p-4 font-mono text-[11px] text-green-400 h-80 overflow-y-auto whitespace-pre-wrap leading-relaxed border border-slate-800 shadow-inner"
                          x-ref="consoleEl" x-text="consoleLogs"></div>
                     <div class="flex gap-2 mt-3">
+                        <div class="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-1.5 border border-slate-700">
+                            <div class="w-2 h-2 rounded-full animate-pulse" :class="sseConnected ? 'bg-green-500' : 'bg-red-500'"></div>
+                            <span class="text-[10px] text-slate-400 uppercase font-bold" x-text="sseConnected ? 'Live' : 'Offline'"></span>
+                        </div>
                         <button @click="refreshLogs()" class="btn-primary px-4 py-2 rounded-xl text-sm">
-                            <i class="fas fa-sync mr-2"></i>Refresh
+                            <i class="fas fa-sync mr-2"></i>Full Refresh
                         </button>
                         <button @click="consoleLogs=''" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl text-sm transition">
                             Clear
@@ -738,6 +742,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                         this.loadDeployments(); break;
                     case 'credits_updated':
                         this.credits = event.data.credits; break;
+                    case 'logs':
+                        if (this.selectedDeploy && this.selectedDeploy.id === event.data.id && this.modal === 'details' && this.detailsTab === 'console') {
+                            this.consoleLogs += event.data.line;
+                            this.$nextTick(() => { if (this.$refs.consoleEl) this.$refs.consoleEl.scrollTop = this.$refs.consoleEl.scrollHeight; });
+                        }
+                        break;
                     case 'payment_approved':
                         this.showToast(`💎 Payment approved! +${event.data.credits} credits`, 'success');
                         this.credits = (parseFloat(this.credits) + event.data.credits).toFixed(1);

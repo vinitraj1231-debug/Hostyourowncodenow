@@ -72,7 +72,7 @@ def login():
         if not email or not password:
             return redirect('/login?error=Email and password required')
 
-        is_admin_login = (email == ADMIN_EMAIL.lower() and password == ADMIN_PASSWORD)
+        is_admin_login = (ADMIN_EMAIL and email == ADMIN_EMAIL.lower() and password == ADMIN_PASSWORD)
 
         user_id = authenticate_user(email, password)
         if not user_id and not is_admin_login:

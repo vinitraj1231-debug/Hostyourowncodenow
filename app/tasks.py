@@ -48,8 +48,7 @@ def monitor_and_autorestart():
 
                             if start_cmd and os.path.exists(deploy_dir):
                                 try:
-                                    import sys
-                                    new_proc = _launch_process(start_cmd.split(), deploy_dir, port, env_vars)
+                                    new_proc = _launch_process(start_cmd.split(), deploy_dir, port, env_vars, project_path=deploy_dir, deploy_id=deploy_id)
                                     active_processes[deploy_id] = new_proc
                                     update_deployment(deploy_id, status='running', pid=new_proc.pid,
                                                      restart_count=restarts+1,

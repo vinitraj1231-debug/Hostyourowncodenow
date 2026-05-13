@@ -29,6 +29,8 @@ PACKAGE_MAP = {
     'aiohttp': 'aiohttp', 'fastapi': 'fastapi', 'uvicorn': 'uvicorn',
     'motor': 'motor', 'pymongo': 'pymongo', 'redis': 'redis',
     'celery': 'celery', 'pydantic': 'pydantic', 'sqlalchemy': 'SQLAlchemy',
+    'flask': 'flask', 'django': 'django', 'numpy': 'numpy', 'pandas': 'pandas',
+    'requests': 'requests', 'httpx': 'httpx', 'discord': 'discord.py',
 }
 
 STDLIB_MODULES = {
@@ -112,15 +114,50 @@ def get_deployment(deploy_id):
     except Exception:
         return None
 
-def _launch_process(cmd, cwd, port, env=None):
+def _get_venv_bin(project_path, binary='python'):
+    if sys.platform == 'win32':
+        return os.path.join(project_path, 'venv', 'Scripts', f"{binary}.exe")
+    return os.path.join(project_path, 'venv', 'bin', binary)
+
+def _launch_process(cmd, cwd, port, env=None, project_path=None, deploy_id=None):
     proc_env = os.environ.copy()
     proc_env['PORT'] = str(port)
     if env:
         proc_env.update(env)
-    return subprocess.Popen(
+
+    # If project_path is provided, we try to use the venv
+    if project_path:
+        venv_python = _get_venv_bin(project_path, 'python')
+        if os.path.exists(venv_python):
+            if isinstance(cmd, list) and cmd[0] in [sys.executable, 'python', 'python3']:
+                cmd[0] = venv_python
+            elif isinstance(cmd, str):
+                # This is trickier if it's a shell command, but we usually pass lists
+                pass
+
+    process = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        cwd=cwd, env=proc_env
+        cwd=cwd, env=proc_env, text=True, bufsize=1
     )
+
+    if deploy_id:
+        from threading import Thread
+        from app.services.sse_service import sse_notify
+        def stream_logs():
+            for line in iter(process.stdout.readline, ''):
+                if not line: break
+                # Append to DB logs
+                with get_db() as conn:
+                    c = conn.cursor()
+                    c.execute("UPDATE deployments SET logs = logs || ? WHERE id = ?", (line, deploy_id))
+                # Notify via SSE
+                deployment = get_deployment(deploy_id)
+                if deployment:
+                    sse_notify(deployment['user_id'], 'logs', {'id': deploy_id, 'line': line})
+            process.stdout.close()
+        Thread(target=stream_logs, daemon=True).start()
+
+    return process
 
 def extract_imports_from_code(code_content):
     imports = set()
@@ -134,23 +171,31 @@ def extract_imports_from_code(code_content):
 def detect_and_install_deps(project_path):
     installed, log_lines = [], ["🤖 AI DEPENDENCY ANALYZER", "=" * 60]
     try:
+        venv_dir = os.path.join(project_path, 'venv')
+        if not os.path.exists(venv_dir):
+            log_lines.append("🛠 Creating virtual environment...")
+            subprocess.run([sys.executable, '-m', 'venv', venv_dir], check=True)
+
+        venv_pip = _get_venv_bin(project_path, 'pip')
+        venv_python = _get_venv_bin(project_path, 'python')
+
         req_file = os.path.join(project_path, 'requirements.txt')
         if os.path.exists(req_file):
             log_lines.append("\n📦 REQUIREMENTS.TXT")
-            with open(req_file, 'r') as f:
-                packages = [l.strip() for l in f if l.strip() and not l.startswith('#')]
-            for pkg in packages:
-                try:
-                    subprocess.run([sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
-                                   check=True, capture_output=True, timeout=300)
-                    log_lines.append(f"  ✅ {pkg}")
-                    installed.append(pkg)
-                except Exception:
-                    log_lines.append(f"  ⚠️  {pkg} (skipped)")
+            try:
+                subprocess.run([venv_pip, 'install', '-r', req_file, '--quiet'],
+                               check=True, capture_output=True, timeout=600)
+                with open(req_file, 'r') as f:
+                    for l in f:
+                        if l.strip() and not l.startswith('#'):
+                            log_lines.append(f"  ✅ {l.strip()}")
+                            installed.append(l.strip())
+            except Exception as e:
+                log_lines.append(f"  ❌ Failed to install from requirements.txt: {str(e)}")
 
         py_files = []
         for root, dirs, files in os.walk(project_path):
-            dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', 'node_modules', '.venv'}]
+            dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', 'node_modules', 'venv', '.venv'}]
             py_files.extend(os.path.join(root, f) for f in files if f.endswith('.py'))
 
         if py_files:
@@ -166,12 +211,13 @@ def detect_and_install_deps(project_path):
             log_lines.append("\n🔍 AUTO-DETECTED DEPENDENCIES")
             for imp in third_party:
                 pkg = PACKAGE_MAP.get(imp, imp)
-                try:
-                    __import__(imp)
-                    log_lines.append(f"  ✓ {pkg} (installed)")
-                except ImportError:
+                # Check if already installed in venv
+                check_proc = subprocess.run([venv_python, '-c', f'import {imp}'], capture_output=True)
+                if check_proc.returncode == 0:
+                    log_lines.append(f"  ✓ {pkg} (already present)")
+                else:
                     try:
-                        subprocess.run([sys.executable, '-m', 'pip', 'install', pkg, '--quiet'],
+                        subprocess.run([venv_pip, 'install', pkg, '--quiet'],
                                        check=True, capture_output=True, timeout=300)
                         log_lines.append(f"  ✅ {pkg} (auto-installed)")
                         installed.append(pkg)
@@ -228,7 +274,7 @@ def deploy_from_file(user_id, file_path, filename):
         update_deployment(deploy_id, status='starting',
                           logs=f'🚀 Launching on port {port}...\n{install_log}')
 
-        process = _launch_process(cmd, os.path.dirname(file_path), port, env_vars)
+        process = _launch_process(cmd, os.path.dirname(file_path), port, env_vars, project_path=deploy_dir, deploy_id=deploy_id)
         with PROCESS_LOCK:
             active_processes[deploy_id] = process
             process_restart_ct[deploy_id] = 0
@@ -297,7 +343,7 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         update_deployment(deploy_id, status='starting',
                           logs=f'🚀 Starting: {start_cmd}', start_command=start_cmd)
 
-        process = _launch_process(start_cmd.split(), deploy_dir, port, env_vars)
+        process = _launch_process(start_cmd.split(), deploy_dir, port, env_vars, project_path=deploy_dir, deploy_id=deploy_id)
         with PROCESS_LOCK:
             active_processes[deploy_id] = process
             process_restart_ct[deploy_id] = 0
@@ -376,6 +422,8 @@ def stop_deployment(deploy_id):
 def delete_deployment(deploy_id):
     try:
         stop_deployment(deploy_id)
+        # Give it a moment to release file handles
+        time.sleep(1)
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
         if os.path.exists(deploy_dir):
             shutil.rmtree(deploy_dir, ignore_errors=True)
