@@ -1,9 +1,7 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from app.config import WEB_SECRET_KEY, get_rate_limit_key
-from app.db import init_database
 from app.utils import get_device_fingerprint
 from app.services.user_service import is_device_banned
 
@@ -20,9 +18,6 @@ def create_app():
         storage_uri="memory://",
         strategy="fixed-window"
     )
-
-    # Initialize Database
-    init_database()
 
     # Register Blueprints
     from app.routes.auth_routes import auth_bp

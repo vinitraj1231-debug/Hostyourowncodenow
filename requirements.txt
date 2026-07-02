@@ -11,3 +11,4 @@ GitPython
 Werkzeug
 PyYAML
 Flask-Limiter
+bcrypt

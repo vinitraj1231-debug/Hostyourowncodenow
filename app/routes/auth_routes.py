@@ -170,9 +170,8 @@ def login_2fa():
 def logout():
     token = request.cookies.get('session_token')
     if token:
-        from app.db import get_db
-        with get_db() as conn:
-            conn.cursor().execute('DELETE FROM sessions WHERE token = ?', (token,))
+        from app.services.json_db import db
+        db.sessions.delete(token=token)
     response = make_response(redirect('/login?success=Logged out successfully'))
     response.set_cookie('session_token', '', expires=0, httponly=True, samesite='Lax')
     return response

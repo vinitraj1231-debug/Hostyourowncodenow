@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from app.db import get_db
+from app.services.json_db import db
 
 logger = logging.getLogger(__name__)
 
@@ -10,12 +10,15 @@ def audit_log(event_type, severity, description, user_id=None, ip_address=None, 
     severity: INFO, WARNING, CRITICAL
     """
     try:
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('''
-                INSERT INTO audit_logs (user_id, event_type, severity, description, ip_address, user_agent, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (user_id, event_type, severity, description, ip_address, user_agent, datetime.now().isoformat()))
+        db.audit_logs.insert({
+            'user_id': user_id,
+            'event_type': event_type,
+            'severity': severity,
+            'description': description,
+            'ip_address': ip_address,
+            'user_agent': user_agent,
+            'timestamp': datetime.now().isoformat()
+        })
     except Exception as e:
         logger.error(f"Failed to write audit log: {e}")
 

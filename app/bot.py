@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from datetime import datetime
 from app.config import TOKEN, ADMIN_ID
-from app.db import get_db
+from app.services.json_db import db
 from app.services.credit_service import add_credits
 from app.services.sse_service import sse_notify
 from app.utils import log_error
@@ -17,22 +17,17 @@ def bot_handler(bot_instance):
             action_part = parts[0]
             payment_id = parts[1]
 
-            with get_db() as conn:
-                c = conn.cursor()
-                c.execute('SELECT * FROM payments WHERE id = ?', (payment_id,))
-                row = c.fetchone()
-                if not row:
-                    bot_instance.answer_callback_query(call.id, "Payment not found")
-                    return
-                payment = dict(row)
+            payment = db.payments.find_one(id=payment_id)
+            if not payment:
+                bot_instance.answer_callback_query(call.id, "Payment not found")
+                return
 
             if 'confirm' in action_part:
-                with get_db() as conn:
-                    c = conn.cursor()
-                    c.execute('''
-                        UPDATE payments SET status='approved', approved_at=?, approved_by=?
-                        WHERE id=?
-                    ''', (datetime.now().isoformat(), str(call.from_user.id), payment_id))
+                db.payments.update({'id': payment_id}, {
+                    'status': 'approved',
+                    'approved_at': datetime.now().isoformat(),
+                    'approved_by': str(call.from_user.id)
+                })
                 add_credits(payment['user_id'], payment['credits'], f"Payment approved: {payment_id}")
                 bot_instance.answer_callback_query(call.id, "✅ Payment Approved!")
                 sse_notify(payment['user_id'], 'payment_approved', {
@@ -45,9 +40,7 @@ def bot_handler(bot_instance):
                     pass
 
             elif 'reject' in action_part:
-                with get_db() as conn:
-                    c = conn.cursor()
-                    c.execute("UPDATE payments SET status='rejected' WHERE id=?", (payment_id,))
+                db.payments.update({'id': payment_id}, {'status': 'rejected'})
                 bot_instance.answer_callback_query(call.id, "❌ Payment Rejected")
                 sse_notify(payment['user_id'], 'payment_rejected', {'payment_id': payment_id})
                 try:

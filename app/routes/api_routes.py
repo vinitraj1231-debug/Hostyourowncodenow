@@ -75,18 +75,10 @@ def api_credits(user_id):
 @require_auth
 def api_deployments(user_id):
     try:
-        from app.db import get_db
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('''
-                SELECT * FROM deployments WHERE user_id=? ORDER BY created_at DESC
-            ''', (user_id,))
-            deployments = []
-            for row in c.fetchall():
-                d = dict(row)
-                d['dependencies'] = json.loads(d.get('dependencies') or '[]')
-                d['env_vars'] = json.loads(d.get('env_vars') or '{}')
-                deployments.append(d)
+        from app.services.json_db import db
+        deployments = db.deployments.find(user_id=user_id)
+        # Sort by created_at desc
+        deployments.sort(key=lambda x: x['created_at'], reverse=True)
         return jsonify({'success': True, 'deployments': deployments})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
