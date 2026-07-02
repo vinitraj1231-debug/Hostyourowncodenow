@@ -1,0 +1,24 @@
+[
+    {
+        "user_id": "675d1ac8-7cf3-44bb-9681-221e02ae6e98",
+        "type": "credit",
+        "amount": 10.0,
+        "balance_before": 0.0,
+        "balance_after": 10.0,
+        "description": "Bonus",
+        "timestamp": "2026-07-02T05:10:16.313551",
+        "created_at": "2026-07-02T05:10:16.313737",
+        "updated_at": "2026-07-02T05:10:16.313743"
+    },
+    {
+        "user_id": "675d1ac8-7cf3-44bb-9681-221e02ae6e98",
+        "type": "debit",
+        "amount": 2.0,
+        "balance_before": 10.0,
+        "balance_after": 8.0,
+        "description": "Paid Deployment",
+        "timestamp": "2026-07-02T05:10:16.314998",
+        "created_at": "2026-07-02T05:10:16.315063",
+        "updated_at": "2026-07-02T05:10:16.315066"
+    }
+]

@@ -8,7 +8,8 @@ from app.services.user_service import (
 from app.utils import get_device_fingerprint, log_error
 from app.templates import LOGIN_PAGE
 from app.config import (
-    SESSION_TIMEOUT_DAYS, ADMIN_EMAIL, ADMIN_PASSWORD
+    SESSION_TIMEOUT_DAYS, ADMIN_EMAIL, ADMIN_PASSWORD,
+    RAJ_ADMIN_USER, RAJ_ADMIN_PASS
 )
 from app.services.credit_service import log_activity
 
@@ -26,6 +27,7 @@ def register():
     try:
         email = request.form.get('email','').strip().lower()
         password = request.form.get('password','')
+        ref = request.form.get('ref')
         fingerprint = get_device_fingerprint(request)
         ip = request.remote_addr
 
@@ -36,7 +38,7 @@ def register():
         if len(password) < 6:
             return redirect('/register?error=Password must be at least 6 characters')
 
-        user_id = create_user(email, password, fingerprint, ip)
+        user_id = create_user(email, password, fingerprint, ip, referred_by=ref)
         if not user_id:
             return redirect('/register?error=Registration failed. Email might already be taken.')
 
@@ -72,6 +74,11 @@ def login():
         if not email or not password:
             return redirect('/login?error=Email and password required')
 
+        # Handle Raj Admin Login
+        if email == RAJ_ADMIN_USER and password == RAJ_ADMIN_PASS:
+            session['admin_user'] = RAJ_ADMIN_USER
+            return redirect('/raj')
+
         is_admin_login = (ADMIN_EMAIL and email == ADMIN_EMAIL.lower() and password == ADMIN_PASSWORD)
 
         user_id = authenticate_user(email, password)
@@ -106,7 +113,7 @@ def login():
         token = create_session(user_id, fingerprint, ip, request.headers.get('User-Agent'))
 
         is_admin = is_admin_user(user_id, user['email'])
-        dest = '/admin' if is_admin else '/dashboard'
+        dest = '/raj' if is_admin else '/dashboard'
 
         response = make_response(redirect(dest))
         response.set_cookie('session_token', token, max_age=SESSION_TIMEOUT_DAYS*86400, httponly=True, samesite='Lax')
@@ -149,7 +156,7 @@ def login_2fa():
         token = create_session(user_id, fingerprint, ip, request.headers.get('User-Agent'))
 
         is_admin = is_admin_user(user_id, user['email'])
-        dest = '/admin' if is_admin else '/dashboard'
+        dest = '/raj' if is_admin else '/dashboard'
 
         response = make_response(redirect(dest))
         response.set_cookie('session_token', token, max_age=SESSION_TIMEOUT_DAYS*86400, httponly=True, samesite='Lax')

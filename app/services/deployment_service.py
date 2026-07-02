@@ -7,10 +7,11 @@ import subprocess
 import sys
 import re
 import psutil
+import time
 from datetime import datetime
 from threading import Lock
 from collections import defaultdict
-from app.db import get_db
+from app.services.json_db import db
 from app.config import (
     DEPLOYS_DIR, BACKUPS_DIR, MAX_DEPLOYMENTS_PER_USER,
     OWNER_ID, CREDIT_COSTS, MAX_DEPLOY_RESTARTS
@@ -54,65 +55,46 @@ def find_free_port():
 
 def create_deployment(user_id, name, deploy_type, **kwargs):
     try:
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('''
-                SELECT COUNT(*) as cnt FROM deployments
-                WHERE user_id=? AND status IN ('running','pending')
-            ''', (user_id,))
-            if c.fetchone()['cnt'] >= MAX_DEPLOYMENTS_PER_USER and str(user_id) != str(OWNER_ID):
-                return None, None
+        active_deploys = db.deployments.find(user_id=user_id, status='running')
+        if len(active_deploys) >= MAX_DEPLOYMENTS_PER_USER and str(user_id) != str(OWNER_ID) and user_id != 'admin_raj':
+            return None, "Deployment limit reached"
 
         deploy_id = str(uuid.uuid4())[:8]
         port = find_free_port()
 
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('''
-                INSERT INTO deployments (id, user_id, name, type, status, port,
-                    created_at, updated_at, logs, dependencies,
-                    repo_url, branch, build_command, start_command, env_vars, restart_count)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (deploy_id, user_id, name, deploy_type, 'pending', port,
-                  datetime.now().isoformat(), datetime.now().isoformat(),
-                  '', json.dumps([]),
-                  kwargs.get('repo_url', ''), kwargs.get('branch', 'main'),
-                  kwargs.get('build_command', ''), kwargs.get('start_command', ''),
-                  json.dumps({}), 0))
-
+        deployment = {
+            'id': deploy_id,
+            'user_id': user_id,
+            'name': name,
+            'type': deploy_type,
+            'status': 'pending',
+            'port': port,
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat(),
+            'logs': '',
+            'dependencies': [],
+            'repo_url': kwargs.get('repo_url', ''),
+            'branch': kwargs.get('branch', 'main'),
+            'build_command': kwargs.get('build_command', ''),
+            'start_command': kwargs.get('start_command', ''),
+            'env_vars': {},
+            'restart_count': 0,
+            'version': 1
+        }
+        db.deployments.insert(deployment)
         return deploy_id, port
     except Exception as e:
         log_error(str(e), "create_deployment")
-        return None, None
+        return None, str(e)
 
 def update_deployment(deploy_id, **kwargs):
     try:
-        kwargs['updated_at'] = datetime.now().isoformat()
-        for key in ['dependencies', 'env_vars']:
-            if key in kwargs and isinstance(kwargs[key], (list, dict)):
-                kwargs[key] = json.dumps(kwargs[key])
-        set_clause = ', '.join([f"{k} = ?" for k in kwargs.keys()])
-        values = list(kwargs.values()) + [deploy_id]
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute(f'UPDATE deployments SET {set_clause} WHERE id = ?', values)
+        db.deployments.update({'id': deploy_id}, kwargs)
     except Exception as e:
         log_error(str(e), f"update_deployment {deploy_id}")
 
 def get_deployment(deploy_id):
-    try:
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('SELECT * FROM deployments WHERE id = ?', (deploy_id,))
-            row = c.fetchone()
-            if row:
-                d = dict(row)
-                d['dependencies'] = json.loads(d.get('dependencies') or '[]')
-                d['env_vars'] = json.loads(d.get('env_vars') or '{}')
-                return d
-        return None
-    except Exception:
-        return None
+    return db.deployments.find_one(id=deploy_id)
 
 def _get_venv_bin(project_path, binary='python'):
     if sys.platform == 'win32':
@@ -125,15 +107,11 @@ def _launch_process(cmd, cwd, port, env=None, project_path=None, deploy_id=None)
     if env:
         proc_env.update(env)
 
-    # If project_path is provided, we try to use the venv
     if project_path:
         venv_python = _get_venv_bin(project_path, 'python')
         if os.path.exists(venv_python):
             if isinstance(cmd, list) and cmd[0] in [sys.executable, 'python', 'python3']:
                 cmd[0] = venv_python
-            elif isinstance(cmd, str):
-                # This is trickier if it's a shell command, but we usually pass lists
-                pass
 
     process = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -146,27 +124,15 @@ def _launch_process(cmd, cwd, port, env=None, project_path=None, deploy_id=None)
         def stream_logs():
             for line in iter(process.stdout.readline, ''):
                 if not line: break
-                # Append to DB logs
-                with get_db() as conn:
-                    c = conn.cursor()
-                    c.execute("UPDATE deployments SET logs = logs || ? WHERE id = ?", (line, deploy_id))
-                # Notify via SSE
                 deployment = get_deployment(deploy_id)
                 if deployment:
+                    new_logs = (deployment.get('logs', '') + line)[-10000:]
+                    update_deployment(deploy_id, logs=new_logs)
                     sse_notify(deployment['user_id'], 'logs', {'id': deploy_id, 'line': line})
             process.stdout.close()
         Thread(target=stream_logs, daemon=True).start()
 
     return process
-
-def extract_imports_from_code(code_content):
-    imports = set()
-    for line in code_content.split('\n'):
-        for pattern in [r'^\s*import\s+([a-zA-Z0-9_\.]+)', r'^\s*from\s+([a-zA-Z0-9_\.]+)\s+import']:
-            m = re.match(pattern, line)
-            if m:
-                imports.add(m.group(1).split('.')[0])
-    return imports
 
 def detect_and_install_deps(project_path):
     installed, log_lines = [], ["🤖 AI DEPENDENCY ANALYZER", "=" * 60]
@@ -203,7 +169,11 @@ def detect_and_install_deps(project_path):
             for pf in py_files[:30]:
                 try:
                     with open(pf, 'r', encoding='utf-8', errors='ignore') as f:
-                        all_imports.update(extract_imports_from_code(f.read()))
+                        for line in f:
+                            for pattern in [r'^\s*import\s+([a-zA-Z0-9_\.]+)', r'^\s*from\s+([a-zA-Z0-9_\.]+)\s+import']:
+                                m = re.match(pattern, line)
+                                if m:
+                                    all_imports.add(m.group(1).split('.')[0])
                 except Exception:
                     continue
 
@@ -211,7 +181,6 @@ def detect_and_install_deps(project_path):
             log_lines.append("\n🔍 AUTO-DETECTED DEPENDENCIES")
             for imp in third_party:
                 pkg = PACKAGE_MAP.get(imp, imp)
-                # Check if already installed in venv
                 check_proc = subprocess.run([venv_python, '-c', f'import {imp}'], capture_output=True)
                 if check_proc.returncode == 0:
                     log_lines.append(f"  ✓ {pkg} (already present)")
@@ -231,19 +200,22 @@ def detect_and_install_deps(project_path):
         return installed, "\n".join(log_lines) + f"\n\n❌ Error: {str(e)}"
 
 def deploy_from_file(user_id, file_path, filename):
-    cost = CREDIT_COSTS['file_upload']
+    is_zip = filename.endswith('.zip')
+    cost = CREDIT_COSTS['zip_deploy'] if is_zip else CREDIT_COSTS['file_upload']
+
     if not deduct_credits(user_id, cost, f"File deploy: {filename}"):
         return None, f"❌ Need {cost} credits"
 
-    deploy_id, port = create_deployment(user_id, filename, 'file_upload')
+    res = create_deployment(user_id, filename, 'zip_upload' if is_zip else 'file_upload')
+    deploy_id, port = res if isinstance(res, tuple) else (None, res)
     if not deploy_id:
-        add_credits(user_id, cost, "Refund"); return None, "Failed to create deployment"
+        add_credits(user_id, cost, "Refund"); return None, port
 
     deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
     os.makedirs(deploy_dir, exist_ok=True)
 
     try:
-        if filename.endswith('.zip'):
+        if is_zip:
             update_deployment(deploy_id, status='extracting', logs='📦 Extracting ZIP...')
             with zipfile.ZipFile(file_path, 'r') as z:
                 z.extractall(deploy_dir)
@@ -252,16 +224,15 @@ def deploy_from_file(user_id, file_path, filename):
                 for f in files:
                     if f in ('main.py', 'app.py', 'bot.py', 'index.js', 'server.js'):
                         main_file = os.path.join(root, f); break
-                if main_file:
-                    break
+                if main_file: break
             if not main_file:
                 update_deployment(deploy_id, status='failed', logs='❌ No entry point found')
                 add_credits(user_id, cost, "Refund"); return None, "❌ No main file found"
-            file_path = main_file
+            entry_path = main_file
         else:
             dest = os.path.join(deploy_dir, filename)
             shutil.copy(file_path, dest)
-            file_path = dest
+            entry_path = dest
 
         update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing dependencies...')
         installed_deps, install_log = detect_and_install_deps(deploy_dir)
@@ -270,11 +241,11 @@ def deploy_from_file(user_id, file_path, filename):
         deployment = get_deployment(deploy_id)
         env_vars = deployment.get('env_vars', {})
 
-        cmd = [sys.executable, file_path] if file_path.endswith('.py') else ['node', file_path]
+        cmd = [sys.executable, entry_path] if entry_path.endswith('.py') else ['node', entry_path]
         update_deployment(deploy_id, status='starting',
                           logs=f'🚀 Launching on port {port}...\n{install_log}')
 
-        process = _launch_process(cmd, os.path.dirname(file_path), port, env_vars, project_path=deploy_dir, deploy_id=deploy_id)
+        process = _launch_process(cmd, deploy_dir, port, env_vars, project_path=deploy_dir, deploy_id=deploy_id)
         with PROCESS_LOCK:
             active_processes[deploy_id] = process
             process_restart_ct[deploy_id] = 0
@@ -294,11 +265,12 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
         return None, f"❌ Need {cost} credits"
 
     repo_name = repo_url.split('/')[-1].replace('.git', '')
-    deploy_id, port = create_deployment(user_id, repo_name, 'github',
+    res = create_deployment(user_id, repo_name, 'github',
                                         repo_url=repo_url, branch=branch,
                                         build_command=build_cmd, start_command=start_cmd)
+    deploy_id, port = res if isinstance(res, tuple) else (None, res)
     if not deploy_id:
-        add_credits(user_id, cost, "Refund"); return None, "Failed to create deployment"
+        add_credits(user_id, cost, "Refund"); return None, port
 
     deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
     os.makedirs(deploy_dir, exist_ok=True)
@@ -359,101 +331,166 @@ def deploy_from_github(user_id, repo_url, branch='main', build_cmd='', start_cmd
 def create_backup(deploy_id):
     try:
         deployment = get_deployment(deploy_id)
-        if not deployment:
-            return None, "Deployment not found"
+        if not deployment: return None, "Deployment not found"
         user_id = deployment['user_id']
         cost = CREDIT_COSTS['backup']
         if not deduct_credits(user_id, cost, f"Backup: {deployment['name']}"):
             return None, f"❌ Need {cost} credits"
 
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
-        if not os.path.exists(deploy_dir):
-            add_credits(user_id, cost, "Refund")
-            return None, "Deployment directory not found"
-
-        backup_name = f"{deployment['name']}_{deploy_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        backup_name = f"{deployment['name']}_{deploy_id}_{int(time.time())}.zip"
         backup_path = os.path.join(BACKUPS_DIR, backup_name)
+
         with zipfile.ZipFile(backup_path, 'w', zipfile.ZIP_DEFLATED) as zf:
             for root, _, files in os.walk(deploy_dir):
                 for file in files:
+                    if 'venv' in root or '__pycache__' in root: continue
                     fp = os.path.join(root, file)
                     zf.write(fp, os.path.relpath(fp, deploy_dir))
         return backup_path, backup_name
     except Exception as e:
-        log_error(str(e), f"create_backup {deploy_id}")
         return None, str(e)
 
 def get_deployment_files(deploy_id):
-    try:
-        deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
-        if not os.path.exists(deploy_dir):
-            return []
-        files = []
-        for root, _, filenames in os.walk(deploy_dir):
-            for fn in filenames:
-                fp = os.path.join(root, fn)
-                files.append({
-                    'name': fn,
-                    'path': os.path.relpath(fp, deploy_dir),
-                    'size': os.path.getsize(fp),
-                    'modified': datetime.fromtimestamp(os.path.getmtime(fp)).isoformat()
-                })
-        return files
-    except Exception:
-        return []
+    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+    if not os.path.exists(deploy_dir): return []
+    files = []
+    for root, _, filenames in os.walk(deploy_dir):
+        if 'venv' in root or '__pycache__' in root or '.git' in root: continue
+        for fn in filenames:
+            fp = os.path.join(root, fn)
+            files.append({
+                'name': fn,
+                'path': os.path.relpath(fp, deploy_dir),
+                'size': os.path.getsize(fp),
+                'modified': datetime.fromtimestamp(os.path.getmtime(fp)).isoformat()
+            })
+    return files
 
 def stop_deployment(deploy_id):
-    try:
-        with PROCESS_LOCK:
-            if deploy_id in active_processes:
-                p = active_processes[deploy_id]
-                p.terminate()
-                try:
-                    p.wait(timeout=5)
-                except Exception:
-                    p.kill()
-                del active_processes[deploy_id]
-        update_deployment(deploy_id, status='stopped', logs='🛑 Stopped by user')
-        return True, "Stopped"
-    except Exception as e:
-        log_error(str(e), f"stop_deployment {deploy_id}")
-        return False, str(e)
+    with PROCESS_LOCK:
+        if deploy_id in active_processes:
+            p = active_processes[deploy_id]
+            p.terminate()
+            try: p.wait(timeout=5)
+            except: p.kill()
+            del active_processes[deploy_id]
+    update_deployment(deploy_id, status='stopped', pid=None)
+    return True, "Stopped"
 
 def delete_deployment(deploy_id):
+    stop_deployment(deploy_id)
+    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+    if os.path.exists(deploy_dir):
+        shutil.rmtree(deploy_dir, ignore_errors=True)
+    db.deployments.delete(id=deploy_id)
+    return True, "Deleted"
+
+def restart_deployment(deploy_id):
     try:
+        deployment = get_deployment(deploy_id)
+        if not deployment: return False, "Not found"
+
         stop_deployment(deploy_id)
-        # Give it a moment to release file handles
         time.sleep(1)
+
         deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
-        if os.path.exists(deploy_dir):
-            shutil.rmtree(deploy_dir, ignore_errors=True)
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('DELETE FROM deployments WHERE id = ?', (deploy_id,))
-        return True, "Deleted successfully"
+        start_cmd = deployment.get('start_command', '')
+        env_vars = deployment.get('env_vars', {})
+        port = deployment.get('port', find_free_port())
+
+        if not start_cmd:
+            MAIN_FILES = {
+                'main.py': f'{sys.executable} main.py', 'app.py': f'{sys.executable} app.py',
+                'bot.py': f'{sys.executable} bot.py', 'index.js': 'node index.js',
+                'server.js': 'node server.js',
+            }
+            for fname, cmd in MAIN_FILES.items():
+                if os.path.exists(os.path.join(deploy_dir, fname)):
+                    start_cmd = cmd; break
+
+        if not start_cmd: return False, "No entry point"
+
+        process = _launch_process(start_cmd.split(), deploy_dir, port, env_vars, project_path=deploy_dir, deploy_id=deploy_id)
+        with PROCESS_LOCK:
+            active_processes[deploy_id] = process
+            process_restart_ct[deploy_id] += 1
+
+        update_deployment(deploy_id, status='running', pid=process.pid,
+                         restart_count=process_restart_ct[deploy_id],
+                         logs=f"🔄 Restarted (#{process_restart_ct[deploy_id]})")
+        return True, "Restarted"
     except Exception as e:
-        log_error(str(e), f"delete_deployment {deploy_id}")
+        return False, str(e)
+
+def deploy_from_raw_code(user_id, code, filename):
+    cost = CREDIT_COSTS['raw_deploy']
+    if not deduct_credits(user_id, cost, f"Raw deploy: {filename}"):
+        return None, f"❌ Need {cost} credits"
+
+    res = create_deployment(user_id, filename, 'raw_code')
+    deploy_id, port = res if isinstance(res, tuple) else (None, res)
+    if not deploy_id:
+        add_credits(user_id, cost, "Refund"); return None, port
+
+    deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+    os.makedirs(deploy_dir, exist_ok=True)
+
+    file_path = os.path.join(deploy_dir, filename)
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(code)
+
+    update_deployment(deploy_id, status='installing', logs='🤖 AI analyzing dependencies...')
+    installed_deps, install_log = detect_and_install_deps(deploy_dir)
+    update_deployment(deploy_id, dependencies=installed_deps)
+
+    cmd = [sys.executable, file_path] if file_path.endswith('.py') else ['node', file_path]
+    process = _launch_process(cmd, deploy_dir, port, {}, project_path=deploy_dir, deploy_id=deploy_id)
+
+    with PROCESS_LOCK:
+        active_processes[deploy_id] = process
+    update_deployment(deploy_id, status='running', pid=process.pid, logs=f"✅ Live on port {port}\n\n{install_log}")
+    return deploy_id, f"🎉 Deployed! Port {port}"
+
+def rollback_deployment(deploy_id, backup_name):
+    try:
+        deployment = get_deployment(deploy_id)
+        if not deployment: return False, "Not found"
+
+        backup_path = os.path.join(BACKUPS_DIR, backup_name)
+        if not os.path.exists(backup_path): return False, "Backup not found"
+
+        stop_deployment(deploy_id)
+        deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
+
+        # Clear current files (except venv)
+        for item in os.listdir(deploy_dir):
+            if item == 'venv': continue
+            path = os.path.join(deploy_dir, item)
+            if os.path.isdir(path): shutil.rmtree(path)
+            else: os.remove(path)
+
+        # Extract backup
+        with zipfile.ZipFile(backup_path, 'r') as zf:
+            zf.extractall(deploy_dir)
+
+        update_deployment(deploy_id, status='stopped', logs=f"🔄 Rolled back to {backup_name}")
+        return True, "Rolled back successfully"
+    except Exception as e:
         return False, str(e)
 
 def get_system_metrics():
     try:
-        cpu = psutil.cpu_percent(interval=0.1)
-        mem = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
-        net = psutil.net_io_counters()
         return {
-            'cpu': round(cpu, 1),
-            'memory_percent': round(mem.percent, 1),
-            'memory_used': round(mem.used / (1024**3), 2),
-            'memory_total': round(mem.total / (1024**3), 2),
-            'disk_percent': round(disk.percent, 1),
-            'disk_used': round(disk.used / (1024**3), 2),
-            'disk_total': round(disk.total / (1024**3), 2),
-            'net_sent_mb': round(net.bytes_sent / (1024**2), 1),
-            'net_recv_mb': round(net.bytes_recv / (1024**2), 1),
+            'cpu': psutil.cpu_percent(),
+            'memory_percent': psutil.virtual_memory().percent,
+            'memory_used': round(psutil.virtual_memory().used / (1024**3), 2),
+            'memory_total': round(psutil.virtual_memory().total / (1024**3), 2),
+            'disk_percent': psutil.disk_usage('/').percent,
+            'disk_used': round(psutil.disk_usage('/').used / (1024**3), 2),
+            'disk_total': round(psutil.disk_usage('/').total / (1024**3), 2),
+            'net_sent_mb': round(psutil.net_io_counters().bytes_sent / (1024**2), 1),
+            'net_recv_mb': round(psutil.net_io_counters().bytes_recv / (1024**2), 1),
             'active_processes': len(active_processes),
         }
-    except Exception:
-        return {k: 0 for k in ['cpu','memory_percent','memory_used','memory_total',
-                                 'disk_percent','disk_used','disk_total','net_sent_mb',
-                                 'net_recv_mb','active_processes']}
+    except: return {}

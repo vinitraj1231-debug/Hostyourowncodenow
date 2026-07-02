@@ -1,0 +1,22 @@
+[
+    {
+        "user_id": "675d1ac8-7cf3-44bb-9681-221e02ae6e98",
+        "event_type": "CREDIT_ADD",
+        "severity": "INFO",
+        "description": "10.0 - Bonus",
+        "ip_address": "",
+        "timestamp": "2026-07-02T05:10:16.314260",
+        "created_at": "2026-07-02T05:10:16.314443",
+        "updated_at": "2026-07-02T05:10:16.314448"
+    },
+    {
+        "user_id": "675d1ac8-7cf3-44bb-9681-221e02ae6e98",
+        "event_type": "CREDIT_USE",
+        "severity": "INFO",
+        "description": "2.0 - Paid Deployment",
+        "ip_address": "",
+        "timestamp": "2026-07-02T05:10:16.315696",
+        "created_at": "2026-07-02T05:10:16.315780",
+        "updated_at": "2026-07-02T05:10:16.315784"
+    }
+]

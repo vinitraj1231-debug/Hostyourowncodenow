@@ -1,0 +1,38 @@
+[
+    {
+        "user_id": "675d1ac8-7cf3-44bb-9681-221e02ae6e98",
+        "balance": 0.0,
+        "total_earned": 0.0,
+        "total_withdrawn": 0.0,
+        "pending_withdrawals": 0.0,
+        "created_at": "2026-07-02T05:10:16.311499",
+        "updated_at": "2026-07-02T05:10:16.311505"
+    },
+    {
+        "user_id": "2c7def74-b1fc-4086-b572-7982c4f68757",
+        "balance": 0.0,
+        "total_earned": 0.0,
+        "total_withdrawn": 0.0,
+        "pending_withdrawals": 0.0,
+        "created_at": "2026-07-02T05:12:29.019615",
+        "updated_at": "2026-07-02T05:12:29.019622"
+    },
+    {
+        "user_id": "bc4b2b76-bd0f-4f48-96e2-82b10ee7e003",
+        "balance": 0.0,
+        "total_earned": 0.0,
+        "total_withdrawn": 0.0,
+        "pending_withdrawals": 0.0,
+        "created_at": "2026-07-02T05:13:16.474361",
+        "updated_at": "2026-07-02T05:13:16.474370"
+    },
+    {
+        "user_id": "bb56a912-b1f8-4107-99c5-6132304f3009",
+        "balance": 0.0,
+        "total_earned": 0.0,
+        "total_withdrawn": 0.0,
+        "pending_withdrawals": 0.0,
+        "created_at": "2026-07-02T05:18:14.396378",
+        "updated_at": "2026-07-02T05:18:14.396386"
+    }
+]

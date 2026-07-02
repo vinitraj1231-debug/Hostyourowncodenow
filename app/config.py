@@ -8,6 +8,8 @@ OWNER_ID = int(os.getenv('OWNER_ID', '0'))
 ADMIN_ID = int(os.getenv('ADMIN_ID', '0'))
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'Kvinit6421@gmail.com')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '28@Humbler')
+RAJ_ADMIN_USER = os.getenv('RAJ_ADMIN_USER', 'Raj')
+RAJ_ADMIN_PASS = os.getenv('RAJ_ADMIN_PASS', '28@RajPapa')
 YOUR_USERNAME = os.getenv('TELEGRAM_USERNAME', '@zolvid')
 TELEGRAM_LINK = os.getenv('TELEGRAM_LINK', 'https://t.me/zolvid')
 WEB_SECRET_KEY = os.getenv('SECRET_KEY', secrets.token_hex(32))
@@ -15,10 +17,14 @@ ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY', Fernet.generate_key().decode())
 if isinstance(ENCRYPTION_KEY, str):
     ENCRYPTION_KEY = ENCRYPTION_KEY.encode()
 
-FREE_CREDITS = 2.0
+FREE_CREDITS = 0.0 # Handled by trial system
+TRIAL_DURATION_HOURS = 3
+REFERRAL_COMMISSION_PERCENT = 30
 CREDIT_COSTS = {
-    'file_upload': 0.5,
-    'github_deploy': 1.0,
+    'file_upload': 1.0,
+    'github_deploy': 2.0,
+    'zip_deploy': 2.0,
+    'raw_deploy': 1.0,
     'backup': 0.5,
 }
 

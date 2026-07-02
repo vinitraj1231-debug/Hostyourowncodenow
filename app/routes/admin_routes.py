@@ -4,49 +4,45 @@ from app.services.user_service import get_user, update_user, is_admin_user
 from app.services.credit_service import add_credits
 from app.services.deployment_service import get_system_metrics, active_processes
 from app.services.sse_service import sse_notify
-from app.db import get_db
+from app.services.json_db import db
+from app.services.payment_service import approve_payment_logic
 from app.templates import ADMIN_PANEL_HTML
 import os
 from datetime import datetime
 
 admin_bp = Blueprint('admin', __name__)
 
-@admin_bp.route('/admin')
+@admin_bp.route('/raj')
 @require_admin
 def admin_panel(user_id):
     try:
-        with get_db() as conn:
-            c = conn.cursor()
-            total_users = c.execute('SELECT COUNT(*) FROM users').fetchone()[0]
-            total_deploys = c.execute('SELECT COUNT(*) FROM deployments').fetchone()[0]
-            pending_pay = c.execute("SELECT COUNT(*) FROM payments WHERE status='submitted'").fetchone()[0]
+        users = db.users.all()
+        deploys = db.deployments.all()
+        payments = db.payments.all()
+        withdrawals = db.withdrawals.all()
+        tickets = db.tickets.all()
+
+        pending_pay = len([p for p in payments if p['status'] == 'submitted'])
+        pending_withdraw = len([w for w in withdrawals if w['status'] == 'pending'])
 
         stats = {
-            'total_users': total_users, 'total_deployments': total_deploys,
-            'active_processes': len(active_processes), 'pending_payments': pending_pay
+            'total_users': len(users),
+            'total_deployments': len(deploys),
+            'active_processes': len(active_processes),
+            'pending_payments': pending_pay,
+            'pending_withdrawals': pending_withdraw,
+            'open_tickets': len([t for t in tickets if t['status'] == 'open'])
         }
 
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('SELECT id, email, credits, created_at, is_banned FROM users ORDER BY created_at DESC')
-            users = []
-            for row in c.fetchall():
-                ud = dict(row)
-                cnt = c.execute('SELECT COUNT(*) FROM deployments WHERE user_id=?', (ud['id'],)).fetchone()[0]
-                ud['deployments'] = [None] * cnt
-                users.append(ud)
+        # Sort payments: submitted first, then by date
+        payments.sort(key=lambda x: (0 if x['status'] == 'submitted' else 1, x['created_at']), reverse=False)
 
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('''
-                SELECT * FROM payments
-                ORDER BY CASE status WHEN 'submitted' THEN 1 WHEN 'pending' THEN 2
-                    WHEN 'approved' THEN 3 ELSE 4 END, created_at DESC
-                LIMIT 200
-            ''')
-            payments = [dict(r) for r in c.fetchall()]
-
-        return render_template_string(ADMIN_PANEL_HTML, stats=stats, users=users, payments=payments)
+        return render_template_string(ADMIN_PANEL_HTML,
+                                     stats=stats,
+                                     users=users,
+                                     payments=payments,
+                                     withdrawals=withdrawals,
+                                     tickets=tickets)
     except Exception as e:
         from app.utils import log_error
         log_error(str(e), "admin_panel")
@@ -69,26 +65,41 @@ def api_admin_add_credits(admin_id):
 @admin_bp.route('/api/admin/approve-payment', methods=['POST'])
 @require_admin
 def api_admin_approve_payment(admin_id):
-    try:
-        data = request.get_json() or {}
-        payment_id = data.get('payment_id')
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute('SELECT * FROM payments WHERE id = ?', (payment_id,))
-            row = c.fetchone()
-            if not row:
-                return jsonify({'success': False, 'error': 'Payment not found'})
-            payment = dict(row)
-            c.execute('''
-                UPDATE payments SET status='approved', approved_at=?, approved_by=?
-                WHERE id=?
-            ''', (datetime.now().isoformat(), str(admin_id), payment_id))
-        add_credits(payment['user_id'], payment['credits'], f"Payment approved: {payment_id}")
-        sse_notify(payment['user_id'], 'payment_approved', {
-            'credits': payment['credits'], 'payment_id': payment_id})
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    data = request.get_json() or {}
+    success, msg = approve_payment_logic(data.get('payment_id'), admin_id)
+    return jsonify({'success': success, 'error' if not success else 'message': msg})
+
+@admin_bp.route('/api/admin/reject-payment', methods=['POST'])
+@require_admin
+def api_admin_reject_payment(admin_id):
+    data = request.get_json() or {}
+    payment_id = data.get('payment_id')
+    db.payments.update({'id': payment_id}, {'status': 'rejected'})
+    return jsonify({'success': True})
+
+@admin_bp.route('/api/admin/withdrawal/<withdrawal_id>/<action>', methods=['POST'])
+@require_admin
+def api_admin_withdrawal_action(admin_id, withdrawal_id, action):
+    w = db.withdrawals.find_one(id=withdrawal_id)
+    if not w: return jsonify({'success': False, 'error': 'Not found'})
+
+    if action == 'approve':
+        db.withdrawals.update({'id': withdrawal_id}, {'status': 'approved'})
+    elif action == 'paid':
+        db.withdrawals.update({'id': withdrawal_id}, {'status': 'paid'})
+        wallet = db.wallets.find_one(user_id=w['user_id'])
+        db.wallets.update({'user_id': w['user_id']}, {
+            'pending_withdrawals': wallet['pending_withdrawals'] - w['amount'],
+            'total_withdrawn': wallet['total_withdrawn'] + w['amount']
+        })
+    elif action == 'reject':
+        db.withdrawals.update({'id': withdrawal_id}, {'status': 'rejected'})
+        wallet = db.wallets.find_one(user_id=w['user_id'])
+        db.wallets.update({'user_id': w['user_id']}, {
+            'balance': wallet['balance'] + w['amount'],
+            'pending_withdrawals': wallet['pending_withdrawals'] - w['amount']
+        })
+    return jsonify({'success': True})
 
 @admin_bp.route('/api/admin/ban-user', methods=['POST'])
 @require_admin

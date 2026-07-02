@@ -1,0 +1,35 @@
+[
+    {
+        "token": "722KqTFv1Ce18YCzBkrfwFQQObuLmqItPNsaAGfDn6Y5r-C4jkFr8ob1tm_6VH_G",
+        "user_id": "2c7def74-b1fc-4086-b572-7982c4f68757",
+        "fingerprint": "4be32f6697796576d060ab7a38326b50caee38ef8cc5ca90f3f3479486f2abc9",
+        "created_at": "2026-07-02T05:12:29.020638",
+        "expires_at": "2026-07-09T05:12:29.020772",
+        "last_activity": "2026-07-02T05:12:29.435258",
+        "ip_address": "127.0.0.1",
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36",
+        "updated_at": "2026-07-02T05:12:29.435318"
+    },
+    {
+        "token": "C6lO-FGHQBABhdrW2AY-KvN2bI4tL_q0QODXe_p4Li7qOPvaZwCwzK7woSoB5tbD",
+        "user_id": "bc4b2b76-bd0f-4f48-96e2-82b10ee7e003",
+        "fingerprint": "4be32f6697796576d060ab7a38326b50caee38ef8cc5ca90f3f3479486f2abc9",
+        "created_at": "2026-07-02T05:13:16.475167",
+        "expires_at": "2026-07-09T05:13:16.475177",
+        "last_activity": "2026-07-02T05:13:22.946697",
+        "ip_address": "127.0.0.1",
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36",
+        "updated_at": "2026-07-02T05:13:22.946769"
+    },
+    {
+        "token": "fuaGFrjfkzNRlZEjECVmxDT57pIpjBUxwRytjEVLJzfsU167Ut2q34ieiY9JRf07",
+        "user_id": "bb56a912-b1f8-4107-99c5-6132304f3009",
+        "fingerprint": "4be32f6697796576d060ab7a38326b50caee38ef8cc5ca90f3f3479486f2abc9",
+        "created_at": "2026-07-02T05:18:14.397020",
+        "expires_at": "2026-07-09T05:18:14.397025",
+        "last_activity": "2026-07-02T05:18:20.838108",
+        "ip_address": "127.0.0.1",
+        "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36",
+        "updated_at": "2026-07-02T05:18:20.838184"
+    }
+]

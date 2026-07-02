@@ -1,0 +1,24 @@
+⚠️ Bot token not set. Bot will not start.
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://192.168.0.2:8080
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [02/Jul/2026 05:18:11] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:13] "GET /register HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "[32mPOST /register HTTP/1.1[0m" 302 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "[33mGET /qr.jpg HTTP/1.1[0m" 404 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "GET /api/deployments HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "GET /api/referral/stats HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "GET /api/finance/wallet HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "GET /api/credits HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:14] "GET /api/events HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:19] "POST /api/ai/generate HTTP/1.1" 200 -
+127.0.0.1 - - [02/Jul/2026 05:18:20] "GET /login HTTP/1.1" 200 -
+🛑 Shutting down EliteHost...
+✅ Cleanup complete
+🛑 Shutting down EliteHost...
+✅ Cleanup complete
