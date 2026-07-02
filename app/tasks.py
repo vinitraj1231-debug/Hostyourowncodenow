@@ -2,11 +2,12 @@ import os
 import time
 import logging
 from datetime import datetime
-from app.db import get_db
+from app.services.json_db import db
 from app.config import LOGS_DIR, DEPLOYS_DIR, MAX_DEPLOY_RESTARTS
 from app.services.deployment_service import (
     active_processes, process_restart_ct, PROCESS_LOCK,
-    get_deployment, _launch_process, update_deployment, find_free_port
+    get_deployment, _launch_process, update_deployment, find_free_port,
+    stop_deployment
 )
 from app.services.sse_service import sse_notify
 from app.utils import log_error
@@ -17,9 +18,13 @@ def cleanup_expired_sessions():
     while True:
         try:
             time.sleep(3600)
-            with get_db() as conn:
-                c = conn.cursor()
-                c.execute("DELETE FROM sessions WHERE expires_at < ?", (datetime.now().isoformat(),))
+            now = datetime.now().isoformat()
+            db.sessions.delete(expires_at__lt=now) # Note: find_one and delete need support for operators or we do it manually
+            # Manual for now
+            sessions = db.sessions.all()
+            for s in sessions:
+                if s['expires_at'] < now:
+                    db.sessions.delete(token=s['token'])
         except Exception as e:
             log_error(str(e), "cleanup_sessions")
 
@@ -27,6 +32,7 @@ def monitor_and_autorestart():
     while True:
         try:
             time.sleep(15)
+            # 1. Check for crashed processes
             with PROCESS_LOCK:
                 for deploy_id, process in list(active_processes.items()):
                     if process.poll() is not None:
@@ -34,11 +40,9 @@ def monitor_and_autorestart():
                         del active_processes[deploy_id]
 
                         deployment = get_deployment(deploy_id)
-                        if not deployment:
-                            continue
+                        if not deployment: continue
 
                         restarts = process_restart_ct.get(deploy_id, 0)
-
                         if restarts < MAX_DEPLOY_RESTARTS:
                             process_restart_ct[deploy_id] = restarts + 1
                             deploy_dir = os.path.join(DEPLOYS_DIR, deploy_id)
@@ -52,7 +56,7 @@ def monitor_and_autorestart():
                                     active_processes[deploy_id] = new_proc
                                     update_deployment(deploy_id, status='running', pid=new_proc.pid,
                                                      restart_count=restarts+1,
-                                                     logs=f'🔄 Auto-restarted #{restarts+1}')
+                                                     logs=deployment.get('logs','') + f'\n🔄 Auto-restarted #{restarts+1}')
                                     sse_notify(deployment['user_id'], 'deployment_updated',
                                               {'id': deploy_id, 'status': 'running', 'restarted': True})
                                     continue
@@ -60,9 +64,23 @@ def monitor_and_autorestart():
                                     log_error(str(e), f"auto_restart {deploy_id}")
 
                         update_deployment(deploy_id, status='crashed',
-                                         logs=f'💥 Crashed (exit {return_code}) after {restarts} restarts')
+                                         logs=deployment.get('logs','') + f'\n💥 Crashed (exit {return_code}) after {restarts} restarts')
                         sse_notify(deployment['user_id'], 'deployment_updated',
                                   {'id': deploy_id, 'status': 'crashed'})
+
+            # 2. Check for trial expirations
+            now = datetime.now()
+            trials = db.trials.find(status='active')
+            for t in trials:
+                if datetime.fromisoformat(t['end_time']) < now:
+                    db.trials.update({'user_id': t['user_id']}, {'status': 'expired'})
+                    # Stop any running deployments for this user if they don't have credits
+                    user = db.users.find_one(id=t['user_id'])
+                    if user and user['credits'] <= 0:
+                        user_deploys = db.deployments.find(user_id=t['user_id'], status='running')
+                        for d in user_deploys:
+                            stop_deployment(d['id'])
+                            update_deployment(d['id'], logs=d.get('logs','') + "\n⚠️ Trial expired. Deployment halted.")
 
         except Exception as e:
             log_error(str(e), "monitor_and_autorestart")
